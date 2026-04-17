@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
 <style>
 body{
   margin:0;
@@ -39,6 +40,7 @@ button{
   background:#16a34a;
   color:white;
   font-size:16px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -67,6 +69,7 @@ const supabase = window.supabase.createClient(
 const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
 
 async function load(){
+
   const {data:{session}} = await supabase.auth.getSession();
   if(!session) return;
 
@@ -79,36 +82,45 @@ async function load(){
 
   let total=0, income=0, gain=0;
 
-  for(let row of data){
+  for(let row of (data || [])){
 
     let price=0;
 
     try{
       let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${row.symbol}&token=${API_KEY}`);
       let d=await r.json();
-      price=d.c||0;
 
-      let change=(d.c-d.pc)||0;
-      gain += change * (row.shares||0);
+      price = d.c || 0;
 
-    }catch{}
+      let change = (d.c - d.pc) || 0;
+      gain += change * (row.shares || 0);
 
-    total += price * (row.shares||0);
-    income += (row.dividend||0) * (row.shares||0);
+    }catch(e){}
+
+    total += price * (row.shares || 0);
+    income += (row.dividend || 0) * (row.shares || 0);
   }
 
-  pVal.innerText="$"+total.toFixed(0);
-  iVal.innerText="$"+income.toFixed(0);
+  document.getElementById("pVal").innerText="$"+total.toFixed(0);
+  document.getElementById("iVal").innerText="$"+income.toFixed(0);
 
-  gVal.innerText="$"+gain.toFixed(0);
-  gVal.className = gain>=0 ? "green" : "red";
+  let gEl = document.getElementById("gVal");
+  gEl.innerText="$"+gain.toFixed(0);
+  gEl.className = gain >= 0 ? "green" : "red";
 }
 
 function openApp(){
-  window.location.href = "https://momtheta.github.io/portfolio_app/";
+  window.open(
+    "https://momtheta.github.io/portfolio_app/",
+    "_top"
+  );
 }
 
+// load immediately
 load();
+
+// optional refresh every 60s
+setInterval(load, 60000);
 </script>
 
 </body>
