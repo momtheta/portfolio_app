@@ -18,6 +18,7 @@ body{
   margin:0 auto;
 }
 
+/* LOGIN */
 .loginWrap{display:flex;justify-content:center;padding-top:40px}
 .loginCard{
   max-width:420px;width:100%;
@@ -30,33 +31,34 @@ body{
   border:none;border-radius:8px
 }
 
+/* CARDS */
 .cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 .card{
   flex:1;background:#f0fdf4;
   padding:12px;border-radius:10px
 }
-
 #logoutBtn{
   background:#16a34a;color:white;
-  border:none;padding:10px;border-radius:8px;
-  height:40px;
+  border:none;padding:10px;border-radius:8px;height:40px;
 }
 
-.tableWrap{
-  width:100%;
-  overflow-x:auto;
+/* TABLE */
+.tableWrap{width:100%;overflow-x:auto}
+
+/* column widths (persisted) */
+:root{
+  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
+  --c5:140px; --c6:140px; --c7:140px; --c8:140px;
 }
 
-/* unified column sizing */
-.header, .row{
+.header,.row{
   display:grid;
   grid-template-columns:
-    max-content  /* SYMBOL */
-    repeat(7, minmax(max-content, 1fr));
+    var(--c1) var(--c2) var(--c3) var(--c4)
+    var(--c5) var(--c6) var(--c7) var(--c8);
   min-width:900px;
 }
 
-/* headers */
 .header{
   position:sticky;
   top:0;
@@ -67,7 +69,6 @@ body{
   color:#444;
 }
 
-/* cells */
 .header > div,
 .row > div,
 .row input{
@@ -75,16 +76,14 @@ body{
   border-right:1px solid #e5e7eb;
   display:flex;
   align-items:center;
-  justify-content:center; /* center everything */
+  justify-content:center;
 }
 
-/* remove last column border */
 .header > div:last-child,
 .row > div:last-child{
   border-right:none;
 }
 
-/* sticky symbol column */
 .sticky{
   position:sticky;
   left:0;
@@ -92,28 +91,33 @@ body{
   z-index:2;
 }
 
-/* rows */
 .row{
   background:white;
   font-size:14px;
-}
-
-/* inputs centered like data */
-.row input{
-  text-align:center;
-  font-variant-numeric:tabular-nums;
-  border:none;
-  outline:none;
-  background:transparent;
 }
 
 .row:hover{
   background:#f9fafb;
 }
 
-.price,.change,.yield,.value,.income{
-  text-align:right;
+.row input{
+  width:100%;
+  text-align:center;
+  border:none;
+  background:transparent;
+  outline:none;
   font-variant-numeric:tabular-nums;
+}
+
+/* RESIZER */
+.col{position:relative}
+.resizer{
+  position:absolute;
+  right:0;
+  top:0;
+  width:6px;
+  height:100%;
+  cursor:col-resize;
 }
 </style>
 </head>
@@ -144,24 +148,13 @@ let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
 
 // ---------- FORMAT ----------
 function fmtMoney(n){
-  return "$" + (n || 0).toLocaleString(undefined,{
-    minimumFractionDigits:2,
-    maximumFractionDigits:2
-  });
+  return "$" + (n || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-
 function fmtNumber(n){
-  return (n || 0).toLocaleString(undefined,{
-    minimumFractionDigits:3,
-    maximumFractionDigits:3
-  });
+  return (n || 0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
 }
-
 function fmtPercent(n){
-  return (n*100).toLocaleString(undefined,{
-    minimumFractionDigits:2,
-    maximumFractionDigits:2
-  }) + "%";
+  return (n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + "%";
 }
 
 // ---------- LOGIN ----------
@@ -175,8 +168,7 @@ function showLogin(){
         <button id="loginBtn">Login</button>
         <p id="msg"></p>
       </div>
-    </div>
-  `;
+    </div>`;
   loginBtn.onclick=login;
 }
 
@@ -208,44 +200,70 @@ function showApp(){
 
       <div class="tableWrap">
         <div class="header">
-          <div class="sticky">SYMBOL</div>
-          <div>PRICE</div>
-          <div>CHANGE</div>
-          <div>DIV</div>
-          <div>YIELD</div>
-          <div>SHARES</div>
-          <div>VALUE</div>
-          <div>INCOME</div>
+          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+          <div class="col">PRICE<div class="resizer"></div></div>
+          <div class="col">CHANGE<div class="resizer"></div></div>
+          <div class="col">DIV<div class="resizer"></div></div>
+          <div class="col">YIELD<div class="resizer"></div></div>
+          <div class="col">SHARES<div class="resizer"></div></div>
+          <div class="col">VALUE<div class="resizer"></div></div>
+          <div class="col">INCOME<div class="resizer"></div></div>
         </div>
         <div id="list"></div>
       </div>
-    </div>
-  `;
+    </div>`;
 
   logoutBtn.onclick=logout;
+
+  loadColumnWidths();
   loadAll();
+  enableResize();
+}
+
+// ---------- COLUMN WIDTH STORAGE ----------
+function loadColumnWidths(){
+  for(let i=1;i<=8;i++){
+    let w = localStorage.getItem("col"+i);
+    if(w) document.documentElement.style.setProperty(`--c${i}`, w);
+  }
+}
+function saveColumnWidth(i,w){
+  localStorage.setItem("col"+i, w);
+}
+
+// ---------- RESIZE ----------
+function enableResize(){
+  document.querySelectorAll(".header .col").forEach((col,i)=>{
+    let resizer = col.querySelector(".resizer");
+    let startX, startW;
+
+    resizer.onmousedown = e=>{
+      startX=e.clientX;
+      startW=col.offsetWidth;
+
+      document.onmousemove = e=>{
+        let w = Math.max(80, startW + (e.clientX-startX));
+        document.documentElement.style.setProperty(`--c${i+1}`, w+"px");
+        saveColumnWidth(i+1, w+"px");
+      };
+      document.onmouseup = ()=> document.onmousemove=null;
+    };
+  });
 }
 
 // ---------- LOAD ----------
 async function loadAll(){
-  const {data:pData}=await supabase
-    .from("portfolio")
-    .select("*")
-    .eq("user_id",user.id);
+  const {data:pData}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
   portfolio={};
   (pData||[]).forEach(r=>{
-    portfolio[r.symbol]={
-      shares:+r.shares||0,
-      dividend:+r.dividend||0
-    };
+    portfolio[r.symbol]={shares:+r.shares||0, dividend:+r.dividend||0};
   });
 
   symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
 
   render();
   refresh();
-
   symbols.forEach(fetchQuote);
 }
 
@@ -284,15 +302,15 @@ function createRow(sym){
     <div class="sticky">${sym}</div>
     <div class="price">N/A</div>
     <div class="change">N/A</div>
-    <input class="divInput" value="${d.dividend?fmtNumber(d.dividend):""}" placeholder="0.000">
+    <input value="${d.dividend?fmtNumber(d.dividend):""}">
     <div class="yield">0%</div>
-    <input class="sharesInput" value="${d.shares?fmtNumber(d.shares):""}" placeholder="0.000">
+    <input value="${d.shares?fmtNumber(d.shares):""}">
     <div class="value">$0</div>
     <div class="income">$0</div>
   `;
 
-  row.querySelector(".sharesInput").oninput=e=>saveField(sym,"shares",e.target.value);
-  row.querySelector(".divInput").oninput=e=>saveField(sym,"dividend",e.target.value);
+  row.children[5].oninput=e=>saveField(sym,"shares",e.target.value);
+  row.children[3].oninput=e=>saveField(sym,"dividend",e.target.value);
 
   rows[sym]=row;
   return row;
@@ -327,14 +345,12 @@ function refresh(){
     incomeTotal+=income;
     gainTotal+=change*shares;
 
-    row.querySelector(".price").innerText=q?fmtMoney(price):"N/A";
-    row.querySelector(".change").innerText=q?fmtMoney(change):"N/A";
-    row.querySelector(".change").style.color=
-      change>0?"#16a34a":change<0?"#dc2626":"#999";
-
-    row.querySelector(".yield").innerText=fmtPercent(yieldVal);
-    row.querySelector(".value").innerText=fmtMoney(val);
-    row.querySelector(".income").innerText=fmtMoney(income);
+    row.children[1].innerText=q?fmtMoney(price):"N/A";
+    row.children[2].innerText=q?fmtMoney(change):"N/A";
+    row.children[2].style.color=change>0?"#16a34a":change<0?"#dc2626":"#999";
+    row.children[4].innerText=fmtPercent(yieldVal);
+    row.children[6].innerText=fmtMoney(val);
+    row.children[7].innerText=fmtMoney(income);
   });
 
   pVal.innerText=fmtMoney(total);
@@ -355,16 +371,14 @@ initAuth();
 });
 </script>
 
-<!-- ✅ AUTO HEIGHT FOR WEEBLY -->
+<!-- AUTO HEIGHT -->
 <script>
 function sendHeight(){
-  const height = document.documentElement.scrollHeight;
-  parent.postMessage({ type: "resize", height }, "*");
+  parent.postMessage({type:"resize",height:document.body.scrollHeight},"*");
 }
-
-window.addEventListener("load", sendHeight);
-window.addEventListener("resize", sendHeight);
-setInterval(sendHeight, 800);
+window.addEventListener("load",sendHeight);
+window.addEventListener("resize",sendHeight);
+setInterval(sendHeight,800);
 </script>
 
 </body>
