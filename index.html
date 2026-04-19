@@ -109,11 +109,22 @@ body{
 }
 
 /* sticky symbol */
+/* sticky symbol column (header + rows) */
 .sticky{
   position:sticky;
   left:0;
   background:white;
-  z-index:2;
+  z-index:3; /* higher than rows */
+}
+
+/* make sure header stays above everything */
+.header{
+  z-index:5;
+}
+
+/* specifically ensure header SYMBOL stays on top */
+.header .sticky{
+  z-index:6;
 }
 
 /* rows */
