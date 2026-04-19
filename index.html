@@ -6,234 +6,301 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-body{
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f5f7f9;
-  margin:0;
-}
+body{font-family:Inter;background:#f5f7f9;margin:0}
+.app{padding:16px;max-width:1400px;margin:auto}
 
-.app{
-  padding:16px;
-  max-width:1400px;
-  margin:0 auto;
-}
-
-/* CARDS */
+/* cards */
 .cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 .card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
-#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px;height:40px}
+#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px}
 
-/* TABLE */
-.tableWrap{
-  width:100%;
-  overflow:auto;
-  position:relative;
-}
+/* add */
+.add{display:flex;gap:8px;margin-bottom:10px}
+.add input{padding:10px}
+.add button{padding:10px;background:#16a34a;color:white;border:none}
+
+/* table */
+.tableWrap{overflow:auto;position:relative}
 
 /* column widths */
 :root{
-  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
-  --c5:140px; --c6:140px; --c7:140px; --c8:140px;
+ --c1:140px;--c2:140px;--c3:140px;--c4:140px;
+ --c5:140px;--c6:140px;--c7:140px;--c8:140px;
 }
 
 .header,.row{
-  display:grid;
-  grid-template-columns:
-    var(--c1) var(--c2) var(--c3) var(--c4)
-    var(--c5) var(--c6) var(--c7) var(--c8);
-  min-width:900px;
+ display:grid;
+ grid-template-columns:
+ var(--c1) var(--c2) var(--c3) var(--c4)
+ var(--c5) var(--c6) var(--c7) var(--c8);
+ min-width:900px;
 }
 
-/* HEADER */
 .header{
-  position:sticky;
-  top:0;
-  background:white;
-  z-index:5;
-  border-bottom:2px solid #d1d5db;
+ position:sticky;top:0;background:white;z-index:5;
+ border-bottom:2px solid #d1d5db;
+ box-shadow:0 2px 4px rgba(0,0,0,.08);
 }
 
-/* CELLS */
-.header > div,
-.row > div{
-  padding:10px;
-  border-right:1px solid #d1d5db;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
+.header>div,.row>div{
+ padding:10px;
+ border-right:1px solid #d1d5db;
+ display:flex;align-items:center;justify-content:center;
 }
 
-/* INPUT CELLS */
 .row input{
-  width:100%;
-  height:100%;
-  border:none;
-  background:transparent;
-  border-right:1px solid #d1d5db;
-  text-align:center;
+ width:100%;border:none;background:transparent;
+ border-right:1px solid #d1d5db;text-align:center;
 }
 
-/* remove last column border */
-.header > div:last-child,
-.row > div:last-child,
-.row input:last-child{
-  border-right:none;
+.header>div:last-child,.row>div:last-child,.row input:last-child{
+ border-right:none;
 }
 
-/* STICKY COLUMN */
+/* sticky */
 .sticky{
-  position:sticky;
-  left:0;
-  background:white;
-  z-index:3;
+ position:sticky;left:0;background:white;z-index:3;
+}
+.header .sticky{z-index:10}
+
+/* shadow */
+.tableWrap.scrolled .sticky{
+ box-shadow:4px 0 6px rgba(0,0,0,.15);
 }
 
-/* 🔥 TOP-LEFT CORNER FIX */
-.header .sticky{
-  z-index:10; /* highest layer */
-}
-
-/* ROWS */
-.row{background:white}
+/* hover */
 .row:hover{background:#f9fafb}
 
-/* RESIZER */
 .col{position:relative}
 .resizer{
-  position:absolute;
-  right:0;
-  top:0;
-  width:6px;
-  height:100%;
-  cursor:col-resize;
+ position:absolute;right:0;top:0;width:6px;height:100%;cursor:col-resize;
 }
 
-/* 🌑 SHADOWS */
-.tableWrap.scrolled-x .sticky{
-  box-shadow: 4px 0 6px -2px rgba(0,0,0,0.15);
-}
-
-.header{
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
+.del{color:red;cursor:pointer;margin-left:6px}
 </style>
 </head>
 
 <body>
-
 <div id="app">Loading...</div>
 
 <script>
-window.addEventListener("load", () => {
+window.addEventListener("load",()=>{
 
-const app = document.getElementById("app");
+const app=document.getElementById("app");
 
-const supabase = window.supabase.createClient(
-  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh"
+const supabase=window.supabase.createClient(
+ "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+ "YOUR_KEY"
 );
 
-const API_KEY = "YOUR_KEY";
+const API_KEY="YOUR_FINNHUB";
 
-let user=null, symbols=["AAPL","AMZN"], portfolio={}, dataMap={}, rows={};
+const defaultSymbols=["AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX"];
 
-// FORMAT
-const fmt=n=>"$"+(n||0).toFixed(2);
+let user=null,symbols=[],portfolio={},dataMap={},rows={};
 
-// APP
+/* format */
+const $=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2});
+
+/* UI */
 function showApp(){
-  app.innerHTML=`
-    <div class="app">
-      <div class="cards">
-        <div class="card"><div>PORTFOLIO</div><h2 id="pVal">$0</h2></div>
-        <button id="logoutBtn">Logout</button>
-      </div>
+ app.innerHTML=`
+ <div class="app">
 
-      <div class="tableWrap" id="tableWrap">
-        <div class="header">
-          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-          <div class="col">PRICE<div class="resizer"></div></div>
-          <div class="col">CHANGE<div class="resizer"></div></div>
-          <div class="col">DIV<div class="resizer"></div></div>
-          <div class="col">YIELD<div class="resizer"></div></div>
-          <div class="col">SHARES<div class="resizer"></div></div>
-          <div class="col">VALUE<div class="resizer"></div></div>
-          <div class="col">INCOME<div class="resizer"></div></div>
-        </div>
-        <div id="list"></div>
-      </div>
-    </div>`;
+  <div class="cards">
+   <div class="card"><div>PORTFOLIO</div><h2 id="pVal">$0</h2></div>
+   <button id="logoutBtn">Logout</button>
+  </div>
 
-  render();
-  enableResize();
-  enableScrollShadow();
+  <div class="add">
+    <input id="newSymbol" placeholder="+ Add Symbol">
+    <button id="addBtn">Add</button>
+  </div>
+
+  <div class="tableWrap" id="wrap">
+    <div class="header">
+      <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+      <div class="col">PRICE<div class="resizer"></div></div>
+      <div class="col">CHANGE<div class="resizer"></div></div>
+      <div class="col">DIV<div class="resizer"></div></div>
+      <div class="col">YIELD<div class="resizer"></div></div>
+      <div class="col">SHARES<div class="resizer"></div></div>
+      <div class="col">VALUE<div class="resizer"></div></div>
+      <div class="col">INCOME<div class="resizer"></div></div>
+    </div>
+    <div id="list"></div>
+  </div>
+
+ </div>`;
+
+ logoutBtn.onclick=logout;
+ addBtn.onclick=addSymbol;
+
+ enableResize();
+ enableScrollShadow();
+ loadAll();
 }
 
-// SCROLL SHADOW
-function enableScrollShadow(){
-  const wrap = document.getElementById("tableWrap");
-  wrap.addEventListener("scroll", ()=>{
-    if(wrap.scrollLeft > 10){
-      wrap.classList.add("scrolled-x");
-    }else{
-      wrap.classList.remove("scrolled-x");
-    }
-  });
-}
-
-// RESIZE
+/* resize */
 function enableResize(){
-  document.querySelectorAll(".header .col").forEach((col,i)=>{
-    let resizer=col.querySelector(".resizer");
-    let startX,startW;
+ document.querySelectorAll(".header .col").forEach((col,i)=>{
+  let r=col.querySelector(".resizer");
+  let startX,startW;
 
-    resizer.onmousedown=e=>{
-      startX=e.clientX;
-      startW=col.offsetWidth;
+  let saved=localStorage.getItem("col"+i);
+  if(saved) document.documentElement.style.setProperty(`--c${i+1}`,saved);
 
-      document.onmousemove=e=>{
-        let w=Math.max(80,startW+(e.clientX-startX));
-        document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
-        localStorage.setItem("col"+(i+1),w+"px");
-      };
-      document.onmouseup=()=>document.onmousemove=null;
-    };
+  r.onmousedown=e=>{
+   startX=e.clientX;
+   startW=col.offsetWidth;
 
-    let saved=localStorage.getItem("col"+(i+1));
-    if(saved) document.documentElement.style.setProperty(`--c${i+1}`,saved);
-  });
+   document.onmousemove=e=>{
+    let w=Math.max(80,startW+(e.clientX-startX));
+    document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
+    localStorage.setItem("col"+i,w+"px");
+   };
+   document.onmouseup=()=>document.onmousemove=null;
+  };
+ });
 }
 
-// UI
+/* shadow */
+function enableScrollShadow(){
+ wrap.onscroll=()=>{
+  wrap.classList.toggle("scrolled",wrap.scrollLeft>10);
+ };
+}
+
+/* load */
+async function loadAll(){
+ const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+
+ portfolio={};
+ (data||[]).forEach(r=>{
+  portfolio[r.symbol]={shares:+r.shares||0,dividend:+r.dividend||0};
+ });
+
+ symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
+
+ render();
+ refresh();
+ symbols.forEach(fetchQuote);
+}
+
+/* add/delete */
+async function addSymbol(){
+ let s=newSymbol.value.trim().toUpperCase();
+ if(!s||symbols.includes(s))return;
+
+ symbols.push(s);
+ render();
+
+ await supabase.from("portfolio").upsert({
+  user_id:user.id,symbol:s,shares:0,dividend:0
+ });
+
+ newSymbol.value="";
+}
+
+async function deleteSymbol(sym){
+ symbols=symbols.filter(s=>s!==sym);
+ delete portfolio[sym];
+ render();
+
+ await supabase.from("portfolio").delete()
+  .eq("user_id",user.id).eq("symbol",sym);
+}
+
+/* save */
+async function save(sym,field,val){
+ portfolio[sym][field]=+val||0;
+ refresh();
+
+ await supabase.from("portfolio").upsert({
+  user_id:user.id,
+  symbol:sym,
+  shares:portfolio[sym].shares||0,
+  dividend:portfolio[sym].dividend||0
+ });
+}
+
+/* API */
+async function fetchQuote(sym){
+ try{
+  let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
+  let d=await r.json();
+  if(d.c) dataMap[sym]=d;
+  refresh();
+ }catch{}
+}
+
+/* UI rows */
 function createRow(sym){
-  let row=document.createElement("div");
-  row.className="row";
+ let d=portfolio[sym]||{};
+ let row=document.createElement("div");
+ row.className="row";
 
-  row.innerHTML=`
-    <div class="sticky">${sym}</div>
-    <div>$100</div>
-    <div>$1</div>
-    <input value="1.00">
-    <div>1%</div>
-    <input value="10">
-    <div>$1000</div>
-    <div>$10</div>
-  `;
+ row.innerHTML=`
+  <div class="sticky">${sym} <span class="del">×</span></div>
+  <div>N/A</div>
+  <div>N/A</div>
+  <input value="${d.dividend||""}">
+  <div>0%</div>
+  <input value="${d.shares||""}">
+  <div>$0</div>
+  <div>$0</div>
+ `;
 
-  return row;
+ row.children[5].oninput=e=>save(sym,"shares",e.target.value);
+ row.children[3].oninput=e=>save(sym,"dividend",e.target.value);
+ row.querySelector(".del").onclick=()=>deleteSymbol(sym);
+
+ rows[sym]=row;
+ return row;
 }
 
 function render(){
-  list.innerHTML="";
-  symbols.forEach(s=>list.appendChild(createRow(s)));
+ list.innerHTML="";
+ rows={};
+ symbols.forEach(s=>list.appendChild(createRow(s)));
 }
 
-// INIT
-showApp();
+/* calc */
+function refresh(){
+ let total=0;
+
+ symbols.forEach(s=>{
+  let q=dataMap[s];
+  let d=portfolio[s]||{};
+  let row=rows[s];
+
+  let price=q?.c||0;
+  let val=price*(d.shares||0);
+  let income=(d.dividend||0)*(d.shares||0);
+
+  total+=val;
+
+  row.children[1].innerText=q?$ (price):"N/A";
+  row.children[2].innerText=q?$ (q.c-q.pc):"N/A";
+  row.children[4].innerText=price?((d.dividend/price)*100).toFixed(2)+"%":"0%";
+  row.children[6].innerText=$ (val);
+  row.children[7].innerText=$ (income);
+ });
+
+ pVal.innerText=$ (total);
+}
+
+/* auth */
+async function init(){
+ const {data}=await supabase.auth.getSession();
+ user=data.session?.user;
+ if(user) showApp();
+ else app.innerHTML="Login required";
+}
+
+init();
 
 });
 </script>
-
 </body>
 </html>
