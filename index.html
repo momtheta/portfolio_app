@@ -51,6 +51,14 @@ body{
   --c5:140px; --c6:140px; --c7:140px; --c8:140px;
 }
 
+.header .sticky{
+  position: sticky;
+  top: 0;     /* ← THIS is the missing piece */
+  left: 0;
+  z-index: 10;
+  background: white;
+}  
+  
 .header,.row{
   display:grid;
   grid-template-columns:
