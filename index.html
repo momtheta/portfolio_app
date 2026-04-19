@@ -1,4 +1,20 @@
 <!-- CLEAN STABLE VERSION -->
+<script>
+function sendHeight(){
+  const height = document.documentElement.scrollHeight;
+  parent.postMessage({ type: "resize", height }, "*");
+}
+
+// run on load
+window.addEventListener("load", sendHeight);
+
+// run when window resizes
+window.addEventListener("resize", sendHeight);
+
+// run when content changes (your table updates)
+setInterval(sendHeight, 800);
+</script>
+
 <div id="app">Loading...</div>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
