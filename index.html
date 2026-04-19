@@ -368,6 +368,7 @@ function refresh(){
   pVal.innerText=fmtMoney(total);
   iVal.innerText=fmtMoney(incomeTotal);
   gVal.innerText=fmtMoney(gainTotal);
+  mVal.innerText = "$" + monthlyTotal.toFixed(0);
 }
 
 async function initAuth(){
