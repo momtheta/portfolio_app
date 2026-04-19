@@ -1,0 +1,278 @@
+<!-- CLEAN STABLE VERSION -->
+<div id="app">Loading...</div>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script>
+window.addEventListener("load", () => {
+
+const app = document.getElementById("app");
+
+const supabase = window.supabase.createClient(
+  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+  {auth:{persistSession:true,storage:window.localStorage}}
+);
+
+const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
+
+const defaultSymbols = [
+  "AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX",
+  "NFLX","DOMO","RELX","SMCY","PGBAX"
+];
+
+let user=null;
+let symbols=[];
+let portfolio={};
+let dataMap={};
+let rows={};
+
+// ---------- LOGIN ----------
+function showLogin(){
+  app.innerHTML=`
+    <div class="loginWrap">
+      <div class="loginCard">
+        <h2>Login</h2>
+        <input id="email" placeholder="Email">
+        <input id="pass" type="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <p id="msg"></p>
+      </div>
+    </div>
+  `;
+  document.getElementById("loginBtn").onclick = login;
+}
+
+async function login(){
+  const {data,error}=await supabase.auth.signInWithPassword({
+    email:email.value,password:pass.value
+  });
+  if(error){ msg.innerText=error.message; return; }
+  user=data.user;
+  showApp();
+}
+
+async function logout(){
+  await supabase.auth.signOut();
+  user=null;
+  showLogin();
+}
+
+// ---------- APP ----------
+function showApp(){
+  app.innerHTML=`
+    <div class="app">
+
+      <div class="cards">
+        <div class="card"><div>PORTFOLIO</div><h2 id="pVal">$0</h2></div>
+        <div class="card"><div>INCOME</div><h2 id="iVal">$0</h2></div>
+        <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
+        <button id="logoutBtn">Logout</button>
+      </div>
+
+      <div class="addSymbol">
+        <input id="newSymbol" placeholder="+ Add Symbol">
+        <button id="addBtn">Add</button>
+      </div>
+
+      <div class="tableWrap">
+        <div class="header">
+          <div class="sticky">SYMBOL</div>
+          <div>PRICE</div>
+          <div>CHANGE</div>
+          <div>DIV</div>
+          <div>YIELD</div>
+          <div>SHARES</div>
+          <div>VALUE</div>
+          <div>INCOME</div>
+        </div>
+        <div id="list"></div>
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById("logoutBtn").onclick = logout;
+  document.getElementById("addBtn").onclick = addSymbol;
+
+  loadAll();
+}
+
+// ---------- LOAD ----------
+async function loadAll(){
+
+  const {data:wData}=await supabase
+    .from("watchlist")
+    .select("*")
+    .eq("user_id",user.id);
+
+  const dbSymbols=(wData||[]).map(r=>r.symbol);
+  symbols=[...new Set([...defaultSymbols,...dbSymbols])];
+
+  const {data:pData}=await supabase
+    .from("portfolio")
+    .select("*")
+    .eq("user_id",user.id);
+
+  portfolio={};
+  (pData||[]).forEach(r=>{
+    portfolio[r.symbol]={
+      shares:+r.shares||0,
+      dividend:+r.dividend||0
+    };
+  });
+
+  render();
+  refresh();
+
+  symbols.forEach(fetchQuote);
+}
+
+// ---------- SYMBOL ----------
+async function addSymbol(){
+  let sym=newSymbol.value.trim().toUpperCase();
+  if(!sym || symbols.includes(sym)) return;
+
+  symbols.push(sym);
+  render();
+
+  await supabase.from("watchlist").upsert({
+    user_id:user.id,
+    symbol:sym
+  }, {onConflict:"user_id,symbol"});
+
+  newSymbol.value="";
+}
+
+// ---------- SAVE ----------
+async function saveField(sym,field,val){
+  portfolio[sym]=portfolio[sym]||{};
+  portfolio[sym][field]=+val||0;
+
+  refresh();
+
+  await supabase.from("portfolio").upsert({
+    user_id:user.id,
+    symbol:sym,
+    shares:portfolio[sym].shares||0,
+    dividend:portfolio[sym].dividend||0
+  }, {onConflict:"user_id,symbol"});
+}
+
+// ---------- API ----------
+async function fetchQuote(sym){
+  try{
+    let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
+    let d=await r.json();
+    if(d.c) dataMap[sym]=d;
+    refresh();
+  }catch{}
+}
+
+// ---------- UI ----------
+function createRow(sym){
+  let d=portfolio[sym]||{};
+  let row=document.createElement("div");
+  row.className="row";
+
+  row.innerHTML=`
+    <div class="sticky">${sym}</div>
+    <div class="price">N/A</div>
+    <div class="change">N/A</div>
+    <input class="divInput" value="${d.dividend||""}">
+    <div class="yield">0%</div>
+    <input class="sharesInput" value="${d.shares||""}">
+    <div class="value">$0</div>
+    <div class="income">$0</div>
+  `;
+
+  row.querySelector(".sharesInput").oninput=e=>saveField(sym,"shares",e.target.value);
+  row.querySelector(".divInput").oninput=e=>saveField(sym,"dividend",e.target.value);
+
+  rows[sym]=row;
+  return row;
+}
+
+function render(){
+  list.innerHTML="";
+  rows={};
+  symbols=[...new Set(symbols)];
+  symbols.forEach(s=>list.appendChild(createRow(s)));
+}
+
+// ---------- CORE ----------
+function refresh(){
+  let total=0,incomeTotal=0,gainTotal=0;
+
+  symbols.forEach(s=>{
+    let q=dataMap[s];
+    let d=portfolio[s]||{};
+    let row=rows[s];
+    if(!row) return;
+
+    let price=q?.c||0;
+    let shares=d.shares||0;
+    let dividend=d.dividend||0;
+
+    let val=price*shares;
+    total+=val;
+
+    let income=dividend*shares;
+    incomeTotal+=income;
+
+    let change=(q&&q.pc)?(q.c-q.pc):0;
+    gainTotal+=change*shares;
+
+    let yieldVal=price?dividend/price:0;
+
+    row.querySelector(".price").innerText=q?"$"+price.toFixed(2):"N/A";
+    row.querySelector(".change").innerText=q?"$"+change.toFixed(2):"N/A";
+    row.querySelector(".change").style.color=
+      change>0?"green":change<0?"red":"#999";
+
+    row.querySelector(".yield").innerText=(yieldVal*100).toFixed(2)+"%";
+    row.querySelector(".value").innerText="$"+val.toFixed(0);
+    row.querySelector(".income").innerText="$"+income.toFixed(0);
+  });
+
+  pVal.innerText="$"+total.toFixed(0);
+  iVal.innerText="$"+incomeTotal.toFixed(0);
+  gVal.innerText="$"+gainTotal.toFixed(0);
+}
+
+// ---------- INIT ----------
+async function initAuth(){
+  showLogin();
+  const {data}=await supabase.auth.getSession();
+  user=data.session?.user;
+  if(user) showApp();
+}
+
+initAuth();
+
+});
+</script>
+
+<style>
+body{font-family:Inter;background:#f5f7f9;margin:0}
+
+.loginWrap{display:flex;justify-content:center;padding-top:40px}
+.loginCard{max-width:400px;width:100%;background:white;padding:24px;border-radius:16px;display:flex;flex-direction:column;gap:12px}
+.loginCard input{padding:14px}
+.loginCard button{padding:12px;background:#16a34a;color:white;border:none;border-radius:8px}
+
+.app{padding:10px}
+
+.cards{display:flex;gap:10px;margin-bottom:10px}
+.card{flex:1;background:#f0fdf4;padding:10px;border-radius:10px}
+
+#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px}
+
+.tableWrap{overflow-x:auto}
+.header,.row{display:grid;grid-template-columns:120px repeat(7,minmax(100px,1fr))}
+.header{position:sticky;top:0;background:white;font-weight:600;text-transform:uppercase}
+.sticky{position:sticky;left:0;background:white}
+.row input{padding:6px}
+.row{background:white;margin-top:4px}
+</style>
