@@ -1,24 +1,84 @@
-<!-- CLEAN STABLE VERSION -->
-<script>
-function sendHeight(){
-  const height = document.documentElement.scrollHeight;
-  parent.postMessage({ type: "resize", height }, "*");
-}
-
-// run on load
-window.addEventListener("load", sendHeight);
-
-// run when window resizes
-window.addEventListener("resize", sendHeight);
-
-// run when content changes (your table updates)
-setInterval(sendHeight, 800);
-</script>
-
-<div id="app">Loading...</div>
-
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  background:#f5f7f9;
+  margin:0;
+}
+
+.app{
+  padding:16px;
+  max-width:1400px;
+  margin:0 auto;
+}
+
+.loginWrap{display:flex;justify-content:center;padding-top:40px}
+.loginCard{
+  max-width:420px;width:100%;
+  background:white;padding:24px;border-radius:16px;
+  display:flex;flex-direction:column;gap:12px
+}
+.loginCard input{padding:14px}
+.loginCard button{
+  padding:12px;background:#16a34a;color:white;
+  border:none;border-radius:8px
+}
+
+.cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+.card{
+  flex:1;background:#f0fdf4;
+  padding:12px;border-radius:10px
+}
+
+#logoutBtn{
+  background:#16a34a;color:white;
+  border:none;padding:10px;border-radius:8px;
+  height:40px;
+}
+
+.tableWrap{width:100%;overflow-x:auto}
+
+.header,.row{
+  display:grid;
+  grid-template-columns:140px repeat(7,minmax(140px,1fr));
+  min-width:1000px;
+}
+
+.header{
+  position:sticky;top:0;background:white;
+  font-weight:600;text-transform:uppercase;
+  letter-spacing:0.04em;color:#444;
+}
+
+.sticky{position:sticky;left:0;background:white}
+
+.row{
+  background:white;margin-top:4px;
+  font-size:14px;
+}
+
+.row input{
+  padding:6px;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+.price,.change,.yield,.value,.income{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">Loading...</div>
 
 <script>
 window.addEventListener("load", () => {
@@ -38,11 +98,29 @@ const defaultSymbols = [
   "NFLX","DOMO","RELX","SMCY","PGBAX"
 ];
 
-let user=null;
-let symbols=[];
-let portfolio={};
-let dataMap={};
-let rows={};
+let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
+
+// ---------- FORMAT ----------
+function fmtMoney(n){
+  return "$" + (n || 0).toLocaleString(undefined,{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function fmtNumber(n){
+  return (n || 0).toLocaleString(undefined,{
+    minimumFractionDigits:3,
+    maximumFractionDigits:3
+  });
+}
+
+function fmtPercent(n){
+  return (n*100).toLocaleString(undefined,{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }) + "%";
+}
 
 // ---------- LOGIN ----------
 function showLogin(){
@@ -57,7 +135,7 @@ function showLogin(){
       </div>
     </div>
   `;
-  document.getElementById("loginBtn").onclick = login;
+  loginBtn.onclick=login;
 }
 
 async function login(){
@@ -79,17 +157,11 @@ async function logout(){
 function showApp(){
   app.innerHTML=`
     <div class="app">
-
       <div class="cards">
         <div class="card"><div>PORTFOLIO</div><h2 id="pVal">$0</h2></div>
         <div class="card"><div>INCOME</div><h2 id="iVal">$0</h2></div>
         <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
         <button id="logoutBtn">Logout</button>
-      </div>
-
-      <div class="addSymbol">
-        <input id="newSymbol" placeholder="+ Add Symbol">
-        <button id="addBtn">Add</button>
       </div>
 
       <div class="tableWrap">
@@ -105,27 +177,15 @@ function showApp(){
         </div>
         <div id="list"></div>
       </div>
-
     </div>
   `;
 
-  document.getElementById("logoutBtn").onclick = logout;
-  document.getElementById("addBtn").onclick = addSymbol;
-
+  logoutBtn.onclick=logout;
   loadAll();
 }
 
 // ---------- LOAD ----------
 async function loadAll(){
-
-  const {data:wData}=await supabase
-    .from("watchlist")
-    .select("*")
-    .eq("user_id",user.id);
-
-  const dbSymbols=(wData||[]).map(r=>r.symbol);
-  symbols=[...new Set([...defaultSymbols,...dbSymbols])];
-
   const {data:pData}=await supabase
     .from("portfolio")
     .select("*")
@@ -139,26 +199,12 @@ async function loadAll(){
     };
   });
 
+  symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
+
   render();
   refresh();
 
   symbols.forEach(fetchQuote);
-}
-
-// ---------- SYMBOL ----------
-async function addSymbol(){
-  let sym=newSymbol.value.trim().toUpperCase();
-  if(!sym || symbols.includes(sym)) return;
-
-  symbols.push(sym);
-  render();
-
-  await supabase.from("watchlist").upsert({
-    user_id:user.id,
-    symbol:sym
-  }, {onConflict:"user_id,symbol"});
-
-  newSymbol.value="";
 }
 
 // ---------- SAVE ----------
@@ -196,9 +242,9 @@ function createRow(sym){
     <div class="sticky">${sym}</div>
     <div class="price">N/A</div>
     <div class="change">N/A</div>
-    <input class="divInput" value="${d.dividend||""}">
+    <input class="divInput" value="${d.dividend?fmtNumber(d.dividend):""}" placeholder="0.000">
     <div class="yield">0%</div>
-    <input class="sharesInput" value="${d.shares||""}">
+    <input class="sharesInput" value="${d.shares?fmtNumber(d.shares):""}" placeholder="0.000">
     <div class="value">$0</div>
     <div class="income">$0</div>
   `;
@@ -213,7 +259,6 @@ function createRow(sym){
 function render(){
   list.innerHTML="";
   rows={};
-  symbols=[...new Set(symbols)];
   symbols.forEach(s=>list.appendChild(createRow(s)));
 }
 
@@ -232,29 +277,27 @@ function refresh(){
     let dividend=d.dividend||0;
 
     let val=price*shares;
-    total+=val;
-
     let income=dividend*shares;
-    incomeTotal+=income;
-
     let change=(q&&q.pc)?(q.c-q.pc):0;
-    gainTotal+=change*shares;
-
     let yieldVal=price?dividend/price:0;
 
-    row.querySelector(".price").innerText=q?"$"+price.toFixed(2):"N/A";
-    row.querySelector(".change").innerText=q?"$"+change.toFixed(2):"N/A";
-    row.querySelector(".change").style.color=
-      change>0?"green":change<0?"red":"#999";
+    total+=val;
+    incomeTotal+=income;
+    gainTotal+=change*shares;
 
-    row.querySelector(".yield").innerText=(yieldVal*100).toFixed(2)+"%";
-    row.querySelector(".value").innerText="$"+val.toFixed(0);
-    row.querySelector(".income").innerText="$"+income.toFixed(0);
+    row.querySelector(".price").innerText=q?fmtMoney(price):"N/A";
+    row.querySelector(".change").innerText=q?fmtMoney(change):"N/A";
+    row.querySelector(".change").style.color=
+      change>0?"#16a34a":change<0?"#dc2626":"#999";
+
+    row.querySelector(".yield").innerText=fmtPercent(yieldVal);
+    row.querySelector(".value").innerText=fmtMoney(val);
+    row.querySelector(".income").innerText=fmtMoney(income);
   });
 
-  pVal.innerText="$"+total.toFixed(0);
-  iVal.innerText="$"+incomeTotal.toFixed(0);
-  gVal.innerText="$"+gainTotal.toFixed(0);
+  pVal.innerText=fmtMoney(total);
+  iVal.innerText=fmtMoney(incomeTotal);
+  gVal.innerText=fmtMoney(gainTotal);
 }
 
 // ---------- INIT ----------
@@ -270,25 +313,17 @@ initAuth();
 });
 </script>
 
-<style>
-body{font-family:Inter;background:#f5f7f9;margin:0}
+<!-- ✅ AUTO HEIGHT FOR WEEBLY -->
+<script>
+function sendHeight(){
+  const height = document.documentElement.scrollHeight;
+  parent.postMessage({ type: "resize", height }, "*");
+}
 
-.loginWrap{display:flex;justify-content:center;padding-top:40px}
-.loginCard{max-width:400px;width:100%;background:white;padding:24px;border-radius:16px;display:flex;flex-direction:column;gap:12px}
-.loginCard input{padding:14px}
-.loginCard button{padding:12px;background:#16a34a;color:white;border:none;border-radius:8px}
+window.addEventListener("load", sendHeight);
+window.addEventListener("resize", sendHeight);
+setInterval(sendHeight, 800);
+</script>
 
-.app{padding:10px}
-
-.cards{display:flex;gap:10px;margin-bottom:10px}
-.card{flex:1;background:#f0fdf4;padding:10px;border-radius:10px}
-
-#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px}
-
-.tableWrap{overflow-x:auto}
-.header,.row{display:grid;grid-template-columns:120px repeat(7,minmax(100px,1fr))}
-.header{position:sticky;top:0;background:white;font-weight:600;text-transform:uppercase}
-.sticky{position:sticky;left:0;background:white}
-.row input{padding:6px}
-.row{background:white;margin-top:4px}
-</style>
+</body>
+</html>
