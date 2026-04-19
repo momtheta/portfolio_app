@@ -50,7 +50,17 @@ body{
   --c1:140px; --c2:140px; --c3:140px; --c4:140px;
   --c5:140px; --c6:140px; --c7:140px; --c8:140px;
 }
+  
+/* header shadow (always visible) */
+.header{
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08) !important;
+}
 
+/* left column shadow (only when scrolled) */
+.tableWrap.scrolled .sticky{
+  box-shadow: 6px 0 8px -2px rgba(0,0,0,0.2) !important;
+}
+  
 .header{
   box-shadow:0 2px 4px rgba(0,0,0,0.08);
 }
