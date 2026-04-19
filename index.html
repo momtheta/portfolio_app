@@ -45,7 +45,7 @@ body{
 /* TABLE */
 .tableWrap{width:100%;overflow-x:auto}
 
-/* column widths (persisted) */
+/* column widths */
 :root{
   --c1:140px; --c2:140px; --c3:140px; --c4:140px;
   --c5:140px; --c6:140px; --c7:140px; --c8:140px;
@@ -59,6 +59,7 @@ body{
   min-width:900px;
 }
 
+/* HEADER */
 .header{
   position:sticky;
   top:0;
@@ -67,23 +68,47 @@ body{
   text-transform:uppercase;
   letter-spacing:0.04em;
   color:#444;
+
+  /* 🔥 NEW: horizontal divider */
+  border-bottom:2px solid #d1d5db;
 }
 
+/* CELLS */
 .header > div,
-.row > div,
-.row input{
+.row > div{
   padding:10px;
-  border-right:1px solid #e5e7eb;
+  border-right:1px solid #d1d5db;
   display:flex;
   align-items:center;
   justify-content:center;
+  box-sizing:border-box;
 }
 
+/* INPUT CELLS */
+.row input{
+  width:100%;
+  height:100%;
+  padding:0;
+  margin:0;
+  border:none;
+  outline:none;
+  background:transparent;
+
+  border-right:1px solid #d1d5db;
+
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  box-sizing:border-box;
+}
+
+/* remove last column border */
 .header > div:last-child,
-.row > div:last-child{
+.row > div:last-child,
+.row input:last-child{
   border-right:none;
 }
 
+/* sticky symbol */
 .sticky{
   position:sticky;
   left:0;
@@ -91,6 +116,7 @@ body{
   z-index:2;
 }
 
+/* rows */
 .row{
   background:white;
   font-size:14px;
@@ -98,15 +124,6 @@ body{
 
 .row:hover{
   background:#f9fafb;
-}
-
-.row input{
-  width:100%;
-  text-align:center;
-  border:none;
-  background:transparent;
-  outline:none;
-  font-variant-numeric:tabular-nums;
 }
 
 /* RESIZER */
@@ -146,18 +163,10 @@ const defaultSymbols = [
 
 let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
 
-// ---------- FORMAT ----------
-function fmtMoney(n){
-  return "$" + (n || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-function fmtNumber(n){
-  return (n || 0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
-}
-function fmtPercent(n){
-  return (n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) + "%";
-}
+const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtNumber=n=>(n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
+const fmtPercent=n=>(n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 
-// ---------- LOGIN ----------
 function showLogin(){
   app.innerHTML=`
     <div class="loginWrap">
@@ -187,7 +196,6 @@ async function logout(){
   showLogin();
 }
 
-// ---------- APP ----------
 function showApp(){
   app.innerHTML=`
     <div class="app">
@@ -215,49 +223,46 @@ function showApp(){
 
   logoutBtn.onclick=logout;
 
-  loadColumnWidths();
+  loadWidths();
   loadAll();
   enableResize();
 }
 
-// ---------- COLUMN WIDTH STORAGE ----------
-function loadColumnWidths(){
+function loadWidths(){
   for(let i=1;i<=8;i++){
-    let w = localStorage.getItem("col"+i);
-    if(w) document.documentElement.style.setProperty(`--c${i}`, w);
+    let w=localStorage.getItem("col"+i);
+    if(w) document.documentElement.style.setProperty(`--c${i}`,w);
   }
 }
-function saveColumnWidth(i,w){
-  localStorage.setItem("col"+i, w);
+function saveWidth(i,w){
+  localStorage.setItem("col"+i,w);
 }
 
-// ---------- RESIZE ----------
 function enableResize(){
   document.querySelectorAll(".header .col").forEach((col,i)=>{
-    let resizer = col.querySelector(".resizer");
-    let startX, startW;
+    let resizer=col.querySelector(".resizer");
+    let startX,startW;
 
-    resizer.onmousedown = e=>{
+    resizer.onmousedown=e=>{
       startX=e.clientX;
       startW=col.offsetWidth;
 
-      document.onmousemove = e=>{
-        let w = Math.max(80, startW + (e.clientX-startX));
-        document.documentElement.style.setProperty(`--c${i+1}`, w+"px");
-        saveColumnWidth(i+1, w+"px");
+      document.onmousemove=e=>{
+        let w=Math.max(80,startW+(e.clientX-startX));
+        document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
+        saveWidth(i+1,w+"px");
       };
-      document.onmouseup = ()=> document.onmousemove=null;
+      document.onmouseup=()=>document.onmousemove=null;
     };
   });
 }
 
-// ---------- LOAD ----------
 async function loadAll(){
-  const {data:pData}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
   portfolio={};
-  (pData||[]).forEach(r=>{
-    portfolio[r.symbol]={shares:+r.shares||0, dividend:+r.dividend||0};
+  (data||[]).forEach(r=>{
+    portfolio[r.symbol]={shares:+r.shares||0,dividend:+r.dividend||0};
   });
 
   symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
@@ -267,7 +272,6 @@ async function loadAll(){
   symbols.forEach(fetchQuote);
 }
 
-// ---------- SAVE ----------
 async function saveField(sym,field,val){
   portfolio[sym]=portfolio[sym]||{};
   portfolio[sym][field]=+val||0;
@@ -282,7 +286,6 @@ async function saveField(sym,field,val){
   }, {onConflict:"user_id,symbol"});
 }
 
-// ---------- API ----------
 async function fetchQuote(sym){
   try{
     let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
@@ -292,7 +295,6 @@ async function fetchQuote(sym){
   }catch{}
 }
 
-// ---------- UI ----------
 function createRow(sym){
   let d=portfolio[sym]||{};
   let row=document.createElement("div");
@@ -300,13 +302,13 @@ function createRow(sym){
 
   row.innerHTML=`
     <div class="sticky">${sym}</div>
-    <div class="price">N/A</div>
-    <div class="change">N/A</div>
+    <div>N/A</div>
+    <div>N/A</div>
     <input value="${d.dividend?fmtNumber(d.dividend):""}">
-    <div class="yield">0%</div>
+    <div>0%</div>
     <input value="${d.shares?fmtNumber(d.shares):""}">
-    <div class="value">$0</div>
-    <div class="income">$0</div>
+    <div>$0</div>
+    <div>$0</div>
   `;
 
   row.children[5].oninput=e=>saveField(sym,"shares",e.target.value);
@@ -322,7 +324,6 @@ function render(){
   symbols.forEach(s=>list.appendChild(createRow(s)));
 }
 
-// ---------- CORE ----------
 function refresh(){
   let total=0,incomeTotal=0,gainTotal=0;
 
@@ -358,7 +359,6 @@ function refresh(){
   gVal.innerText=fmtMoney(gainTotal);
 }
 
-// ---------- INIT ----------
 async function initAuth(){
   showLogin();
   const {data}=await supabase.auth.getSession();
@@ -371,7 +371,6 @@ initAuth();
 });
 </script>
 
-<!-- AUTO HEIGHT -->
 <script>
 function sendHeight(){
   parent.postMessage({type:"resize",height:document.body.scrollHeight},"*");
