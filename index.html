@@ -349,6 +349,7 @@ function refresh(){
 
     let val=price*shares;
     let income=dividend*shares;
+    monthlyTotal += income / 12;
     let change=(q&&q.pc)?(q.c-q.pc):0;
     let yieldVal=price?dividend/price:0;
 
