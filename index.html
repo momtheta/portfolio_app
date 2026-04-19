@@ -42,31 +42,69 @@ body{
   height:40px;
 }
 
-.tableWrap{width:100%;overflow-x:auto}
+.tableWrap{
+  width:100%;
+  overflow-x:auto;
+}
 
-.header,.row{
+/* unified column sizing */
+.header, .row{
   display:grid;
-  grid-template-columns:140px repeat(7,minmax(140px,1fr));
-  min-width:1000px;
+  grid-template-columns:
+    max-content  /* SYMBOL */
+    repeat(7, minmax(max-content, 1fr));
+  min-width:900px;
 }
 
+/* headers */
 .header{
-  position:sticky;top:0;background:white;
-  font-weight:600;text-transform:uppercase;
-  letter-spacing:0.04em;color:#444;
+  position:sticky;
+  top:0;
+  background:white;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  color:#444;
 }
 
-.sticky{position:sticky;left:0;background:white}
+/* cells */
+.header > div,
+.row > div,
+.row input{
+  padding:10px;
+  border-right:1px solid #e5e7eb;
+  display:flex;
+  align-items:center;
+  justify-content:center; /* center everything */
+}
 
+/* remove last column border */
+.header > div:last-child,
+.row > div:last-child{
+  border-right:none;
+}
+
+/* sticky symbol column */
+.sticky{
+  position:sticky;
+  left:0;
+  background:white;
+  z-index:2;
+}
+
+/* rows */
 .row{
-  background:white;margin-top:4px;
+  background:white;
   font-size:14px;
 }
 
+/* inputs centered like data */
 .row input{
-  padding:6px;
-  text-align:right;
+  text-align:center;
   font-variant-numeric:tabular-nums;
+  border:none;
+  outline:none;
+  background:transparent;
 }
 
 .price,.change,.yield,.value,.income{
