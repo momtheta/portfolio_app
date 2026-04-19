@@ -59,15 +59,36 @@ body{
   min-width:900px;
 }
 
-/* HEADER */
+/* HEADER (top freeze) */
 .header{
   position:sticky;
   top:0;
-  background:white;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.04em;
-  color:#444;
+  background:#fff;
+  z-index:20; /* must be high */
+}
+
+/* LEFT COLUMN (rows) */
+.row .sticky{
+  position:sticky;
+  left:0;
+  background:#fff;
+  z-index:10;
+}
+
+/* 🔥 TOP-LEFT CORNER (SYMBOL header) */
+.header .sticky{
+  position:sticky;
+  left:0;
+  background:#fff;
+  z-index:30; /* highest layer */
+}
+
+/* prevent visual bleed */
+.header,
+.row .sticky,
+.header .sticky{
+  background-clip:padding-box;
+}
 
   /* 🔥 NEW: horizontal divider */
   border-bottom:2px solid #d1d5db;
