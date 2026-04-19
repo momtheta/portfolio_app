@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  background:#f5f7f9;
+  margin:0;
+}
+
+.app{
+  padding:16px;
+  max-width:1400px;
+  margin:0 auto;
+}
+
+/* LOGIN */
+.loginWrap{display:flex;justify-content:center;padding-top:40px}
+.loginCard{
+  max-width:420px;width:100%;
+  background:white;padding:24px;border-radius:16px;
+  display:flex;flex-direction:column;gap:12px
+}
+.loginCard input{padding:14px}
+.loginCard button{
+  padding:12px;background:#16a34a;color:white;
+  border:none;border-radius:8px
+}
+
+/* CARDS */
+.cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+.card{
+  flex:1;background:#f0fdf4;
+  padding:12px;border-radius:10px
+}
+#logoutBtn{
+  background:#16a34a;color:white;
+  border:none;padding:10px;border-radius:8px;height:40px;
+}
+
+/* TABLE */
+.tableWrap{width:100%;overflow-x:auto}
+
+/* column widths */
+:root{
+  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
+  --c5:140px; --c6:140px; --c7:140px; --c8:140px;
+}
+
+.header .sticky{
+  position: sticky;
+  top: 0;     /* ← THIS is the missing piece */
+  left: 0;
+  z-index: 10;
+  background: white;
+}  
+  
+.header,.row{
+  display:grid;
+  grid-template-columns:
+    var(--c1) var(--c2) var(--c3) var(--c4)
+    var(--c5) var(--c6) var(--c7) var(--c8);
+  min-width:900px;
+}
+
+/* HEADER */
+.header{
+  position:sticky;
+  top:0;
+  background:white;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  color:#444;
+
+  /* 🔥 NEW: horizontal divider */
+  border-bottom:2px solid #d1d5db;
+}
+
+/* CELLS */
+.header > div,
+.row > div{
+  padding:10px;
+  border-right:1px solid #d1d5db;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+}
+
+/* INPUT CELLS */
+.row input{
+  width:100%;
+  height:100%;
+  padding:0;
+  margin:0;
+  border:none;
+  outline:none;
+  background:transparent;
+
+  border-right:1px solid #d1d5db;
+
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  box-sizing:border-box;
+}
+
+/* remove last column border */
+.header > div:last-child,
+.row > div:last-child,
+.row input:last-child{
+  border-right:none;
+}
+
+/* sticky symbol */
+.sticky{
+  position:sticky;
+  left:0;
+  background:white;
+  z-index:5; /* ← ADD THIS LINE ONLY */
+}
+
+/* rows */
+.row{
+  background:white;
+  font-size:14px;
+}
+
+.row:hover{
+  background:#f9fafb;
+}
+
+/* RESIZER */
+.col{position:relative}
+.resizer{
+  position:absolute;
+  right:0;
+  top:0;
+  width:6px;
+  height:100%;
+  cursor:col-resize;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">Loading...</div>
+
+<script>
+window.addEventListener("load", () => {
+
+const app = document.getElementById("app");
+
+const supabase = window.supabase.createClient(
+  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+  {auth:{persistSession:true,storage:window.localStorage}}
+);
+
+const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
+
+const defaultSymbols = [
+  "AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX",
+  "NFLX","DOMO","RELX","SMCY","PGBAX"
+];
+
+let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
+
+const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtNumber=n=>(n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
+const fmtPercent=n=>(n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
+
+function showLogin(){
+  app.innerHTML=`
+    <div class="loginWrap">
+      <div class="loginCard">
+        <h2>Login</h2>
+        <input id="email" placeholder="Email">
+        <input id="pass" type="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <p id="msg"></p>
+      </div>
+    </div>`;
+  loginBtn.onclick=login;
+}
+
+async function login(){
+  const {data,error}=await supabase.auth.signInWithPassword({
+    email:email.value,password:pass.value
+  });
+  if(error){ msg.innerText=error.message; return; }
+  user=data.user;
+  showApp();
+}
+
+async function logout(){
+  await supabase.auth.signOut();
+  user=null;
+  showLogin();
+}
+
+function showApp(){
+  app.innerHTML=`
+    <div class="app">
+      <div class="cards">
+        <div class="card"><div>PORTFOLIO</div><h2 id="pVal">$0</h2></div>
+        <div class="card"><div>INCOME</div><h2 id="iVal">$0</h2></div>
+        <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
+        <button id="logoutBtn">Logout</button>
+      </div>
+
+      <div class="tableWrap">
+        <div class="header">
+          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+          <div class="col">PRICE<div class="resizer"></div></div>
+          <div class="col">CHANGE<div class="resizer"></div></div>
+          <div class="col">DIV<div class="resizer"></div></div>
+          <div class="col">YIELD<div class="resizer"></div></div>
+          <div class="col">SHARES<div class="resizer"></div></div>
+          <div class="col">VALUE<div class="resizer"></div></div>
+          <div class="col">INCOME<div class="resizer"></div></div>
+        </div>
+        <div id="list"></div>
+      </div>
+    </div>`;
+
+  logoutBtn.onclick=logout;
+
+  loadWidths();
+  loadAll();
+  enableResize();
+}
+
+function loadWidths(){
+  for(let i=1;i<=8;i++){
+    let w=localStorage.getItem("col"+i);
+    if(w) document.documentElement.style.setProperty(`--c${i}`,w);
+  }
+}
+function saveWidth(i,w){
+  localStorage.setItem("col"+i,w);
+}
+
+function enableResize(){
+  document.querySelectorAll(".header .col").forEach((col,i)=>{
+    let resizer=col.querySelector(".resizer");
+    let startX,startW;
+
+    resizer.onmousedown=e=>{
+      startX=e.clientX;
+      startW=col.offsetWidth;
+
+      document.onmousemove=e=>{
+        let w=Math.max(80,startW+(e.clientX-startX));
+        document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
+        saveWidth(i+1,w+"px");
+      };
+      document.onmouseup=()=>document.onmousemove=null;
+    };
+  });
+}
+
+async function loadAll(){
+  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+
+  portfolio={};
+  (data||[]).forEach(r=>{
+    portfolio[r.symbol]={shares:+r.shares||0,dividend:+r.dividend||0};
+  });
+
+  symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
+
+  render();
+  refresh();
+  symbols.forEach(fetchQuote);
+}
+
+async function saveField(sym,field,val){
+  portfolio[sym]=portfolio[sym]||{};
+  portfolio[sym][field]=+val||0;
+
+  refresh();
+
+  await supabase.from("portfolio").upsert({
+    user_id:user.id,
+    symbol:sym,
+    shares:portfolio[sym].shares||0,
+    dividend:portfolio[sym].dividend||0
+  }, {onConflict:"user_id,symbol"});
+}
+
+async function fetchQuote(sym){
+  try{
+    let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
+    let d=await r.json();
+    if(d.c) dataMap[sym]=d;
+    refresh();
+  }catch{}
+}
+
+function createRow(sym){
+  let d=portfolio[sym]||{};
+  let row=document.createElement("div");
+  row.className="row";
+
+  row.innerHTML=`
+    <div class="sticky">${sym}</div>
+    <div>N/A</div>
+    <div>N/A</div>
+    <input value="${d.dividend?fmtNumber(d.dividend):""}">
+    <div>0%</div>
+    <input value="${d.shares?fmtNumber(d.shares):""}">
+    <div>$0</div>
+    <div>$0</div>
+  `;
+
+  row.children[5].oninput=e=>saveField(sym,"shares",e.target.value);
+  row.children[3].oninput=e=>saveField(sym,"dividend",e.target.value);
+
+  rows[sym]=row;
+  return row;
+}
+
+function render(){
+  list.innerHTML="";
+  rows={};
+  symbols.forEach(s=>list.appendChild(createRow(s)));
+}
+
+function refresh(){
+  let total=0,incomeTotal=0,gainTotal=0;
+
+  symbols.forEach(s=>{
+    let q=dataMap[s];
+    let d=portfolio[s]||{};
+    let row=rows[s];
+    if(!row) return;
+
+    let price=q?.c||0;
+    let shares=d.shares||0;
+    let dividend=d.dividend||0;
+
+    let val=price*shares;
+    let income=dividend*shares;
+    let change=(q&&q.pc)?(q.c-q.pc):0;
+    let yieldVal=price?dividend/price:0;
+
+    total+=val;
+    incomeTotal+=income;
+    gainTotal+=change*shares;
+
+    row.children[1].innerText=q?fmtMoney(price):"N/A";
+    row.children[2].innerText=q?fmtMoney(change):"N/A";
+    row.children[2].style.color=change>0?"#16a34a":change<0?"#dc2626":"#999";
+    row.children[4].innerText=fmtPercent(yieldVal);
+    row.children[6].innerText=fmtMoney(val);
+    row.children[7].innerText=fmtMoney(income);
+  });
+
+  pVal.innerText=fmtMoney(total);
+  iVal.innerText=fmtMoney(incomeTotal);
+  gVal.innerText=fmtMoney(gainTotal);
+}
+
+async function initAuth(){
+  showLogin();
+  const {data}=await supabase.auth.getSession();
+  user=data.session?.user;
+  if(user) showApp();
+}
+
+initAuth();
+
+});
+</script>
+
+<script>
+function sendHeight(){
+  parent.postMessage({type:"resize",height:document.body.scrollHeight},"*");
+}
+window.addEventListener("load",sendHeight);
+window.addEventListener("resize",sendHeight);
+setInterval(sendHeight,800);
+</script>
+
+</body>
+</html>
