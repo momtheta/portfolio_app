@@ -393,7 +393,17 @@ function refresh(){
 }
     row.children[4].innerText=fmtPercent(yieldVal);
     row.children[6].innerText=fmtMoney(val);
+    row.children[6].style.borderBottom = change > 0
+  ? "2px solid #16a34a"
+  : change < 0
+  ? "2px solid #dc2626"
+  : "none";
     row.children[7].innerText=fmtMoney(income);
+    if (income > 0) {
+  row.children[7].style.background = "#eff6ff"; // light blue
+} else {
+  row.children[7].style.background = "transparent";
+}
   });
 
   pVal.innerText=fmtMoney0(total);
