@@ -450,25 +450,7 @@ function initChart(){
     }
   });
 }
-function buildProjection(currentValue, years = 1, rate = 0.10){
-  let points = [];
-  let today = new Date();
 
-  for(let i = 1; i <= years * 12; i++){ // monthly points
-    let future = new Date(today);
-    future.setMonth(today.getMonth() + i);
-
-    let t = i / 12;
-    let value = currentValue * Math.pow(1 + rate, t);
-
-    points.push({
-      time: future.toLocaleDateString(undefined, { month: "short", year: "2-digit" }),
-      value
-    });
-  }
-
-  return points;
-}
 function updateHistorySafe(){
   const el = document.getElementById("pVal");
   if(!el) return;
@@ -505,20 +487,11 @@ if (currentRange !== "all") {
   filtered = historyData.slice(-currentRange);
 }
 
-// actual data
-let labels = filtered.map(d => d.time);
-let values = filtered.map(d => d.value);
-
-// projection
-let projLabels = projection.map(d => d.time);
-let projValues = projection.map(d => d.value);
-
-// combine
-chart.data.labels = [...labels, ...projLabels];
-chart.data.datasets[0].data = [...values, ...Array(projValues.length).fill(null)];
-chart.data.datasets[1].data = [...Array(values.length).fill(null), ...projValues];
-
-chart.update();
+chart.data.labels = filtered.map(d => d.time);
+chart.data.datasets[0].data = filtered.map(d => d.value);
+    chart.update();
+  }
+}
 
 /* wait for UI */
 setTimeout(()=>{
