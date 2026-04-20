@@ -370,6 +370,13 @@ function refresh(){
   pVal.innerText=fmtMoney(total);
   iVal.innerText=fmtMoney(incomeTotal);
   gVal.innerText=fmtMoney(gainTotal);
+  if (dailyGainTotal > 0) {
+    gVal.style.color = "#16a34a";
+  } else if (dailyGainTotal < 0) {
+    gVal.style.color = "#dc2626";
+  } else {
+    gVal.style.color = "#333";
+  }
   mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined,{
     minimumFractionDigits:0,
     maximumFractionDigits:0
