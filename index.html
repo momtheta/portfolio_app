@@ -171,7 +171,7 @@ const defaultSymbols = [
 
 let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
 
-const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtNumber=n=>(n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
 const fmtPercent=n=>(n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 
