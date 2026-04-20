@@ -411,21 +411,6 @@ async function initAuth(){
 initAuth();
 
 });
-  // ⬇️ ADD STEP 3 RIGHT HERE (before this closes)
-
-  let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
-  let chart;
-
-  function initChart(){ ... }
-
-  function updateHistorySafe(){ ... }
-
-  setTimeout(()=>{
-    initChart();
-    setInterval(updateHistorySafe, 5000);
-  }, 1500);
-
-}); // ← end of your main app  
 </script>
 
 <script>
