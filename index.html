@@ -369,7 +369,9 @@ function refresh(){
 
   pVal.innerText=fmtMoney(total);
   iVal.innerText=fmtMoney(incomeTotal);
-  gVal.innerText=fmtMoney(gainTotal);
+  let todayText = ` (${dailyGainTotal > 0 ? "+" : ""}${fmtMoney(dailyGainTotal)} today)`;
+  gVal.innerText = fmtMoney(gainTotal) + todayText;
+  
   if (dailyGainTotal > 0) {
     gVal.style.color = "#16a34a";
   } else if (dailyGainTotal < 0) {
@@ -377,10 +379,11 @@ function refresh(){
   } else {
     gVal.style.color = "#333";
   }
+  
   mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined,{
     minimumFractionDigits:0,
     maximumFractionDigits:0
-});
+  });
 }
 
 async function initAuth(){
