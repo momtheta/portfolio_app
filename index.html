@@ -450,10 +450,18 @@ function updateHistorySafe(){
   let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
   if(isNaN(val)) return;
 
-  let now = new Date().toLocaleTimeString();
+let today = new Date().toLocaleDateString();
 
-  historyData.push({ time: now, value: val });
-  if(historyData.length > 100) historyData.shift();
+// check last saved date
+let last = historyData[historyData.length - 1];
+
+if (!last || last.time !== today) {
+  historyData.push({ time: today, value: val });
+
+  if (historyData.length > 100) historyData.shift();
+
+  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+}
 
   localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
 
