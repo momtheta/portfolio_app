@@ -3,6 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
@@ -238,6 +239,17 @@ function showApp(){
         </div>
         <div id="list"></div>
       </div>
+      <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+  <h3>Portfolio History</h3>
+  <div>
+    <button class="rangeBtn" data-range="7">1W</button>
+    <button class="rangeBtn" data-range="30">1M</button>
+    <button class="rangeBtn" data-range="all">ALL</button>
+  </div>
+</div>
+        <canvas id="historyChart" height="120"></canvas>
+      </div>
     </div>`;
 
   logoutBtn.onclick=logout;
@@ -406,6 +418,95 @@ async function initAuth(){
 initAuth();
 
 });
+let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
+let chart;
+let currentRange = "all";
+  
+function initChart(){
+  const ctx = document.getElementById("historyChart");
+  if(!ctx) return;
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Portfolio",
+        data: [],
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          ticks: {
+            callback: v => "$" + v.toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateHistorySafe(){
+  const el = document.getElementById("pVal");
+  if(!el) return;
+
+  let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
+  if(isNaN(val)) return;
+
+let d = new Date();
+let today = d.toLocaleDateString(undefined, {
+  weekday: "short",
+  month: "short",
+  day: "numeric"
+});
+
+// check last saved date
+let last = historyData[historyData.length - 1];
+
+let todayKey = new Date().toDateString();
+
+if (!last || last.key !== todayKey) {
+  historyData.push({ key: todayKey, time: today, value: val });
+
+  if (historyData.length > 100) historyData.shift();
+
+  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+}
+
+  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+
+  if(chart){
+let filtered = historyData;
+
+if (currentRange !== "all") {
+  filtered = historyData.slice(-currentRange);
+}
+
+chart.data.labels = filtered.map(d => d.time);
+chart.data.datasets[0].data = filtered.map(d => d.value);
+    chart.update();
+  }
+}
+
+/* wait for UI */
+setTimeout(()=>{
+  initChart();
+  document.querySelectorAll(".rangeBtn").forEach(btn=>{
+  btn.onclick = () => {
+    currentRange = btn.dataset.range === "all"
+      ? "all"
+      : parseInt(btn.dataset.range);
+
+    updateHistorySafe(); // redraw chart
+  };
+});
+  setInterval(updateHistorySafe, 60000);
+}, 1500);  
 </script>
 
 <script>
