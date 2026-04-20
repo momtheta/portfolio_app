@@ -433,6 +433,7 @@ function refresh(){
     minimumFractionDigits:0,
     maximumFractionDigits:0
   });
+  updateProjection(total);
 }
 
 async function initAuth(){
@@ -523,7 +524,7 @@ chart.data.datasets[0].data = filtered.map(d => d.value);
 /* wait for UI */
 setTimeout(()=>{
   initChart();
-  setTimeout(updateProjection, 1500);
+  
   document.querySelectorAll(".rangeBtn").forEach(btn=>{
   btn.onclick = () => {
     currentRange = btn.dataset.range === "all"
@@ -536,7 +537,7 @@ setTimeout(()=>{
 });
   setInterval(updateHistorySafe, 60000);
 }, 1500);  
-  setInterval(updateProjection, 60000);
+
 </script>
 
 <script>
@@ -546,15 +547,9 @@ function sendHeight(){
 window.addEventListener("load",sendHeight);
 window.addEventListener("resize",sendHeight);
 setInterval(sendHeight,800);
-function updateProjection(){
-  const el = document.getElementById("pVal");
-  if(!el) return;
 
-  let raw = el.innerText || "";
-
-  let current = Number(raw.replace(/[^0-9.-]+/g,""));
-
-  if(!current || isNaN(current)) return; // wait until value exists
+function updateProjection(current){
+  if(!current || isNaN(current)) return;
 
   const rate = 0.10;
 
@@ -571,6 +566,7 @@ function updateProjection(){
   document.getElementById("proj10y").innerText =
     "10Y → " + fmtMoney0(future(current, 10));
 }
+
 </script>
 
 </body>
