@@ -371,10 +371,10 @@ function refresh(){
     row.children[7].innerText=fmtMoney(income);
   });
 
-  pVal.innerText=fmtMoney(total);
-  iVal.innerText=fmtMoney(incomeTotal);
-  let todayText = ` (${dailyGainTotal > 0 ? "+" : ""}${fmtMoney(dailyGainTotal)} today)`;
-  gVal.innerText = fmtMoney(gainTotal) + todayText;
+  pVal.innerText=fmtMoney0(total);
+  iVal.innerText=fmtMoney0(incomeTotal);
+  let todayText = ` (${dailyGainTotal > 0 ? "+" : ""}${fmtMoney0(dailyGainTotal)} today)`;
+  gVal.innerText = fmtMoney0(gainTotal) + todayText;
   
   if (dailyGainTotal > 0) {
     gVal.style.color = "#16a34a";
