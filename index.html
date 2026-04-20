@@ -384,6 +384,13 @@ function refresh(){
     row.children[1].innerText=q?fmtMoney(price):"N/A";
     row.children[2].innerText=q?fmtMoney(change):"N/A";
     row.children[2].style.color=change>0?"#16a34a":change<0?"#dc2626":"#999";
+    if (change > 0) {
+  row.style.borderLeft = "4px solid #16a34a";
+} else if (change < 0) {
+  row.style.borderLeft = "4px solid #dc2626";
+} else {
+  row.style.borderLeft = "4px solid transparent";
+}
     row.children[4].innerText=fmtPercent(yieldVal);
     row.children[6].innerText=fmtMoney(val);
     row.children[7].innerText=fmtMoney(income);
