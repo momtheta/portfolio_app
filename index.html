@@ -411,6 +411,64 @@ async function initAuth(){
 initAuth();
 
 });
+let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
+let chart;
+
+function initChart(){
+  const ctx = document.getElementById("historyChart");
+  if(!ctx) return;
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Portfolio",
+        data: [],
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          ticks: {
+            callback: v => "$" + v.toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateHistorySafe(){
+  const el = document.getElementById("pVal");
+  if(!el) return;
+
+  let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
+  if(isNaN(val)) return;
+
+  let now = new Date().toLocaleTimeString();
+
+  historyData.push({ time: now, value: val });
+  if(historyData.length > 100) historyData.shift();
+
+  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+
+  if(chart){
+    chart.data.labels = historyData.map(d=>d.time);
+    chart.data.datasets[0].data = historyData.map(d=>d.value);
+    chart.update();
+  }
+}
+
+/* wait for UI */
+setTimeout(()=>{
+  initChart();
+  setInterval(updateHistorySafe, 5000);
+}, 1500);  
 </script>
 
 <script>
