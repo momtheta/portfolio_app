@@ -240,7 +240,14 @@ function showApp(){
         <div id="list"></div>
       </div>
       <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-        <h3>Portfolio History</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+  <h3>Portfolio History</h3>
+  <div>
+    <button class="rangeBtn" data-range="7">1W</button>
+    <button class="rangeBtn" data-range="30">1M</button>
+    <button class="rangeBtn" data-range="all">ALL</button>
+  </div>
+</div>
         <canvas id="historyChart" height="120"></canvas>
       </div>
     </div>`;
