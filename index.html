@@ -481,8 +481,14 @@ if (!last || last.key !== todayKey) {
   localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
 
   if(chart){
-    chart.data.labels = historyData.map(d=>d.time);
-    chart.data.datasets[0].data = historyData.map(d=>d.value);
+let filtered = historyData;
+
+if (currentRange !== "all") {
+  filtered = historyData.slice(-currentRange);
+}
+
+chart.data.labels = filtered.map(d => d.time);
+chart.data.datasets[0].data = filtered.map(d => d.value);
     chart.update();
   }
 }
