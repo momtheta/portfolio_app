@@ -435,12 +435,12 @@ function refresh(){
 }
     row.children[4].innerText=fmtPercent(yieldVal);
     row.children[7].innerText=fmtMoney(val);
-    // existing styling (daily change)
-    //row.children[7].style.borderBottom = change > 0
-    //  ? "2px solid #16a34a"
-    //  : change < 0
-    //  ? "2px solid #dc2626"
-    //  : "none";
+    existing styling (daily change)
+    row.children[7].style.borderBottom = change > 0
+      ? "2px solid #16a34a"
+      : change < 0
+      ? "2px solid #dc2626"
+      : "none";
 
 // ✅ ADD THIS RIGHT HERE (REAL GAIN styling)
 if (realGain > 0) {
