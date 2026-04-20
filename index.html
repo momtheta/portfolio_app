@@ -523,6 +523,7 @@ chart.data.datasets[0].data = filtered.map(d => d.value);
 /* wait for UI */
 setTimeout(()=>{
   initChart();
+  setTimeout(updateProjection, 1500);
   document.querySelectorAll(".rangeBtn").forEach(btn=>{
   btn.onclick = () => {
     currentRange = btn.dataset.range === "all"
