@@ -420,7 +420,8 @@ initAuth();
 });
 let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
 let chart;
-
+let currentRange = "all";
+  
 function initChart(){
   const ctx = document.getElementById("historyChart");
   if(!ctx) return;
