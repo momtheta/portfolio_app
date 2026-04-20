@@ -496,6 +496,15 @@ chart.data.datasets[0].data = filtered.map(d => d.value);
 /* wait for UI */
 setTimeout(()=>{
   initChart();
+  document.querySelectorAll(".rangeBtn").forEach(btn=>{
+  btn.onclick = () => {
+    currentRange = btn.dataset.range === "all"
+      ? "all"
+      : parseInt(btn.dataset.range);
+
+    updateHistorySafe(); // redraw chart
+  };
+});
   setInterval(updateHistorySafe, 60000);
 }, 1500);  
 </script>
