@@ -7,6 +7,43 @@ let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
 let chart;  
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+function updateChart(){
+
+  const ctx = document.getElementById("historyChart");
+  if(!ctx) return;
+
+  const labels = historyData.map(d => d.time);
+  const values = historyData.map(d => d.value);
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Portfolio Value",
+        data: values,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          ticks: {
+            callback: v => "$" + v.toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+  
 <style>
 body{
   font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -385,6 +422,17 @@ function refresh(){
     row.children[6].innerText=fmtMoney(val);
     row.children[7].innerText=fmtMoney(income);
   });
+
+  /* ✅ ADD HERE (after loop, before function ends) */
+let now = new Date().toLocaleTimeString();
+
+// keep last 100 points
+historyData.push({ time: now, value: total });
+if (historyData.length > 100) historyData.shift();
+
+localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+
+updateChart();
 
   pVal.innerText=fmtMoney0(total);
   iVal.innerText=fmtMoney0(incomeTotal);
