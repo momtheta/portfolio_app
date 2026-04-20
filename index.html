@@ -460,8 +460,10 @@ let today = d.toLocaleDateString(undefined, {
 // check last saved date
 let last = historyData[historyData.length - 1];
 
-if (!last || last.time !== today) {
-  historyData.push({ time: today, value: val });
+let todayKey = new Date().toDateString();
+
+if (!last || last.key !== todayKey) {
+  historyData.push({ key: todayKey, time: today, value: val });
 
   if (historyData.length > 100) historyData.shift();
 
