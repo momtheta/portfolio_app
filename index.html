@@ -239,18 +239,24 @@ function showApp(){
         </div>
         <div id="list"></div>
       </div>
-      <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-  <h3>Portfolio History</h3>
-  <div>
-    <button class="rangeBtn" data-range="7">1W</button>
-    <button class="rangeBtn" data-range="30">1M</button>
-    <button class="rangeBtn" data-range="all">ALL</button>
+  <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
+    <h3>Projected (10%)</h3>
+    <div id="proj1y">1Y → $0</div>
+    <div id="proj5y">5Y → $0</div>
+    <div id="proj10y">10Y → $0</div>
   </div>
-</div>
-        <canvas id="historyChart" height="120"></canvas>
+    <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3>Portfolio History</h3>
+      <div>
+        <button class="rangeBtn" data-range="7">1W</button>
+        <button class="rangeBtn" data-range="30">1M</button>
+        <button class="rangeBtn" data-range="all">ALL</button>
       </div>
-    </div>`;
+    </div>
+    <canvas id="historyChart" height="120"></canvas>
+  </div>
+</div>`;
 
   logoutBtn.onclick=logout;
 
@@ -520,6 +526,7 @@ setTimeout(()=>{
       : parseInt(btn.dataset.range);
 
     updateHistorySafe(); // redraw chart
+    updateProjection();
   };
 });
   setInterval(updateHistorySafe, 60000);
@@ -533,6 +540,28 @@ function sendHeight(){
 window.addEventListener("load",sendHeight);
 window.addEventListener("resize",sendHeight);
 setInterval(sendHeight,800);
+  function updateProjection(){
+  const el = document.getElementById("pVal");
+  if(!el) return;
+
+  let current = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
+  if(isNaN(current)) return;
+
+  const rate = 0.10;
+
+  function future(val, years){
+    return val * Math.pow(1 + rate, years);
+  }
+
+  document.getElementById("proj1y").innerText =
+    "1Y → " + fmtMoney0(future(current, 1));
+
+  document.getElementById("proj5y").innerText =
+    "5Y → " + fmtMoney0(future(current, 5));
+
+  document.getElementById("proj10y").innerText =
+    "10Y → " + fmtMoney0(future(current, 10));
+}
 </script>
 
 </body>
