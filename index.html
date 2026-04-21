@@ -262,32 +262,34 @@ async function logout(){
 function showApp(){
   app.innerHTML=`
     <div class="app">
-      <div class="cards"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+      <div class="cards">
+      <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
       <div class="card"><div>TOTAL GAIN</div><h2 id="gVal">$0</h2></div>
-      <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div>
+      <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div> 
+    </div>
+
       <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
       <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
+
       <button id="logoutBtn">Logout</button>
     </div>
 
-    <div class="tableWrap">
-      <div class="header">
-        <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-        <div class="col">PRICE<div class="resizer"></div></div>
-        <div class="col">CHANGE<div class="resizer"></div></div>
-        <div class="col">DIV<div class="resizer"></div></div>
-        <div class="col">YIELD<div class="resizer"></div></div>
-        <div class="col">SHARES<div class="resizer"></div></div>
-        <div class="col">COST<div class="resizer"></div></div>
-        <div class="col">VALUE<div class="resizer"></div></div>
-        <div class="col">INCOME<div class="resizer"></div></div>
+      <div class="tableWrap">
+        <div class="header">
+          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+          <div class="col">PRICE<div class="resizer"></div></div>
+          <div class="col">CHANGE<div class="resizer"></div></div>
+          <div class="col">DIV<div class="resizer"></div></div>
+          <div class="col">YIELD<div class="resizer"></div></div>
+          <div class="col">SHARES<div class="resizer"></div></div>
+          <div class="col">COST<div class="resizer"></div></div>
+          <div class="col">VALUE<div class="resizer"></div></div>
+          <div class="col">INCOME<div class="resizer"></div></div>
+        </div>
+        <div id="list"></div>
       </div>
-        
-      <div id="list"></div>
-    </div>
-
-    <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
-    <div style="display:flex;align-items:center;gap:10px">
+<div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
+  <div style="display:flex;align-items:center;gap:10px">
     <h3 style="margin:0">PROJECTION</h3>
 
     <select id="rateSelect" style="
@@ -331,9 +333,9 @@ function showApp(){
   loadAll();
   enableResize();
   const rateSelect = document.getElementById("rateSelect");
-    if(rateSelect){
-      rateSelect.onchange = () => refresh();
-    }
+if(rateSelect){
+  rateSelect.onchange = () => refresh();
+}
 }
 
 function loadWidths(){
