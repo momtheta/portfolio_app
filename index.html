@@ -195,23 +195,59 @@ const fmtMoney0=n=>"$"+(n||0).toLocaleString();
 
 function showLogin(){
   app.innerHTML=`
-    <div class="loginWrap">
-      <div class="loginCard">
-        <h2>Login</h2>
-        <input id="email" placeholder="Email">
-        <input id="pass" type="password" placeholder="Password">
-        <button id="loginBtn">Login</button>
-        <p id="msg"></p>
-      </div>
-    </div>`;
+  <div class="loginWrap">
+    <div class="loginCard">
+      <h2>Login</h2>
+
+      <input id="email" placeholder="Email">
+      <input id="pass" type="password" placeholder="Password">
+
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
+        <input type="checkbox" id="rememberMe">
+        Remember Me
+      </label>
+
+      <button id="loginBtn">Login</button>
+      <p id="msg"></p>
+    </div>
+  </div>`;
+  
+  // load saved email
+  const savedEmail = localStorage.getItem("rememberEmail");
+  const emailEl = document.getElementById("email");
+  const rememberEl = document.getElementById("rememberMe");
+  const savedEmail = localStorage.getItem("rememberEmail");
+  if(savedEmail){
+    emailEl.value = savedEmail;
+    rememberEl.checked = true;
+  }
+  
   loginBtn.onclick=login;
 }
 
-window.login=async function(){
-  const {data}=await supabase.auth.signInWithPassword({
-    email:email.value,password:pass.value
+window.login = async function(){
+  const emailVal = email.value;
+  const passVal = pass.value;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: emailVal,
+    password: passVal
   });
-  user=data.user;
+
+  // ✅ handle errors (IMPORTANT)
+  if(error){
+    msg.innerText = error.message;
+    return;
+  }
+
+  // ✅ Remember Me logic
+  if(rememberMe && rememberMe.checked){
+    localStorage.setItem("rememberEmail", emailVal);
+  } else {
+    localStorage.removeItem("rememberEmail");
+  }
+
+  user = data.user;
   showApp();
 }
 
