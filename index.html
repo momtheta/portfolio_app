@@ -59,14 +59,15 @@ body{font-family:Inter;background:#f5f7f9;margin:0;}
 window.addEventListener("load", ()=>{
 
 const supabase = window.supabase.createClient(
-  "YOUR_URL",
-  "YOUR_KEY"
+  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+  {auth:{persistSession:true,storage:window.localStorage}}
 );
 
 let user=null, dataMap={}, rows={};
 let portfolio=[]; // ✅ now ARRAY (lots)
 
-const API_KEY="YOUR_FINNHUB_KEY";
+const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
 
 const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2});
 const fmtMoney0=n=>"$"+(n||0).toLocaleString();
