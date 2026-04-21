@@ -272,6 +272,17 @@ function showApp(){
       <button id="logoutBtn">LOGOUT</button>
     </div>
 
+    <button id="resetOrderBtn" style="
+  background:#e5e7eb;
+  color:#111;
+  border:none;
+  padding:10px;
+  border-radius:8px;
+  height:40px;
+">
+  RESET ORDER
+</button>
+
     <div style="margin-bottom:10px">
   <button id="addRowBtn" style="
     padding:8px 12px;
@@ -339,6 +350,7 @@ function showApp(){
 </div>`;
 
   logoutBtn.onclick=logout;
+  document.getElementById("resetOrderBtn").onclick = resetOrder;
   document.getElementById("addRowBtn").onclick = addRow;
 
   loadWidths();
@@ -398,6 +410,7 @@ async function loadAll(){
   render();
   refresh();
   symbols.forEach(fetchQuote);
+  portfolio.sort((a,b) => a.symbol.localeCompare(b.symbol));
 }
 
 async function saveField(id, field, val){
@@ -641,6 +654,36 @@ async function deleteRow(id){
   }
 
   refresh();
+}
+
+async function resetOrder(){
+
+  if(!confirm("Reset order to alphabetical?")) return;
+
+  // fetch fresh data
+  const { data, error } = await supabase
+    .from("portfolio")
+    .select("id, symbol")
+    .eq("user_id", user.id);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  // sort alphabetically
+  data.sort((a,b) => a.symbol.localeCompare(b.symbol));
+
+  // assign new positions
+  for(let i = 0; i < data.length; i++){
+    await supabase
+      .from("portfolio")
+      .update({ position: i + 1 })
+      .eq("id", data[i].id);
+  }
+
+  // reload app
+  loadAll();
 }
 
 async function initAuth(){
