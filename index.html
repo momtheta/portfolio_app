@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body{font-family:Inter;background:#f5f7f9;margin:0;}
+.app{padding:16px;max-width:1400px;margin:auto;}
+
+.cards{display:flex;gap:10px;margin-bottom:10px}
+.card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
+.card h2{font-size:20px;margin:4px 0}
+
+.tableWrap{overflow-x:auto}
+
+.header,.row{
+  display:grid;
+  grid-template-columns:140px 120px 120px 120px 120px 120px 120px 120px;
+  min-width:900px;
+}
+
+.header{
+  font-weight:600;
+  border-bottom:2px solid #d1d5db;
+  background:white;
+  position:sticky;top:0;
+}
+
+.header div,.row div{
+  padding:10px;
+  border-right:1px solid #e5e7eb;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.row{background:white;font-size:14px}
+.row:hover{background:#f9fafb}
+
+.row input{
+  width:100%;
+  border:none;
+  background:transparent;
+  text-align:center;
+}
+
+.sticky{position:sticky;left:0;background:white}
+
+</style>
+</head>
+
+<body>
+<div id="app">Loading...</div>
+
+<script>
+window.addEventListener("load", ()=>{
+
+const supabase = window.supabase.createClient(
+  "YOUR_URL",
+  "YOUR_KEY"
+);
+
+let user=null, dataMap={}, rows={};
+let portfolio=[]; // ✅ now ARRAY (lots)
+
+const API_KEY="YOUR_FINNHUB_KEY";
+
+const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2});
+const fmtMoney0=n=>"$"+(n||0).toLocaleString();
+
+function showApp(){
+document.getElementById("app").innerHTML=`
+<div class="app">
+
+<div class="cards">
+<div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+<div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
+</div>
+
+<button id="addLotBtn">+ Add Lot</button>
+
+<div class="tableWrap">
+<div class="header">
+<div class="sticky">SYMBOL</div>
+<div>PRICE</div>
+<div>CHANGE</div>
+<div>DIV</div>
+<div>YIELD</div>
+<div>SHARES</div>
+<div>COST</div>
+<div>VALUE</div>
+</div>
+<div id="list"></div>
+</div>
+
+</div>`;
+
+document.getElementById("addLotBtn").onclick=addLot;
+
+loadAll();
+}
+
+async function loadAll(){
+const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+
+portfolio=data||[];
+
+render();
+portfolio.forEach(p=>fetchQuote(p.symbol));
+refresh();
+}
+
+function createRow(p){
+let row=document.createElement("div");
+row.className="row";
+
+row.innerHTML=`
+<div class="sticky">${p.symbol}</div>
+<div>N/A</div>
+<div>N/A</div>
+<input value="${p.dividend||""}">
+<div>0%</div>
+<input value="${p.shares||""}">
+<input value="${p.cost||""}">
+<div>$0</div>
+`;
+
+row.children[5].oninput=e=>updateField(p,"shares",e.target.value);
+row.children[6].oninput=e=>updateField(p,"cost",e.target.value);
+row.children[3].oninput=e=>updateField(p,"dividend",e.target.value);
+
+rows[p.id]=row;
+return row;
+}
+
+function render(){
+list.innerHTML="";
+rows={};
+portfolio.forEach(p=>list.appendChild(createRow(p)));
+}
+
+async function addLot(){
+let symbol=prompt("Enter symbol (e.g. AAPL)");
+if(!symbol) return;
+
+let newLot={
+  id: crypto.randomUUID(),
+  user_id:user.id,
+  symbol:symbol.toUpperCase(),
+  shares:0,
+  cost:0,
+  dividend:0
+};
+
+portfolio.push(newLot);
+await supabase.from("portfolio").insert(newLot);
+
+render();
+fetchQuote(symbol);
+}
+
+async function updateField(p,field,val){
+p[field]=+val||0;
+
+await supabase.from("portfolio").update({
+  shares:p.shares,
+  cost:p.cost,
+  dividend:p.dividend
+}).eq("id",p.id);
+
+refresh();
+}
+
+async function fetchQuote(sym){
+let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
+let d=await r.json();
+if(d.c) dataMap[sym]=d;
+refresh();
+}
+
+function refresh(){
+let total=0, gainTotal=0;
+
+portfolio.forEach(p=>{
+let q=dataMap[p.symbol];
+let row=rows[p.id];
+if(!row) return;
+
+let price=q?.c||0;
+let change=q&&q.pc?(q.c-q.pc):0;
+
+let val=price*p.shares;
+let invested=p.cost*p.shares;
+let realGain=val-invested;
+
+total+=val;
+gainTotal+=realGain;
+
+row.children[1].innerText=fmtMoney(price);
+row.children[2].innerText=fmtMoney(change);
+row.children[6].innerText=p.cost||0;
+row.children[7].innerText=fmtMoney(val);
+
+// gain coloring
+row.children[7].style.background =
+  realGain>0?"#ecfdf5":
+  realGain<0?"#fef2f2":"transparent";
+
+});
+
+pVal.innerText=fmtMoney0(total);
+gVal.innerText=fmtMoney0(gainTotal);
+}
+
+async function init(){
+const {data}=await supabase.auth.getSession();
+user=data.session?.user;
+if(user) showApp();
+}
+
+init();
+
+});
+</script>
+
+</body>
+</html>
