@@ -179,7 +179,8 @@ body{
 
 /* both cards share same look */
 .netWorthCard{
-  flex:0 0 45%;   /* 👈 fixed half width */
+  flex:0 0 auto;     /* 👈 stops stretching */
+  width:220px;       /* 👈 compact width */
   background:#f0fdf4;
   padding:16px;
   border-radius:12px;
@@ -198,6 +199,7 @@ body{
   width:100%;
   margin-top:6px;
   padding:8px;
+  font-size:13px;
   border:1px solid #d1d5db;
   border-radius:6px;
 }
@@ -354,9 +356,9 @@ function showApp(){
   <!-- NET WORTH (FIRST) -->
   <div class="netWorthCard">
     <h3>NET WORTH</h3>
-    <input id="cash" placeholder="Cash"><br>
-    <input id="realEstate" placeholder="Real Estate"><br>
-    <input id="debt" placeholder="Debt"><br>
+    <input id="cash" placeholder="CASH"><br>
+    <input id="realEstate" placeholder="REAL ESTATE"><br>
+    <input id="debt" placeholder="DEBT"><br>
     <h2 id="netVal">$0</h2>
   </div>
 
