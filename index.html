@@ -157,15 +157,10 @@ body{
 .row:hover{background:#f9fafb}
 
 /* projection spacing */
-  #proj1y,
-  #proj5y,
-  #proj10y,
-  #proj20y,
-  #proj30y,
-  #proj40y{
-    display:block;
-    margin-top:6px;
-  }
+#proj1y,#proj5y,#proj10y,#proj20y,#proj30y,#proj40y{
+  display:block;
+  margin-top:6px;
+}
 
 /* NET WORTH */
 .netWorth{
@@ -371,22 +366,36 @@ function showApp(){
 
   <!-- PROJECTION (SECOND) -->
   <div class="projectionCard">
-   <div style="display:flex; align-items:center; gap:8px;">
+  <div style="
+  margin-top:20px;
+  background:#f0fdf4;
+  padding:16px;
+  border-radius:12px;
+  flex:1;
+  min-width:0;        /* 🔥 CRITICAL FIX */
+">
   
-<div style="display:flex;align-items:center;gap:6px;">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
   <h3 style="margin:0;">PROJECTION</h3>
+
   <button onclick="setRate(0.05)">5%</button>
-  <button onclick="setRate(0.1)">10%</button>
+  <button onclick="setRate(0.10)">10%</button>
   <button onclick="setRate(0.15)">15%</button>
 </div>
-  <div style="display:flex;flex-direction:column;">
-    <div id="proj1y"></div>
-    <div id="proj5y"></div>
-    <div id="proj10y"></div>
-    <div id="proj20y"></div>
-    <div id="proj30y"></div>
-    <div id="proj40y"></div>
-  </div>
+
+<div style="
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-width:100%;     /* 🔥 prevents overflow */
+">
+  <div id="proj1y"></div>
+  <div id="proj5y"></div>
+  <div id="proj10y"></div>
+  <div id="proj20y"></div>
+  <div id="proj30y"></div>
+  <div id="proj40y"></div>
+</div>
 
 </div>
 
