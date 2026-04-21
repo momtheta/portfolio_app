@@ -302,29 +302,6 @@ function showApp(){
 
       <button id="logoutBtn">LOGOUT</button>
     </div>
-
-    <button id="resetOrderBtn" style="
-  background:#e5e7eb;
-  color:#111;
-  border:none;
-  padding:10px;
-  border-radius:8px;
-  height:40px;
-">
-  RESET ORDER
-</button>
-
-    <div style="margin-bottom:10px">
-  <button id="addRowBtn" style="
-    padding:8px 12px;
-    border-radius:8px;
-    border:none;
-    background:#16a34a;
-    color:white;
-    font-size:13px;
-  ">
-    + ADD ROW
-  </button>
 </div>
 
       <div class="tableWrap">
@@ -382,9 +359,6 @@ function showApp(){
 
   logoutBtn.onclick=logout;
   createToolbar();
-  document.getElementById("resetOrderBtn").onclick = resetOrder;
-  document.getElementById("addRowBtn").onclick = addRow;
-
   loadWidths();
   loadAll();
   enableResize();
@@ -438,11 +412,11 @@ async function loadAll(){
   }));
 
   symbols = portfolio.map(p => p.symbol);
-
+  portfolio.sort((a,b) => a.symbol.localeCompare(b.symbol));
   render();
   refresh();
   symbols.forEach(fetchQuote);
-  portfolio.sort((a,b) => a.symbol.localeCompare(b.symbol));
+  
 }
 
 async function saveField(id, field, val){
@@ -723,18 +697,18 @@ function createToolbar(){
 
   wrap.style.cssText = `
     display:flex;
-    gap:6px;
-    margin-bottom:10px;
+    gap:8px;
+    margin-bottom:12px;
     align-items:center;
   `;
 
   wrap.innerHTML = `
     <button id="addRowBtn" class="toolBtn">
-      ➕ <span>Add</span>
+      ➕ <span>ADD SYMBOL</span>
     </button>
 
     <button id="resetOrderBtn" class="toolBtn blue">
-      🔄 <span>Reset</span>
+      🔄 <span>RESET</span>
     </button>
   `;
 
