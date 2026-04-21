@@ -309,7 +309,7 @@ function showApp(){
 
   </div>`;
 
-  logoutBtn.onclick=()=>location.reload();
+  document.getElementById("logoutBtn").onclick = logout;
 
   loadAll();
 
@@ -436,6 +436,11 @@ async function start(){
 start();
 
 });
+async function logout(){
+  await supabase.auth.signOut();
+  user = null;
+  showLogin();
+}
 </script>
 
 </body>
