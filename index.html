@@ -12,213 +12,60 @@ body{
   background:#f5f7f9;
   margin:0;
 }
+.app{padding:16px;max-width:1400px;margin:0 auto}
 
-.app{
-  padding:16px;
-  max-width:1400px;
-  margin:0 auto;
-}
 /* LOGIN */
-.loginWrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  background:#f5f7f9;
-}
-
+.loginWrap{display:flex;justify-content:center;align-items:center;min-height:100vh}
 .loginCard{
-  max-width:420px;
-  width:100%;
-  background:white;
-  padding:28px;
-  border-radius:16px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  max-width:420px;width:100%;background:white;padding:28px;border-radius:16px;
+  display:flex;flex-direction:column;gap:14px;box-shadow:0 10px 25px rgba(0,0,0,0.08)
 }
+.loginCard h2{text-align:center;margin:0}
+.loginCard input{padding:12px;border:1px solid #d1d5db;border-radius:8px}
+.loginCard button{padding:12px;background:#16a34a;color:white;border:none;border-radius:8px}
+#msg{font-size:13px;color:#dc2626;text-align:center}
 
-.loginCard h2{
-  margin:0 0 10px 0;
-  font-weight:600;
-  text-align:center;
-}
-
-.loginCard input{
-  padding:12px 14px;
-  border:1px solid #d1d5db;
-  border-radius:8px;
-  font-size:14px;
-}
-
-.loginCard input:focus{
-  outline:none;
-  border-color:#16a34a;
-  box-shadow:0 0 0 2px rgba(22,163,74,0.15);
-}
-
-.loginCard button{
-  padding:12px;
-  background:#16a34a;
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:500;
-  cursor:pointer;
-  transition:all 0.2s ease;
-}
-
-.loginCard button:hover{
-  background:#15803d;
-}
-
-#msg{
-  font-size:13px;
-  color:#dc2626;
-  text-align:center;
-}
 /* CARDS */
 .cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-.card{
-  flex:1;background:#f0fdf4;
-  padding:12px;border-radius:10px
-}
-.card h2{
-  font-size:18px;
-  margin:4px 0 0 0;
-}
-#logoutBtn{
-  background:#16a34a;color:white;
-  border:none;padding:10px;border-radius:8px;height:40px;
-}
+.card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
+.card h2{font-size:18px;margin:4px 0}
+#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px}
 
 /* TABLE */
-.tableWrap{width:100%;overflow-x:auto}
-
-:root{
-  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
-  --c5:140px; --c6:140px; --c7:140px; --c8:140px; --c9:140px;
-}
-
+.tableWrap{overflow-x:auto}
 .header,.row{
   display:grid;
-  grid-template-columns:
-    var(--c1) var(--c2) var(--c3) var(--c4)
-    var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
+  grid-template-columns:repeat(9,140px);
 }
-
-/* HEADER */
-.header{
-  position:sticky;
-  top:0;
-  background:white;
-  border-bottom:2px solid #d1d5db;
+.header{background:white;border-bottom:2px solid #d1d5db}
+.header > div,.row > div{
+  padding:10px;border-right:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center
 }
-
-/* CELLS */
-.header > div,
-.row > div{
-  padding:10px;
-  border-right:1px solid #e5e7eb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.row .sticky{
-  justify-content:flex-start;
-}
-
-/* INPUT */
-.row input{
-  width:100%;
-  border:none;
-  background:transparent;
-  text-align:center;
-}
-
-/* remove last border */
-.header > div:last-child,
-.row > div:last-child{
-  border-right:none;
-}
-
-/* sticky symbol */
-.sticky{
-  position:sticky;
-  left:0;
-  background:white;
-  z-index:5;
-}
-
-/* rows */
+.row input{width:100%;border:none;background:transparent;text-align:center}
 .row{background:white}
 .row:hover{background:#f9fafb}
 
-/* projection spacing */
-#proj1y,#proj5y,#proj10y,#proj20y,#proj30y,#proj40y{
-  display:block;
-  margin-top:6px;
-}
+/* BOTTOM CARDS */
+.bottomCards{display:flex;gap:12px;margin-top:20px;align-items:flex-start}
 
-/* NET WORTH */
-.netWorth{
-  margin-top:20px;
-  background:#f0fdf4;
-  padding:16px;
-  border-radius:12px;
-}
-
-/* bottom cards layout */
-.bottomCards{
-  display:flex;
-  gap:12px;
-  margin-top:20px;
-  align-items:flex-start;
-}
-
-/* both cards share same look */
 .netWorthCard{
-  flex:0 0 auto;     /* 👈 stops stretching */
-  width:220px;       /* 👈 compact width */
-  background:#f0fdf4;
-  padding:16px;
-  border-radius:12px;
+  width:220px;background:#f0fdf4;padding:16px;border-radius:12px
+}
+.netWorthCard input{
+  width:100%;margin-top:6px;padding:8px;font-size:13px;border:1px solid #d1d5db;border-radius:6px
 }
 
 .projectionCard{
-  flex:0 0 auto;   /* 👈 prevents stretching */
-  width:280px;     /* 👈 keeps it compact */
-  background:#f0fdf4;
-  padding:16px;
-  border-radius:12px;
+  width:280px;background:#f0fdf4;padding:16px;border-radius:12px
 }
 
-/* inputs spacing */
-.netWorthCard input{
-  width:100%;
-  margin-top:6px;
-  padding:8px;
-  font-size:13px;
-  border:1px solid #d1d5db;
-  border-radius:6px;
-}
+/* projection rows vertical */
+.projList{display:flex;flex-direction:column;gap:6px}
 
-/* responsive (mobile) */
-@media (max-width: 768px){
-  .bottomCards{
-    flex-direction:column;
-  }
+/* mobile */
+@media (max-width:768px){
+  .bottomCards{flex-direction:column}
 }
-.projectionCard h3,
-.netWorthCard h3{
-  margin-top:0;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
 </style>
 </head>
 
@@ -226,7 +73,6 @@ body{
 <div id="app">Loading...</div>
 
 <script>
-let currentRate = 0.10; // default 10%  
 window.addEventListener("load", () => {
 
 const app = document.getElementById("app");
@@ -234,98 +80,49 @@ const app = document.getElementById("app");
 const supabase = window.supabase.createClient(
   "https://yxvgevzvrvhtzmfxgitk.supabase.co",
   "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-  {
-    auth: {
-      persistSession: true,
-      storage: window.localStorage
-    }
-  }
+  {auth:{persistSession:true,storage:window.localStorage}}
 );
 
-const API_KEY = "d7f97chr01qpjqqju8f0";
+let user=null, symbols=[], portfolio={}, rows={};
 
-const defaultSymbols = ["AAPL","MSFT","NVDA"];
+let currentRate = 0.10;
 
-let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
-async function logout(){
-  const { error } = await supabase.auth.signOut();
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  user = null;
-
-  // clear UI
-  app.innerHTML = "";
-
-  // go back to login
-  showLogin();
-}
-
-const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+/* FORMAT */
 const fmtMoney0=n=>"$"+(n||0).toLocaleString();
 
+/* LOGIN */
 function showLogin(){
   app.innerHTML=`
   <div class="loginWrap">
     <div class="loginCard">
       <h2>Login</h2>
-
       <input id="email" placeholder="Email">
       <input id="pass" type="password" placeholder="Password">
-
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;">
-        <input type="checkbox" id="rememberMe">
-        Remember Me
-      </label>
-
+      <label><input type="checkbox" id="rememberMe"> Remember Me</label>
       <button id="loginBtn">Login</button>
       <p id="msg"></p>
     </div>
   </div>`;
-  
-  // load saved email
-  const savedEmail = localStorage.getItem("rememberEmail");
-  const emailEl = document.getElementById("email");
-  const rememberEl = document.getElementById("rememberMe");
 
-if(savedEmail){
-  emailEl.value = savedEmail;
-  rememberEl.checked = true;
-  }
-  
-  document.getElementById("loginBtn").onclick = window.login;
-  
+  document.getElementById("loginBtn").onclick = login;
 }
 
-window.login = async function(){
-  const emailVal = email.value;
-  const passVal = pass.value;
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailVal,
-    password: passVal
+async function login(){
+  const {data,error}=await supabase.auth.signInWithPassword({
+    email:email.value,password:pass.value
   });
-
-  // ✅ handle errors (IMPORTANT)
-  if(error){
-    msg.innerText = error.message;
-    return;
-  }
-
-  // ✅ Remember Me logic
-  if(rememberMe && rememberMe.checked){
-    localStorage.setItem("rememberEmail", emailVal);
-  } else {
-    localStorage.removeItem("rememberEmail");
-  }
-
-  user = data.user;
+  if(error){ msg.innerText=error.message; return; }
+  user=data.user;
   showApp();
 }
 
+async function logout(){
+  await supabase.auth.signOut();
+  user=null;
+  showLogin();
+}
+
+/* APP */
 function showApp(){
   app.innerHTML=`
   <div class="app">
@@ -340,90 +137,62 @@ function showApp(){
 
   <div class="tableWrap">
     <div class="header">
-      <div class="sticky">SYMBOL</div>
-      <div>PRICE</div>
-      <div>CHANGE</div>
-      <div>DIV</div>
-      <div>YIELD</div>
-      <div>SHARES</div>
-      <div>COST</div>
-      <div>VALUE</div>
-      <div>INCOME</div>
+      <div>SYMBOL</div><div>PRICE</div><div>CHANGE</div><div>DIV</div>
+      <div>YIELD</div><div>SHARES</div><div>COST</div><div>VALUE</div><div>INCOME</div>
     </div>
     <div id="list"></div>
   </div>
 
- <div class="bottomCards">
+  <div class="bottomCards">
 
-  <!-- NET WORTH (FIRST) -->
-  <div class="netWorthCard">
-    <h3>NET WORTH</h3>
-    <input id="cash" placeholder="CASH"><br>
-    <input id="realEstate" placeholder="REAL ESTATE"><br>
-    <input id="debt" placeholder="DEBT"><br>
-    <h2 id="netVal">$0</h2>
+    <!-- NET WORTH -->
+    <div class="netWorthCard">
+      <h3>NET WORTH</h3>
+      <input id="cash" placeholder="Cash">
+      <input id="realEstate" placeholder="Real Estate">
+      <input id="debt" placeholder="Debt">
+      <h2 id="netVal">$0</h2>
+    </div>
+
+    <!-- PROJECTION -->
+    <div class="projectionCard">
+      <h3>PROJECTION
+        <button onclick="setRate(0.05)">5%</button>
+        <button onclick="setRate(0.10)">10%</button>
+        <button onclick="setRate(0.15)">15%</button>
+      </h3>
+
+      <div class="projList">
+        <div id="proj1y"></div>
+        <div id="proj5y"></div>
+        <div id="proj10y"></div>
+        <div id="proj20y"></div>
+        <div id="proj30y"></div>
+        <div id="proj40y"></div>
+      </div>
+    </div>
+
   </div>
-
-  <!-- PROJECTION (SECOND) -->
-  <div class="projectionCard">
-  <div style="
-  margin-top:20px;
-  background:#f0fdf4;
-  padding:16px;
-  border-radius:12px;
-  flex:1;
-  min-width:0;        /* 🔥 CRITICAL FIX */
-">
-  
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-  <h3 style="margin:0;">PROJECTION</h3>
-
-  <button onclick="setRate(0.05)">5%</button>
-  <button onclick="setRate(0.10)">10%</button>
-  <button onclick="setRate(0.15)">15%</button>
-</div>
-
-<div style="
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  max-width:100%;     /* 🔥 prevents overflow */
-">
-  <div id="proj1y"></div>
-  <div id="proj5y"></div>
-  <div id="proj10y"></div>
-  <div id="proj20y"></div>
-  <div id="proj30y"></div>
-  <div id="proj40y"></div>
-</div>
-
-</div>
-
-  <!-- CHART -->
-  <canvas id="chart"></canvas>
 
   </div>`;
 
   document.getElementById("logoutBtn").onclick = logout;
 
-  loadAll();
+  document.getElementById("cash").oninput = refresh;
+  document.getElementById("realEstate").oninput = refresh;
+  document.getElementById("debt").oninput = refresh;
 
-  rateSelect.onchange=refresh;
-  cash.oninput=refresh;
-  realEstate.oninput=refresh;
-  debt.oninput=refresh;
+  loadAll();
 }
 
+/* DATA */
 async function loadAll(){
   const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
   portfolio={};
-  (data || []).forEach(r=>{
-  portfolio[r.symbol]=r;
-});
+  (data||[]).forEach(r=>portfolio[r.symbol]=r);
 
   symbols=Object.keys(portfolio);
-
   render();
   refresh();
 }
@@ -434,9 +203,9 @@ function createRow(sym){
   row.className="row";
 
   row.innerHTML=`
-    <div class="sticky">${sym}</div>
-    <div>N/A</div>
-    <div>N/A</div>
+    <div>${sym}</div>
+    <div>$100</div>
+    <div>$0</div>
     <input value="${d.dividend||""}">
     <div>0%</div>
     <input value="${d.shares||""}">
@@ -459,8 +228,8 @@ function render(){
 }
 
 async function save(sym,field,val){
-  portfolio[sym] = portfolio[sym] || {};
-  portfolio[sym][field] = +val || 0;
+  portfolio[sym]=portfolio[sym]||{};
+  portfolio[sym][field]=+val||0;
 
   await supabase.from("portfolio").upsert({
     user_id:user.id,
@@ -471,32 +240,30 @@ async function save(sym,field,val){
   refresh();
 }
 
-let currentRate = 0.10;
-
+/* PROJECTION */
 function setRate(r){
   currentRate = r;
   refresh();
 }
 
 function updateProjection(total){
-  const rate = currentRate;
+  const f=y=>total*Math.pow(1+currentRate,y);
 
-  function f(y){ return total * Math.pow(1 + rate, y); }
-
-  proj1y.innerText = "1Y → " + fmtMoney0(f(1));
-  proj5y.innerText = "5Y → " + fmtMoney0(f(5));
-  proj10y.innerText = "10Y → " + fmtMoney0(f(10));
-  proj20y.innerText = "20Y → " + fmtMoney0(f(20));
-  proj30y.innerText = "30Y → " + fmtMoney0(f(30));
-  proj40y.innerText = "40Y → " + fmtMoney0(f(40));
+  proj1y.innerText="1Y → "+fmtMoney0(f(1));
+  proj5y.innerText="5Y → "+fmtMoney0(f(5));
+  proj10y.innerText="10Y → "+fmtMoney0(f(10));
+  proj20y.innerText="20Y → "+fmtMoney0(f(20));
+  proj30y.innerText="30Y → "+fmtMoney0(f(30));
+  proj40y.innerText="40Y → "+fmtMoney0(f(40));
 }
 
+/* REFRESH */
 function refresh(){
   let total=0,incomeTotal=0,monthly=0;
 
   symbols.forEach(s=>{
     let d=portfolio[s];
-    let price=100; // demo
+    let price=100;
 
     let val=price*(d.shares||0);
     let income=(d.dividend||0)*(d.shares||0);
@@ -505,8 +272,8 @@ function refresh(){
     incomeTotal+=income;
     monthly+=income/12;
 
-    rows[s].children[7].innerText=fmtMoney(val);
-    rows[s].children[8].innerText=fmtMoney(income);
+    rows[s].children[7].innerText=fmtMoney0(val);
+    rows[s].children[8].innerText=fmtMoney0(income);
   });
 
   pVal.innerText=fmtMoney0(total);
@@ -515,43 +282,21 @@ function refresh(){
 
   updateProjection(total);
 
-  // NET WORTH
-  let nw = total
-    + (+cash.value||0)
-    + (+realEstate.value||0)
-    - (+debt.value||0);
+  const cashVal=parseFloat(cash.value)||0;
+  const realEstateVal=parseFloat(realEstate.value)||0;
+  const debtVal=parseFloat(debt.value)||0;
 
-  netVal.innerText=fmtMoney0(nw);
+  netVal.innerText=fmtMoney0(total+cashVal+realEstateVal-debtVal);
 }
 
-function setRate(r){
-  currentRate = r;
-  refresh(); // 🔥 forces projection update
-}
-
-async function start(){
-  const { data } = await supabase.auth.getSession();
-  user = data.session?.user;
-
-  if(user){
-    showApp();
-  } else {
-    showLogin();
-  }
-}
-function setRate(r){
-  const rateSelect = document.getElementById("rateSelect");
-
-  if(rateSelect){
-    rateSelect.value = r;
-  }
-
-  refresh(); // 🔥 THIS is what updates the numbers
-}
-start();
+/* INIT */
+(async ()=>{
+  const {data}=await supabase.auth.getSession();
+  user=data.session?.user;
+  user ? showApp() : showLogin();
+})();
 
 });
-
 </script>
 
 </body>
