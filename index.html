@@ -223,6 +223,11 @@ if(savedEmail){
   }
   
   document.getElementById("loginBtn").onclick = window.login;
+  async function logout(){
+  await supabase.auth.signOut();
+  user = null;
+  showLogin();
+  }
 }
 
 window.login = async function(){
