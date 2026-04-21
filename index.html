@@ -531,6 +531,10 @@ function refresh(){
     let q = dataMap[s];
     let row = rows[p.id];
     if(!row) return;
+    // 🔥 reset all cell backgrounds first
+for(let i=0;i<9;i++){
+  row.children[i].style.background = "transparent";
+}
 
     let price = q?.c || 0;
     let shares = p.shares || 0;
@@ -559,16 +563,17 @@ function refresh(){
       change < 0 ? "#dc2626" : "#999";
 
     row.children[7].innerText = fmtPercent(yieldVal);
+    row.children[7].style.background = "transparent";
     row.children[5].innerText = fmtMoney(val);
     row.children[8].innerText = fmtMoney(income);
 
     // styling
     if (realGain > 0) {
-      row.children[7].style.background = "#ecfdf5";
+      row.children[5].style.background = "#ecfdf5";
     } else if (realGain < 0) {
-      row.children[7].style.background = "#fef2f2";
+      row.children[5].style.background = "#fef2f2";
     } else {
-      row.children[7].style.background = "transparent";
+      row.children[5].style.background = "transparent";
     }
 
     row.children[8].style.background =
