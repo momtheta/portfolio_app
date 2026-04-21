@@ -257,10 +257,16 @@ function showApp(){
         </div>
         <div id="list"></div>
       </div>
-<div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <h3>Projection</h3>
-    <select id="rateSelect">
+<div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <h3 style="margin:0">Projection</h3>
+
+    <select id="rateSelect" style="
+      padding:4px 8px;
+      border-radius:6px;
+      border:1px solid #d1d5db;
+      font-size:13px;
+    ">
       <option value="0.05">5%</option>
       <option value="0.08">8%</option>
       <option value="0.10" selected>10%</option>
@@ -276,6 +282,7 @@ function showApp(){
   <div id="proj30y">30Y → $0</div>
   <div id="proj40y">40Y → $0</div>
 </div>
+
     <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3>Portfolio History</h3>
@@ -294,6 +301,10 @@ function showApp(){
   loadWidths();
   loadAll();
   enableResize();
+  const rateSelect = document.getElementById("rateSelect");
+if(rateSelect){
+  rateSelect.onchange = () => refresh();
+}
 }
 
 function loadWidths(){
@@ -394,23 +405,32 @@ function render(){
   rows={};
   symbols.forEach(s=>list.appendChild(createRow(s)));
 }
+
 function updateProjection(current){
   if(!current || isNaN(current)) return;
 
-  const rate = 0.10;
+  const rateEl = document.getElementById("rateSelect");
+  const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
 
   function future(val, years){
     return val * Math.pow(1 + rate, years);
   }
 
-  document.getElementById("proj1y").innerText =
-    "1Y → " + fmtMoney0(future(current, 1));
+  const map = {
+    proj1y: 1,
+    proj5y: 5,
+    proj10y: 10,
+    proj20y: 20,
+    proj30y: 30,
+    proj40y: 40
+  };
 
-  document.getElementById("proj5y").innerText =
-    "5Y → " + fmtMoney0(future(current, 5));
-
-  document.getElementById("proj10y").innerText =
-    "10Y → " + fmtMoney0(future(current, 10));
+  Object.entries(map).forEach(([id, yrs])=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.innerText = `${yrs}Y → ${fmtMoney0(future(current, yrs))}`;
+    }
+  });
 }
 
 function refresh(){
