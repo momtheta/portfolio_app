@@ -1,77 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-<style>
-body{
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f5f7f9;
-  margin:0;
-}
-.app{padding:16px;max-width:1400px;margin:0 auto}
-
-/* LOGIN */
-.loginWrap{display:flex;justify-content:center;align-items:center;min-height:100vh}
-.loginCard{
-  max-width:420px;width:100%;background:white;padding:28px;border-radius:16px;
-  display:flex;flex-direction:column;gap:14px;box-shadow:0 10px 25px rgba(0,0,0,0.08)
-}
-.loginCard h2{text-align:center;margin:0}
-.loginCard input{padding:12px;border:1px solid #d1d5db;border-radius:8px}
-.loginCard button{padding:12px;background:#16a34a;color:white;border:none;border-radius:8px}
-#msg{font-size:13px;color:#dc2626;text-align:center}
-
-/* CARDS */
-.cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-.card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
-.card h2{font-size:18px;margin:4px 0}
-#logoutBtn{background:#16a34a;color:white;border:none;padding:10px;border-radius:8px}
-
-/* TABLE */
-.tableWrap{overflow-x:auto}
-.header,.row{
-  display:grid;
-  grid-template-columns:repeat(9,140px);
-}
-.header{background:white;border-bottom:2px solid #d1d5db}
-.header > div,.row > div{
-  padding:10px;border-right:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center
-}
-.row input{width:100%;border:none;background:transparent;text-align:center}
-.row{background:white}
-.row:hover{background:#f9fafb}
-
-/* BOTTOM CARDS */
-.bottomCards{display:flex;gap:12px;margin-top:20px;align-items:flex-start}
-
-.netWorthCard{
-  width:220px;background:#f0fdf4;padding:16px;border-radius:12px
-}
-.netWorthCard input{
-  width:100%;margin-top:6px;padding:8px;font-size:13px;border:1px solid #d1d5db;border-radius:6px
-}
-
-.projectionCard{
-  width:280px;background:#f0fdf4;padding:16px;border-radius:12px
-}
-
-/* projection rows vertical */
-.projList{display:flex;flex-direction:column;gap:6px}
-
-/* mobile */
-@media (max-width:768px){
-  .bottomCards{flex-direction:column}
-}
-</style>
-</head>
-
-<body>
-<div id="app">Loading...</div>
-
 <script>
 window.addEventListener("load", () => {
 
@@ -80,89 +6,109 @@ const app = document.getElementById("app");
 const supabase = window.supabase.createClient(
   "https://yxvgevzvrvhtzmfxgitk.supabase.co",
   "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-  {auth:{persistSession:true,storage:window.localStorage}}
+  {
+    auth: {
+      persistSession: true,
+      storage: window.localStorage
+    }
+  }
 );
 
-let user=null, symbols=[], portfolio={}, rows={};
+let user = null;
+let portfolio = {}, symbols = [], rows = {};
+let currentRate = 0.10; // ✅ single source of truth
 
-let currentRate = 0.10;
+const fmtMoney = n => "$" + (n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtMoney0 = n => "$" + (n||0).toLocaleString();
 
-/* FORMAT */
-const fmtMoney0=n=>"$"+(n||0).toLocaleString();
+async function logout(){
+  await supabase.auth.signOut();
+  user = null;
+  showLogin();
+}
 
-/* LOGIN */
 function showLogin(){
-  app.innerHTML=`
+  app.innerHTML = `
   <div class="loginWrap">
     <div class="loginCard">
       <h2>Login</h2>
       <input id="email" placeholder="Email">
       <input id="pass" type="password" placeholder="Password">
-      <label><input type="checkbox" id="rememberMe"> Remember Me</label>
+
+      <label style="display:flex;gap:8px;font-size:13px;">
+        <input type="checkbox" id="rememberMe"> Remember Me
+      </label>
+
       <button id="loginBtn">Login</button>
       <p id="msg"></p>
     </div>
   </div>`;
 
-  document.getElementById("loginBtn").onclick = login;
+  const saved = localStorage.getItem("rememberEmail");
+  if(saved){
+    email.value = saved;
+    rememberMe.checked = true;
+  }
+
+  loginBtn.onclick = login;
 }
 
 async function login(){
-  const {data,error}=await supabase.auth.signInWithPassword({
-    email:email.value,password:pass.value
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: pass.value
   });
-  if(error){ msg.innerText=error.message; return; }
-  user=data.user;
+
+  if(error){
+    msg.innerText = error.message;
+    return;
+  }
+
+  if(rememberMe.checked){
+    localStorage.setItem("rememberEmail", email.value);
+  } else {
+    localStorage.removeItem("rememberEmail");
+  }
+
+  user = data.user;
   showApp();
 }
 
-async function logout(){
-  await supabase.auth.signOut();
-  user=null;
-  showLogin();
-}
-
-/* APP */
 function showApp(){
-  app.innerHTML=`
+  app.innerHTML = `
   <div class="app">
 
-  <div class="cards">
-    <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-    <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
-    <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
-    <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
-    <button id="logoutBtn">Logout</button>
-  </div>
-
-  <div class="tableWrap">
-    <div class="header">
-      <div>SYMBOL</div><div>PRICE</div><div>CHANGE</div><div>DIV</div>
-      <div>YIELD</div><div>SHARES</div><div>COST</div><div>VALUE</div><div>INCOME</div>
+    <div class="cards">
+      <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+      <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
+      <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
+      <button id="logoutBtn">Logout</button>
     </div>
+
     <div id="list"></div>
-  </div>
 
-  <div class="bottomCards">
+    <div class="bottomCards">
 
-    <!-- NET WORTH -->
-    <div class="netWorthCard">
-      <h3>NET WORTH</h3>
-      <input id="cash" placeholder="Cash">
-      <input id="realEstate" placeholder="Real Estate">
-      <input id="debt" placeholder="Debt">
-      <h2 id="netVal">$0</h2>
-    </div>
+      <!-- NET WORTH -->
+      <div class="netWorthCard">
+        <h3>NET WORTH</h3>
+        <input id="cash" placeholder="Cash">
+        <input id="realEstate" placeholder="Real Estate">
+        <input id="debt" placeholder="Debt">
+        <h2 id="netVal">$0</h2>
+      </div>
 
-    <!-- PROJECTION -->
-    <div class="projectionCard">
-      <h3>PROJECTION
-        <button onclick="setRate(0.05)">5%</button>
-        <button onclick="setRate(0.10)">10%</button>
-        <button onclick="setRate(0.15)">15%</button>
-      </h3>
+      <!-- PROJECTION -->
+      <div class="projectionCard">
+        <h3>
+          PROJECTION
+          <span>
+            <button onclick="setRate(0.05)">5%</button>
+            <button onclick="setRate(0.10)">10%</button>
+            <button onclick="setRate(0.15)">15%</button>
+          </span>
+        </h3>
 
-      <div class="projList">
         <div id="proj1y"></div>
         <div id="proj5y"></div>
         <div id="proj10y"></div>
@@ -170,134 +116,93 @@ function showApp(){
         <div id="proj30y"></div>
         <div id="proj40y"></div>
       </div>
+
     </div>
-
-  </div>
-
   </div>`;
 
-  document.getElementById("logoutBtn").onclick = logout;
+  logoutBtn.onclick = logout;
 
-  document.getElementById("cash").oninput = refresh;
-  document.getElementById("realEstate").oninput = refresh;
-  document.getElementById("debt").oninput = refresh;
+  cash.oninput = refresh;
+  realEstate.oninput = refresh;
+  debt.oninput = refresh;
 
   loadAll();
 }
 
-/* DATA */
 async function loadAll(){
-  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+  const { data } = await supabase
+    .from("portfolio")
+    .select("*")
+    .eq("user_id", user.id);
 
-  portfolio={};
-  (data||[]).forEach(r=>portfolio[r.symbol]=r);
+  portfolio = {};
+  (data || []).forEach(r => portfolio[r.symbol] = r);
 
-  symbols=Object.keys(portfolio);
-  render();
-  refresh();
-}
-
-function createRow(sym){
-  let d=portfolio[sym]||{};
-  let row=document.createElement("div");
-  row.className="row";
-
-  row.innerHTML=`
-    <div>${sym}</div>
-    <div>$100</div>
-    <div>$0</div>
-    <input value="${d.dividend||""}">
-    <div>0%</div>
-    <input value="${d.shares||""}">
-    <input value="${d.cost||""}">
-    <div>$0</div>
-    <div>$0</div>
-  `;
-
-  row.children[5].oninput=e=>save(sym,"shares",e.target.value);
-  row.children[3].oninput=e=>save(sym,"dividend",e.target.value);
-  row.children[6].oninput=e=>save(sym,"cost",e.target.value);
-
-  rows[sym]=row;
-  return row;
-}
-
-function render(){
-  list.innerHTML="";
-  symbols.forEach(s=>list.appendChild(createRow(s)));
-}
-
-async function save(sym,field,val){
-  portfolio[sym]=portfolio[sym]||{};
-  portfolio[sym][field]=+val||0;
-
-  await supabase.from("portfolio").upsert({
-    user_id:user.id,
-    symbol:sym,
-    ...portfolio[sym]
-  });
-
-  refresh();
-}
-
-/* PROJECTION */
-function setRate(r){
-  currentRate = r;
+  symbols = Object.keys(portfolio);
   refresh();
 }
 
 function updateProjection(total){
-  const f=y=>total*Math.pow(1+currentRate,y);
+  const r = currentRate;
 
-  proj1y.innerText="1Y → "+fmtMoney0(f(1));
-  proj5y.innerText="5Y → "+fmtMoney0(f(5));
-  proj10y.innerText="10Y → "+fmtMoney0(f(10));
-  proj20y.innerText="20Y → "+fmtMoney0(f(20));
-  proj30y.innerText="30Y → "+fmtMoney0(f(30));
-  proj40y.innerText="40Y → "+fmtMoney0(f(40));
+  const calc = y => total * Math.pow(1 + r, y);
+
+  proj1y.innerText  = "1Y → "  + fmtMoney0(calc(1));
+  proj5y.innerText  = "5Y → "  + fmtMoney0(calc(5));
+  proj10y.innerText = "10Y → " + fmtMoney0(calc(10));
+  proj20y.innerText = "20Y → " + fmtMoney0(calc(20));
+  proj30y.innerText = "30Y → " + fmtMoney0(calc(30));
+  proj40y.innerText = "40Y → " + fmtMoney0(calc(40));
 }
 
-/* REFRESH */
 function refresh(){
-  let total=0,incomeTotal=0,monthly=0;
+  let total = 0, annual = 0, monthly = 0;
 
   symbols.forEach(s=>{
-    let d=portfolio[s];
-    let price=100;
+    let d = portfolio[s] || {};
+    let price = 100; // placeholder
 
-    let val=price*(d.shares||0);
-    let income=(d.dividend||0)*(d.shares||0);
+    let val = price * (d.shares || 0);
+    let income = (d.dividend || 0) * (d.shares || 0);
 
-    total+=val;
-    incomeTotal+=income;
-    monthly+=income/12;
-
-    rows[s].children[7].innerText=fmtMoney0(val);
-    rows[s].children[8].innerText=fmtMoney0(income);
+    total += val;
+    annual += income;
+    monthly += income / 12;
   });
 
-  pVal.innerText=fmtMoney0(total);
-  iVal.innerText=fmtMoney0(incomeTotal);
-  mVal.innerText=fmtMoney0(monthly);
+  pVal.innerText = fmtMoney0(total);
+  iVal.innerText = fmtMoney0(annual);
+  mVal.innerText = fmtMoney0(monthly);
 
   updateProjection(total);
 
-  const cashVal=parseFloat(cash.value)||0;
-  const realEstateVal=parseFloat(realEstate.value)||0;
-  const debtVal=parseFloat(debt.value)||0;
+  let net =
+    total +
+    (+cash.value || 0) +
+    (+realEstate.value || 0) -
+    (+debt.value || 0);
 
-  netVal.innerText=fmtMoney0(total+cashVal+realEstateVal-debtVal);
+  netVal.innerText = fmtMoney0(net);
 }
 
-/* INIT */
-(async ()=>{
-  const {data}=await supabase.auth.getSession();
-  user=data.session?.user;
-  user ? showApp() : showLogin();
-})();
+/* ✅ THIS is the ONLY rate function */
+window.setRate = function(r){
+  currentRate = r;
+  refresh();
+};
+
+async function start(){
+  const { data } = await supabase.auth.getSession();
+  user = data.session?.user;
+
+  if(user){
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+start();
 
 });
 </script>
-
-</body>
-</html>
