@@ -77,6 +77,37 @@ body{
   border:none;padding:10px;border-radius:8px;height:40px;
 }
 
+.toolBtn{
+  display:flex;
+  align-items:center;
+  gap:4px;
+
+  padding:6px 10px;
+  font-size:12px;
+
+  border:none;
+  border-radius:6px;
+
+  background:#111827;
+  color:#e5e7eb;
+
+  cursor:pointer;
+  transition:all 0.15s ease;
+}
+
+.toolBtn span{
+  font-weight:500;
+}
+
+.toolBtn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+}
+
+.toolBtn.blue{
+  background:#1d4ed8;
+}
+
 /* TABLE */
 .tableWrap{width:100%;overflow-x:auto}
 
@@ -350,6 +381,7 @@ function showApp(){
 </div>`;
 
   logoutBtn.onclick=logout;
+  createToolbar();
   document.getElementById("resetOrderBtn").onclick = resetOrder;
   document.getElementById("addRowBtn").onclick = addRow;
 
@@ -684,6 +716,35 @@ async function resetOrder(){
 
   // reload app
   loadAll();
+}
+function createToolbar(){
+
+  const wrap = document.createElement("div");
+
+  wrap.style.cssText = `
+    display:flex;
+    gap:6px;
+    margin-bottom:10px;
+    align-items:center;
+  `;
+
+  wrap.innerHTML = `
+    <button id="addRowBtn" class="toolBtn">
+      ➕ <span>Add</span>
+    </button>
+
+    <button id="resetOrderBtn" class="toolBtn blue">
+      🔄 <span>Reset</span>
+    </button>
+  `;
+
+  // insert ABOVE table
+  const table = document.querySelector(".tableWrap");
+  table.parentNode.insertBefore(wrap, table);
+
+  // wire actions
+  document.getElementById("addRowBtn").onclick = addRow;
+  document.getElementById("resetOrderBtn").onclick = resetOrder;
 }
 
 async function initAuth(){
