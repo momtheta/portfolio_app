@@ -159,7 +159,10 @@ body{
   cursor:col-resize;
 }
 /* projection card spacing */
-#proj1y, #proj5y, #proj10y{margin-top:6px;font-weight:500;}
+#proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
+  margin-top:6px;
+  font-weight:500;
+}
 /* target COST input specifically */
 .row input:nth-of-type(3){
   border-bottom: none !important;
@@ -254,12 +257,25 @@ function showApp(){
         </div>
         <div id="list"></div>
       </div>
-  <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-    <h3>Projected (10%)</h3>
-    <div id="proj1y">1Y → $0</div>
-    <div id="proj5y">5Y → $0</div>
-    <div id="proj10y">10Y → $0</div>
+<div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h3>Projection</h3>
+    <select id="rateSelect">
+      <option value="0.05">5%</option>
+      <option value="0.08">8%</option>
+      <option value="0.10" selected>10%</option>
+      <option value="0.12">12%</option>
+      <option value="0.15">15%</option>
+    </select>
   </div>
+
+  <div id="proj1y">1Y → $0</div>
+  <div id="proj5y">5Y → $0</div>
+  <div id="proj10y">10Y → $0</div>
+  <div id="proj20y">20Y → $0</div>
+  <div id="proj30y">30Y → $0</div>
+  <div id="proj40y">40Y → $0</div>
+</div>
     <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3>Portfolio History</h3>
