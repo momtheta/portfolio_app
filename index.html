@@ -272,6 +272,19 @@ function showApp(){
       <button id="logoutBtn">LOGOUT</button>
     </div>
 
+    <div style="margin-bottom:10px">
+  <button id="addRowBtn" style="
+    padding:8px 12px;
+    border-radius:8px;
+    border:none;
+    background:#16a34a;
+    color:white;
+    font-size:13px;
+  ">
+    + ADD ROW
+  </button>
+</div>
+
       <div class="tableWrap">
         <div class="header">
           <div class="sticky col">SYMBOL<div class="resizer"></div></div>
@@ -326,6 +339,7 @@ function showApp(){
 </div>`;
 
   logoutBtn.onclick=logout;
+  document.getElementById("addRowBtn").onclick = addRow;
 
   loadWidths();
   loadAll();
@@ -419,19 +433,32 @@ function createRow(p){
   let row=document.createElement("div");
   row.className="row";
 
-  row.innerHTML=`
-    <div class="sticky">${sym}</div>
-    <div>N/A</div>
-    <div>N/A</div>
-    <input value="${d.dividend?fmtNumber(d.dividend):""}">
-    <div>0%</div>
-    <input value="${d.shares?fmtNumber(d.shares):""}">
-    <input value="${d.cost?fmtMoney(d.cost):""}">
-    <div>$0</div>
-    <div>$0</div>
-  `;
+  row.innerHTML = `
+  <div class="sticky">${sym}</div>
+  <div>N/A</div>
+  <div>N/A</div>
+  <input value="${d.dividend?fmtNumber(d.dividend):""}">
+  <div>0%</div>
+  <input value="${d.shares?fmtNumber(d.shares):""}">
+  <input value="${d.cost?fmtMoney(d.cost):""}">
+  <div>$0</div>
+  <div>$0</div>
+`;
+const del = document.createElement("button");
+del.innerText = "✕";
+del.style.cssText = `
+  margin-left:6px;
+  background:#ef4444;
+  color:white;
+  border:none;
+  border-radius:6px;
+  padding:2px 6px;
+  cursor:pointer;
+`;
 
- row.children[5].oninput = e => saveField(p.id,"shares",e.target.value);
+del.onclick = () => deleteRow(p.id);
+row.children[0].appendChild(del); // attach to SYMBOL column
+row.children[5].oninput = e => saveField(p.id,"shares",e.target.value);
 row.children[3].oninput = e => saveField(p.id,"dividend",e.target.value);
 row.children[6].oninput = e => saveField(p.id,"cost",e.target.value);
 
@@ -554,6 +581,66 @@ function refresh(){
   });
 
   updateProjection(total);
+}
+
+async function addRow(){
+
+  const symbol = prompt("Enter symbol (e.g. AAPL)");
+  if(!symbol) return;
+
+  const { data, error } = await supabase
+    .from("portfolio")
+    .insert({
+      user_id: user.id,
+      symbol: symbol.toUpperCase(),
+      shares: 0,
+      dividend: 0,
+      cost: 0
+    })
+    .select()
+    .single();
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  // add locally
+  portfolio.push({
+    id: data.id,
+    symbol: data.symbol,
+    shares: 0,
+    dividend: 0,
+    cost: 0
+  });
+
+  symbols.push(data.symbol);
+
+  const newRow = createRow(portfolio[portfolio.length - 1]);
+  list.appendChild(newRow);
+
+  fetchQuote(data.symbol);
+}
+
+async function deleteRow(id){
+
+  if(!confirm("Delete this row?")) return;
+
+  await supabase
+    .from("portfolio")
+    .delete()
+    .eq("id", id);
+
+  // remove locally
+  portfolio = portfolio.filter(p => p.id !== id);
+
+  // remove DOM
+  if(rows[id]){
+    rows[id].remove();
+    delete rows[id];
+  }
+
+  refresh();
 }
 
 async function initAuth(){
