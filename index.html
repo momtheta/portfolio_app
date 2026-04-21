@@ -664,7 +664,7 @@ async function deleteRow(id){
 
 async function resetOrder(){
 
-  if(!confirm("Reset order to alphabetical?")) return;
+  if(!confirm("Sort alphabetically?")) return;
 
   // fetch fresh data
   const { data, error } = await supabase
@@ -708,7 +708,7 @@ function createToolbar(){
     </button>
 
     <button id="resetOrderBtn" class="toolBtn blue">
-      🔄 <span>RESET</span>
+      🔄 <span>SORT Alphabetically</span>
     </button>
   `;
 
