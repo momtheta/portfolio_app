@@ -18,7 +18,66 @@ body{
   max-width:1400px;
   margin:0 auto;
 }
+/* LOGIN */
+.loginWrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  background:#f5f7f9;
+}
 
+.loginCard{
+  max-width:420px;
+  width:100%;
+  background:white;
+  padding:28px;
+  border-radius:16px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+
+.loginCard h2{
+  margin:0 0 10px 0;
+  font-weight:600;
+  text-align:center;
+}
+
+.loginCard input{
+  padding:12px 14px;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  font-size:14px;
+}
+
+.loginCard input:focus{
+  outline:none;
+  border-color:#16a34a;
+  box-shadow:0 0 0 2px rgba(22,163,74,0.15);
+}
+
+.loginCard button{
+  padding:12px;
+  background:#16a34a;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+.loginCard button:hover{
+  background:#15803d;
+}
+
+#msg{
+  font-size:13px;
+  color:#dc2626;
+  text-align:center;
+}
 /* CARDS */
 .cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
 .card{
@@ -135,11 +194,17 @@ const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,m
 const fmtMoney0=n=>"$"+(n||0).toLocaleString();
 
 function showLogin(){
-  app.innerHTML=`<div style="padding:40px">
-    <input id="email" placeholder="email"><br><br>
-    <input id="pass" type="password" placeholder="password"><br><br>
-    <button onclick="login()">Login</button>
-  </div>`;
+  app.innerHTML=`
+    <div class="loginWrap">
+      <div class="loginCard">
+        <h2>Login</h2>
+        <input id="email" placeholder="Email">
+        <input id="pass" type="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <p id="msg"></p>
+      </div>
+    </div>`;
+  loginBtn.onclick=login;
 }
 
 window.login=async function(){
