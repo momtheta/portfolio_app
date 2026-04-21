@@ -168,6 +168,46 @@ body{
   padding:16px;
   border-radius:12px;
 }
+
+/* bottom cards layout */
+.bottomCards{
+  display:flex;
+  gap:12px;
+  margin-top:20px;
+}
+
+/* both cards share same look */
+.projectionCard,
+.netWorthCard{
+  flex:1;
+  background:#f0fdf4;
+  padding:16px;
+  border-radius:12px;
+}
+
+/* inputs spacing */
+.netWorthCard input{
+  width:100%;
+  margin-top:6px;
+  padding:8px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+}
+
+/* responsive (mobile) */
+@media (max-width: 768px){
+  .bottomCards{
+    flex-direction:column;
+  }
+}
+.projectionCard h3,
+.netWorthCard h3{
+  margin-top:0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
 </style>
 </head>
 
@@ -301,8 +341,19 @@ function showApp(){
     <div id="list"></div>
   </div>
 
-  <!-- PROJECTION -->
-  <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
+ <div class="bottomCards">
+
+  <!-- NET WORTH (FIRST) -->
+  <div class="netWorthCard">
+    <h3>Net Worth</h3>
+    <input id="cash" placeholder="Cash"><br>
+    <input id="realEstate" placeholder="Real Estate"><br>
+    <input id="debt" placeholder="Debt"><br>
+    <h2 id="netVal">$0</h2>
+  </div>
+
+  <!-- PROJECTION (SECOND) -->
+  <div class="projectionCard">
     <h3>Projection
       <select id="rateSelect">
         <option value="0.05">5%</option>
@@ -318,14 +369,7 @@ function showApp(){
     <div id="proj40y"></div>
   </div>
 
-  <!-- NET WORTH -->
-  <div class="netWorth">
-    <h3>Net Worth</h3>
-    <input id="cash" placeholder="Cash"><br>
-    <input id="realEstate" placeholder="Real Estate"><br>
-    <input id="debt" placeholder="Debt"><br>
-    <h2 id="netVal">$0</h2>
-  </div>
+</div>
 
   <!-- CHART -->
   <canvas id="chart"></canvas>
