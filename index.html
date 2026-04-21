@@ -181,7 +181,13 @@ const app = document.getElementById("app");
 
 const supabase = window.supabase.createClient(
   "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh"
+  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+  {
+    auth: {
+      persistSession: true,
+      storage: window.localStorage
+    }
+  }
 );
 
 const API_KEY = "d7f97chr01qpjqqju8f0";
@@ -189,6 +195,22 @@ const API_KEY = "d7f97chr01qpjqqju8f0";
 const defaultSymbols = ["AAPL","MSFT","NVDA"];
 
 let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
+async function logout(){
+  const { error } = await supabase.auth.signOut();
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  user = null;
+
+  // clear UI
+  app.innerHTML = "";
+
+  // go back to login
+  showLogin();
+}
 
 const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtMoney0=n=>"$"+(n||0).toLocaleString();
@@ -213,9 +235,9 @@ function showLogin(){
   </div>`;
   
   // load saved email
- const savedEmail = localStorage.getItem("rememberEmail");
-const emailEl = document.getElementById("email");
-const rememberEl = document.getElementById("rememberMe");
+  const savedEmail = localStorage.getItem("rememberEmail");
+  const emailEl = document.getElementById("email");
+  const rememberEl = document.getElementById("rememberMe");
 
 if(savedEmail){
   emailEl.value = savedEmail;
@@ -223,11 +245,7 @@ if(savedEmail){
   }
   
   document.getElementById("loginBtn").onclick = window.login;
-  async function logout(){
-  await supabase.auth.signOut();
-  user = null;
-  showLogin();
-  }
+  
 }
 
 window.login = async function(){
@@ -441,11 +459,7 @@ async function start(){
 start();
 
 });
-async function logout(){
-  await supabase.auth.signOut();
-  user = null;
-  showLogin();
-}
+
 </script>
 
 </body>
