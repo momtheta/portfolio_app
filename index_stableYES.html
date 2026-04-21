@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,632 +8,142 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-body{
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f5f7f9;
-  margin:0;
-}
+body{font-family:Inter;background:#f5f7f9;margin:0}
+.app{padding:16px;max-width:1400px;margin:auto}
 
-.app{
-  padding:16px;
-  max-width:1400px;
-  margin:0 auto;
-}
+.cards{display:flex;gap:10px;margin-bottom:10px}
+.card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
+.card h2{font-size:18px;margin:4px 0}
 
-/* LOGIN */
-.loginWrap{display:flex;justify-content:center;padding-top:40px}
-.loginCard{
-  max-width:420px;width:100%;
-  background:white;padding:24px;border-radius:16px;
-  display:flex;flex-direction:column;gap:12px
-}
-.loginCard input{padding:14px}
-.loginCard button{
-  padding:12px;background:#16a34a;color:white;
-  border:none;border-radius:8px
-}
-
-/* CARDS */
-.cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-.card{
-  flex:1;background:#f0fdf4;
-  padding:12px;border-radius:10px
-}
-/* summary card values */
-.card h2{
-  font-size:18px;   /* adjust this */
-  margin:4px 0 0 0;
-  font-weight:600;
-  letter-spacing:0.5px;
-}
-#logoutBtn{
-  background:#16a34a;color:white;
-  border:none;padding:10px;border-radius:8px;height:40px;
-}
-
-/* TABLE */
-.tableWrap{width:100%;overflow-x:auto}
-
-/* column widths */
-:root{
-  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
-  --c5:140px; --c6:140px; --c7:140px; --c8:140px; --c9:140px;
-}
-
-.header .sticky{
-  position: sticky;
-  top: 0;     /* ← THIS is the missing piece */
-  left: 0;
-  z-index: 10;
-  background: white;
-}  
-  
-.header,.row{
-  display:grid;
-  grid-template-columns:
-    var(--c1) var(--c2) var(--c3) var(--c4)
-    var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
-  min-width:900px;
-}
-
-/* HEADER */
-.header{
-  position:sticky;
-  top:0;
+.section{
   background:white;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.04em;
-  color:#444;
-
-  /* 🔥 NEW: horizontal divider */
-  border-bottom:2px solid #d1d5db;
+  padding:12px;
+  border-radius:10px;
+  margin-top:16px;
 }
 
-/* CELLS */
-.header > div,
-.row > div{
-  padding:10px;
-  border-right:1px solid #e5e7eb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
-}
-  
-/* left-align SYMBOL column (data only) */
-.row .sticky{
-  justify-content: flex-start;
-  text-align: left;
-}  
-
-/* INPUT CELLS */
-.row input{
-  width:100%;
-  height:100%;
-  padding:0;
-  margin:0;
-  border:none;
-  outline:none;
-  background:transparent;
-
-  border-right:1px solid #d1d5db;
-
-  text-align:center;
-  font-variant-numeric:tabular-nums;
-  box-sizing:border-box;
-}
-
-/* remove last column border */
-.header > div:last-child,
-.row > div:last-child,
-.row input:last-child {
-  border-right:none;
-}
-
-/* sticky symbol */
-.sticky{
-  position:sticky;
-  left:0;
-  background:white;
-  z-index:5; /* ← ADD THIS LINE ONLY */
-}
-
-/* rows */
-.row{
-  background:white;
-  font-size:14px;
-}
-
-.row:hover{
-  background:#f9fafb;
-}
-
-/* RESIZER */
-.col{position:relative}
-.resizer{
-  position:absolute;
-  right:-3px;   /* shift to center on border */
-  top:0;
-  width:6px;
-  height:100%;
-  cursor:col-resize;
-}
-/* projection card spacing */
-#proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
-  margin-top:6px;
-  font-weight:500;
-}
-/* target COST input specifically */
-.row input:nth-of-type(3){
-  border-bottom: none !important;
-}  
+input{padding:6px;border:1px solid #ddd;border-radius:6px;width:120px}
 </style>
 
 </head>
 
 <body>
-
 <div id="app">Loading...</div>
 
 <script>
-window.addEventListener("load", () => {
+window.addEventListener("load",()=>{
 
-const app = document.getElementById("app");
+const app=document.getElementById("app");
 
-const supabase = window.supabase.createClient(
-  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-  {auth:{persistSession:true,storage:window.localStorage}}
+const supabase=window.supabase.createClient(
+"https://yxvgevzvrvhtzmfxgitk.supabase.co",
+"sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh"
 );
 
-const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
+let user=null, portfolio={}, extraAssets={
+cash:0, realEstate:0, crypto:0, other:0
+};
 
-const defaultSymbols = [
-  "AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX",
-  "NFLX","DOMO","RELX","SMCY","PGBAX"
-];
+/* ---------- FORMAT ---------- */
+const fmt=n=>"$"+(n||0).toLocaleString();
 
-let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
-
-const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtMoney0 = n => "$" + (n || 0).toLocaleString(undefined, {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0
-});  
-const fmtNumber=n=>(n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
-const fmtPercent=n=>(n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
-
+/* ---------- LOGIN ---------- */
 function showLogin(){
-  app.innerHTML=`
-    <div class="loginWrap">
-      <div class="loginCard">
-        <h2>Login</h2>
-        <input id="email" placeholder="Email">
-        <input id="pass" type="password" placeholder="Password">
-        <button id="loginBtn">Login</button>
-        <p id="msg"></p>
-      </div>
-    </div>`;
-  loginBtn.onclick=login;
+app.innerHTML=`
+<div style="display:flex;justify-content:center;margin-top:60px">
+<div style="background:white;padding:20px;border-radius:10px">
+<input id="email"><br><br>
+<input id="pass" type="password"><br><br>
+<button id="loginBtn">Login</button>
+</div></div>`;
+loginBtn.onclick=login;
 }
 
 async function login(){
-  const {data,error}=await supabase.auth.signInWithPassword({
-    email:email.value,password:pass.value
-  });
-  if(error){ msg.innerText=error.message; return; }
-  user=data.user;
-  showApp();
+const {data}=await supabase.auth.signInWithPassword({
+email:email.value,password:pass.value});
+user=data.user;
+showApp();
 }
 
-async function logout(){
-  await supabase.auth.signOut();
-  user=null;
-  showLogin();
-}
-
+/* ---------- APP ---------- */
 function showApp(){
-  app.innerHTML=`
-    <div class="app">
-      <div class="cards">
-        <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-        <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
-        <div class="card"><div>MONTHLY INCOME</div><h2 id="mVal">$0</h2></div>
-        <div class="card"><div>ANNUAL INCOME</div><h2 id="iVal">$0</h2></div>
-        <button id="logoutBtn">Logout</button>
-      </div>
+app.innerHTML=`
+<div class="app">
 
-      <div class="tableWrap">
-        <div class="header">
-          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-          <div class="col">PRICE<div class="resizer"></div></div>
-          <div class="col">CHANGE<div class="resizer"></div></div>
-          <div class="col">DIV<div class="resizer"></div></div>
-          <div class="col">YIELD<div class="resizer"></div></div>
-          <div class="col">SHARES<div class="resizer"></div></div>
-          <div class="col">COST<div class="resizer"></div></div>
-          <div class="col">VALUE<div class="resizer"></div></div>
-          <div class="col">INCOME<div class="resizer"></div></div>
-        </div>
-        <div id="list"></div>
-      </div>
-<div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
-  <div style="display:flex;align-items:center;gap:10px">
-    <h3 style="margin:0">Projection</h3>
-
-    <select id="rateSelect" style="
-      padding:4px 8px;
-      border-radius:6px;
-      border:1px solid #d1d5db;
-      font-size:13px;
-    ">
-      <option value="0.05">5%</option>
-      <option value="0.08">8%</option>
-      <option value="0.10" selected>10%</option>
-      <option value="0.12">12%</option>
-      <option value="0.15">15%</option>
-    </select>
-  </div>
-
-  <div id="proj1y">1Y → $0</div>
-  <div id="proj5y">5Y → $0</div>
-  <div id="proj10y">10Y → $0</div>
-  <div id="proj20y">20Y → $0</div>
-  <div id="proj30y">30Y → $0</div>
-  <div id="proj40y">40Y → $0</div>
+<div class="cards">
+<div class="card"><div>STOCKS</div><h2 id="stocksVal"></h2></div>
+<div class="card"><div>NET WORTH</div><h2 id="netVal"></h2></div>
 </div>
 
-    <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>Portfolio History</h3>
-      <div>
-        <button class="rangeBtn" data-range="7">1W</button>
-        <button class="rangeBtn" data-range="30">1M</button>
-        <button class="rangeBtn" data-range="all">ALL</button>
-      </div>
-    </div>
-    <canvas id="historyChart" height="120"></canvas>
-  </div>
+<div class="section">
+<h3>Assets (Outside Stocks)</h3>
+
+Cash: <input id="cash"><br><br>
+Real Estate: <input id="realEstate"><br><br>
+Crypto: <input id="crypto"><br><br>
+Other: <input id="other"><br><br>
+
+</div>
+
 </div>`;
 
-  logoutBtn.onclick=logout;
+["cash","realEstate","crypto","other"].forEach(id=>{
+document.getElementById(id).oninput=e=>{
+extraAssets[id]=+e.target.value||0;
+saveAssets();
+refresh();
+};
+});
 
-  loadWidths();
-  loadAll();
-  enableResize();
-  const rateSelect = document.getElementById("rateSelect");
-if(rateSelect){
-  rateSelect.onchange = () => refresh();
-}
-}
-
-function loadWidths(){
-  for(let i=1;i<=8;i++){
-    let w=localStorage.getItem("col"+i);
-    if(w) document.documentElement.style.setProperty(`--c${i}`,w);
-  }
-}
-function saveWidth(i,w){
-  localStorage.setItem("col"+i,w);
+load();
 }
 
-function enableResize(){
-  document.querySelectorAll(".header .col").forEach((col,i)=>{
-    let resizer=col.querySelector(".resizer");
-    let startX,startW;
+/* ---------- LOAD ---------- */
+async function load(){
+const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
-    resizer.onmousedown=e=>{
-      startX=e.clientX;
-      startW=col.offsetWidth;
-
-      document.onmousemove=e=>{
-        let w=Math.max(80,startW+(e.clientX-startX));
-        document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
-        saveWidth(i+1,w+"px");
-      };
-      document.onmouseup=()=>document.onmousemove=null;
-    };
-  });
+if(data.length && data[0].extra_assets){
+extraAssets=data[0].extra_assets;
 }
 
-async function loadAll(){
-  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+Object.keys(extraAssets).forEach(k=>{
+let el=document.getElementById(k);
+if(el) el.value=extraAssets[k];
+});
 
-  portfolio={};
-  (data||[]).forEach(r=>{
-    portfolio[r.symbol]={shares:+r.shares||0,dividend:+r.dividend||0,cost:+r.cost||0};
-  });
-
-  symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
-
-  render();
-  refresh();
-  symbols.forEach(fetchQuote);
+refresh();
 }
 
-async function saveField(sym,field,val){
-  portfolio[sym]=portfolio[sym]||{};
-  portfolio[sym][field]=+val||0;
-
-  refresh();
-
-  await supabase.from("portfolio").upsert({
-    user_id:user.id,
-    symbol:sym,
-    shares:portfolio[sym].shares||0,
-    dividend:portfolio[sym].dividend||0,
-    cost:portfolio[sym].cost||0
-  }, {onConflict:"user_id,symbol"});
+/* ---------- SAVE ---------- */
+async function saveAssets(){
+await supabase.from("portfolio").update({
+extra_assets:extraAssets
+}).eq("user_id",user.id);
 }
 
-async function fetchQuote(sym){
-  try{
-    let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
-    let d=await r.json();
-    if(d.c) dataMap[sym]=d;
-    refresh();
-  }catch{}
-}
-
-function createRow(sym){
-  let d=portfolio[sym]||{};
-  let row=document.createElement("div");
-  row.className="row";
-
-  row.innerHTML=`
-    <div class="sticky">${sym}</div>
-    <div>N/A</div>
-    <div>N/A</div>
-    <input value="${d.dividend?fmtNumber(d.dividend):""}">
-    <div>0%</div>
-    <input value="${d.shares?fmtNumber(d.shares):""}">
-    <input value="${d.cost?fmtMoney(d.cost):""}">
-    <div>$0</div>
-    <div>$0</div>
-  `;
-
-  row.children[5].oninput=e=>saveField(sym,"shares",e.target.value);
-  row.children[3].oninput=e=>saveField(sym,"dividend",e.target.value);
-  row.children[6].oninput = e => saveField(sym,"cost",e.target.value);
-
-  rows[sym]=row;
-  return row;
-}
-
-function render(){
-  list.innerHTML="";
-  rows={};
-  symbols.forEach(s=>list.appendChild(createRow(s)));
-}
-
-function updateProjection(current){
-  if(!current || isNaN(current)) return;
-
-  const rateEl = document.getElementById("rateSelect");
-  const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
-
-  function future(val, years){
-    return val * Math.pow(1 + rate, years);
-  }
-
-  const map = {
-    proj1y: 1,
-    proj5y: 5,
-    proj10y: 10,
-    proj20y: 20,
-    proj30y: 30,
-    proj40y: 40
-  };
-
-  Object.entries(map).forEach(([id, yrs])=>{
-    const el = document.getElementById(id);
-    if(el){
-      el.innerText = `${yrs}Y → ${fmtMoney0(future(current, yrs))}`;
-    }
-  });
-}
-
+/* ---------- REFRESH ---------- */
 function refresh(){
-  let total=0,incomeTotal=0,gainTotal=0;
-  let monthlyTotal = 0;
-  let dailyGainTotal = 0;
 
-  symbols.forEach(s=>{
-    let q=dataMap[s];
-    let d=portfolio[s]||{};
-    let row=rows[s];
-    if(!row) return;
+// simulate stock total (replace with your real total later)
+let stockTotal = 10000;
 
-    let price=q?.c||0;
-    let shares=d.shares||0;
-    let dividend=d.dividend||0;
+let extraTotal =
+extraAssets.cash +
+extraAssets.realEstate +
+extraAssets.crypto +
+extraAssets.other;
 
-    let val=price*shares;
-    let cost = d.cost || 0;
-    let invested = cost * shares;
-    let realGain = val - invested;
-    let income=dividend*shares;
-    monthlyTotal += income / 12;
-    let change=(q&&q.pc)?(q.c-q.pc):0;
-    dailyGainTotal += change * shares;
-    let yieldVal=price?dividend/price:0;
+let net = stockTotal + extraTotal;
 
-    total+=val;
-    incomeTotal+=income;
-    gainTotal+=change*shares;
-
-    row.children[1].innerText=q?fmtMoney(price):"N/A";
-    row.children[2].innerText=q?fmtMoney(change):"N/A";
-    row.children[2].style.color=change>0?"#16a34a":change<0?"#dc2626":"#999";
-    if (change > 0) {
-  row.style.borderLeft = "4px solid #16a34a";
-} else if (change < 0) {
-  row.style.borderLeft = "4px solid #dc2626";
-} else {
-  row.style.borderLeft = "4px solid transparent";
-}
-    row.children[4].innerText=fmtPercent(yieldVal);
-    row.children[7].innerText=fmtMoney(val);
-    // existing styling (daily change)
-    row.children[7].style.borderBottom = change > 0
-      ? "2px solid #16a34a"
-      : change < 0
-      ? "2px solid #dc2626"
-      : "none";
-
-// ✅ ADD THIS RIGHT HERE (REAL GAIN styling)
-if (realGain > 0) {
-  row.children[7].style.background = "#ecfdf5"; // light green
-} else if (realGain < 0) {
-  row.children[7].style.background = "#fef2f2"; // light red
-} else {
-  row.children[7].style.background = "transparent";
-}
-    row.children[6].style.borderBottom = change > 0
-  ? "2px solid #16a34a"
-  : change < 0
-  ? "2px solid #dc2626"
-  : "none";
-    row.children[8].innerText=fmtMoney(income);
-    if (income > 0) {
-    row.children[7].style.background = "#eff6ff"; // light blue
-    } else {
-    row.children[7].style.background = "transparent";
-    }
-  });
-
-  pVal.innerText=fmtMoney0(total);
-  iVal.innerText=fmtMoney0(incomeTotal);
-  let todayText = ` (${dailyGainTotal > 0 ? "+" : ""}${fmtMoney0(dailyGainTotal)} today)`;
-  gVal.innerText = fmtMoney0(gainTotal) + todayText;
-  
-  if (dailyGainTotal > 0) {
-    gVal.style.color = "#16a34a";
-  } else if (dailyGainTotal < 0) {
-    gVal.style.color = "#dc2626";
-  } else {
-    gVal.style.color = "#333";
-  }
-  
-  mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined,{
-    minimumFractionDigits:0,
-    maximumFractionDigits:0
-  });
-  updateProjection(total);
+stocksVal.innerText=fmt(stockTotal);
+netVal.innerText=fmt(net);
 }
 
-async function initAuth(){
-  showLogin();
-  const {data}=await supabase.auth.getSession();
-  user=data.session?.user;
-  if(user) showApp();
-}
-
-initAuth();
+/* ---------- INIT ---------- */
+showLogin();
 
 });
-let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
-let chart;
-let currentRange = "all";
-  
-function initChart(){
-  const ctx = document.getElementById("historyChart");
-  if(!ctx) return;
-
-  chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: [],
-      datasets: [{
-        label: "Portfolio",
-        data: [],
-        tension: 0.3
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: {
-          ticks: {
-            callback: v => "$" + v.toLocaleString()
-          }
-        }
-      }
-    }
-  });
-}
-
-function updateHistorySafe(){
-  const el = document.getElementById("pVal");
-  if(!el) return;
-
-  let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
-  if(isNaN(val)) return;
-
-let d = new Date();
-let today = d.toLocaleDateString(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric"
-});
-
-// check last saved date
-let last = historyData[historyData.length - 1];
-
-let todayKey = new Date().toDateString();
-
-if (!last || last.key !== todayKey) {
-  historyData.push({ key: todayKey, time: today, value: val });
-
-  if (historyData.length > 100) historyData.shift();
-
-  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
-}
-
-  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
-
-  if(chart){
-let filtered = historyData;
-
-if (currentRange !== "all") {
-  filtered = historyData.slice(-currentRange);
-}
-
-chart.data.labels = filtered.map(d => d.time);
-chart.data.datasets[0].data = filtered.map(d => d.value);
-    chart.update();
-  }
-}
-
-/* wait for UI */
-setTimeout(()=>{
-  initChart();
-  
-  document.querySelectorAll(".rangeBtn").forEach(btn=>{
-  btn.onclick = () => {
-    currentRange = btn.dataset.range === "all"
-      ? "all"
-      : parseInt(btn.dataset.range);
-
-    updateHistorySafe(); // redraw chart
-  };
-});
-  setInterval(updateHistorySafe, 60000);
-}, 1500);  
-
-</script>
-
-<script>
-function sendHeight(){
-  parent.postMessage({type:"resize",height:document.body.scrollHeight},"*");
-}
-window.addEventListener("load",sendHeight);
-window.addEventListener("resize",sendHeight);
-setInterval(sendHeight,800);
-
 </script>
 
 </body>
