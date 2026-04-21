@@ -7,39 +7,71 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-body{font-family:Inter;background:#f5f7f9;margin:0;}
-.app{padding:16px;max-width:1400px;margin:auto;}
+body{
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  background:#f5f7f9;
+  margin:0;
+}
 
-.cards{display:flex;gap:10px;margin-bottom:10px}
-.card{flex:1;background:#f0fdf4;padding:12px;border-radius:10px}
-.card h2{font-size:20px;margin:4px 0}
+.app{
+  padding:16px;
+  max-width:1400px;
+  margin:0 auto;
+}
 
-.tableWrap{overflow-x:auto}
+/* CARDS */
+.cards{display:flex;gap:10px;margin-bottom:10px;align-items:center}
+.card{
+  flex:1;background:#f0fdf4;
+  padding:12px;border-radius:10px
+}
+.card h2{
+  font-size:18px;
+  margin:4px 0 0 0;
+}
+#logoutBtn{
+  background:#16a34a;color:white;
+  border:none;padding:10px;border-radius:8px;height:40px;
+}
+
+/* TABLE */
+.tableWrap{width:100%;overflow-x:auto}
+
+:root{
+  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
+  --c5:140px; --c6:140px; --c7:140px; --c8:140px; --c9:140px;
+}
 
 .header,.row{
   display:grid;
-  grid-template-columns:140px 120px 120px 120px 120px 120px 120px 120px;
-  min-width:900px;
+  grid-template-columns:
+    var(--c1) var(--c2) var(--c3) var(--c4)
+    var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
 }
 
+/* HEADER */
 .header{
-  font-weight:600;
-  border-bottom:2px solid #d1d5db;
+  position:sticky;
+  top:0;
   background:white;
-  position:sticky;top:0;
+  border-bottom:2px solid #d1d5db;
 }
 
-.header div,.row div{
+/* CELLS */
+.header > div,
+.row > div{
   padding:10px;
   border-right:1px solid #e5e7eb;
   display:flex;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
 }
 
-.row{background:white;font-size:14px}
-.row:hover{background:#f9fafb}
+.row .sticky{
+  justify-content:flex-start;
+}
 
+/* INPUT */
 .row input{
   width:100%;
   border:none;
@@ -47,8 +79,36 @@ body{font-family:Inter;background:#f5f7f9;margin:0;}
   text-align:center;
 }
 
-.sticky{position:sticky;left:0;background:white}
+/* remove last border */
+.header > div:last-child,
+.row > div:last-child{
+  border-right:none;
+}
 
+/* sticky symbol */
+.sticky{
+  position:sticky;
+  left:0;
+  background:white;
+  z-index:5;
+}
+
+/* rows */
+.row{background:white}
+.row:hover{background:#f9fafb}
+
+/* projection spacing */
+#proj1y,#proj5y,#proj10y,#proj20y,#proj30y,#proj40y{
+  margin-top:6px;
+}
+
+/* NET WORTH */
+.netWorth{
+  margin-top:20px;
+  background:#f0fdf4;
+  padding:16px;
+  border-radius:12px;
+}
 </style>
 </head>
 
@@ -56,173 +116,211 @@ body{font-family:Inter;background:#f5f7f9;margin:0;}
 <div id="app">Loading...</div>
 
 <script>
-window.addEventListener("load", ()=>{
+window.addEventListener("load", () => {
+
+const app = document.getElementById("app");
 
 const supabase = window.supabase.createClient(
   "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-  {auth:{persistSession:true,storage:window.localStorage}}
+  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh"
 );
 
-let user=null, dataMap={}, rows={};
-let portfolio=[]; // ✅ now ARRAY (lots)
+const API_KEY = "d7f97chr01qpjqqju8f0";
 
-const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
+const defaultSymbols = ["AAPL","MSFT","NVDA"];
 
-const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2});
+let user=null, symbols=[], portfolio={}, dataMap={}, rows={};
+
+const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtMoney0=n=>"$"+(n||0).toLocaleString();
 
+function showLogin(){
+  app.innerHTML=`<div style="padding:40px">
+    <input id="email" placeholder="email"><br><br>
+    <input id="pass" type="password" placeholder="password"><br><br>
+    <button onclick="login()">Login</button>
+  </div>`;
+}
+
+window.login=async function(){
+  const {data}=await supabase.auth.signInWithPassword({
+    email:email.value,password:pass.value
+  });
+  user=data.user;
+  showApp();
+}
+
 function showApp(){
-document.getElementById("app").innerHTML=`
-<div class="app">
+  app.innerHTML=`
+  <div class="app">
 
-<div class="cards">
-<div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-<div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
-</div>
+  <div class="cards">
+    <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+    <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
+    <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
+    <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
+    <button id="logoutBtn">Logout</button>
+  </div>
 
-<button id="addLotBtn">+ Add Lot</button>
+  <div class="tableWrap">
+    <div class="header">
+      <div class="sticky">SYMBOL</div>
+      <div>PRICE</div>
+      <div>CHANGE</div>
+      <div>DIV</div>
+      <div>YIELD</div>
+      <div>SHARES</div>
+      <div>COST</div>
+      <div>VALUE</div>
+      <div>INCOME</div>
+    </div>
+    <div id="list"></div>
+  </div>
 
-<div class="tableWrap">
-<div class="header">
-<div class="sticky">SYMBOL</div>
-<div>PRICE</div>
-<div>CHANGE</div>
-<div>DIV</div>
-<div>YIELD</div>
-<div>SHARES</div>
-<div>COST</div>
-<div>VALUE</div>
-</div>
-<div id="list"></div>
-</div>
+  <!-- PROJECTION -->
+  <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
+    <h3>Projection
+      <select id="rateSelect">
+        <option value="0.05">5%</option>
+        <option value="0.1" selected>10%</option>
+        <option value="0.15">15%</option>
+      </select>
+    </h3>
+    <div id="proj1y"></div>
+    <div id="proj5y"></div>
+    <div id="proj10y"></div>
+    <div id="proj20y"></div>
+    <div id="proj30y"></div>
+    <div id="proj40y"></div>
+  </div>
 
-</div>`;
+  <!-- NET WORTH -->
+  <div class="netWorth">
+    <h3>Net Worth</h3>
+    <input id="cash" placeholder="Cash"><br>
+    <input id="realEstate" placeholder="Real Estate"><br>
+    <input id="debt" placeholder="Debt"><br>
+    <h2 id="netVal">$0</h2>
+  </div>
 
-document.getElementById("addLotBtn").onclick=addLot;
+  <!-- CHART -->
+  <canvas id="chart"></canvas>
 
-loadAll();
+  </div>`;
+
+  logoutBtn.onclick=()=>location.reload();
+
+  loadAll();
+
+  rateSelect.onchange=refresh;
+  cash.oninput=refresh;
+  realEstate.oninput=refresh;
+  debt.oninput=refresh;
 }
 
 async function loadAll(){
-const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
-portfolio=data||[];
+  portfolio={};
+  data.forEach(r=>{
+    portfolio[r.symbol]=r;
+  });
 
-render();
-portfolio.forEach(p=>fetchQuote(p.symbol));
-refresh();
+  symbols=Object.keys(portfolio);
+
+  render();
+  refresh();
 }
 
-function createRow(p){
-let row=document.createElement("div");
-row.className="row";
+function createRow(sym){
+  let d=portfolio[sym]||{};
+  let row=document.createElement("div");
+  row.className="row";
 
-row.innerHTML=`
-<div class="sticky">${p.symbol}</div>
-<div>N/A</div>
-<div>N/A</div>
-<input value="${p.dividend||""}">
-<div>0%</div>
-<input value="${p.shares||""}">
-<input value="${p.cost||""}">
-<div>$0</div>
-`;
+  row.innerHTML=`
+    <div class="sticky">${sym}</div>
+    <div>N/A</div>
+    <div>N/A</div>
+    <input value="${d.dividend||""}">
+    <div>0%</div>
+    <input value="${d.shares||""}">
+    <input value="${d.cost||""}">
+    <div>$0</div>
+    <div>$0</div>
+  `;
 
-row.children[5].oninput=e=>updateField(p,"shares",e.target.value);
-row.children[6].oninput=e=>updateField(p,"cost",e.target.value);
-row.children[3].oninput=e=>updateField(p,"dividend",e.target.value);
+  row.children[5].oninput=e=>save(sym,"shares",e.target.value);
+  row.children[3].oninput=e=>save(sym,"dividend",e.target.value);
+  row.children[6].oninput=e=>save(sym,"cost",e.target.value);
 
-rows[p.id]=row;
-return row;
+  rows[sym]=row;
+  return row;
 }
 
 function render(){
-list.innerHTML="";
-rows={};
-portfolio.forEach(p=>list.appendChild(createRow(p)));
+  list.innerHTML="";
+  symbols.forEach(s=>list.appendChild(createRow(s)));
 }
 
-async function addLot(){
-let symbol=prompt("Enter symbol (e.g. AAPL)");
-if(!symbol) return;
+async function save(sym,field,val){
+  portfolio[sym][field]=+val||0;
 
-let newLot={
-  id: crypto.randomUUID(),
-  user_id:user.id,
-  symbol:symbol.toUpperCase(),
-  shares:0,
-  cost:0,
-  dividend:0
-};
+  await supabase.from("portfolio").upsert({
+    user_id:user.id,
+    symbol:sym,
+    ...portfolio[sym]
+  });
 
-portfolio.push(newLot);
-await supabase.from("portfolio").insert(newLot);
-
-render();
-fetchQuote(symbol);
+  refresh();
 }
 
-async function updateField(p,field,val){
-p[field]=+val||0;
+function updateProjection(total){
+  let rate=parseFloat(rateSelect.value);
 
-await supabase.from("portfolio").update({
-  shares:p.shares,
-  cost:p.cost,
-  dividend:p.dividend
-}).eq("id",p.id);
+  function f(y){return total*Math.pow(1+rate,y)}
 
-refresh();
-}
-
-async function fetchQuote(sym){
-let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
-let d=await r.json();
-if(d.c) dataMap[sym]=d;
-refresh();
+  proj1y.innerText="1Y → "+fmtMoney0(f(1));
+  proj5y.innerText="5Y → "+fmtMoney0(f(5));
+  proj10y.innerText="10Y → "+fmtMoney0(f(10));
+  proj20y.innerText="20Y → "+fmtMoney0(f(20));
+  proj30y.innerText="30Y → "+fmtMoney0(f(30));
+  proj40y.innerText="40Y → "+fmtMoney0(f(40));
 }
 
 function refresh(){
-let total=0, gainTotal=0;
+  let total=0,incomeTotal=0,monthly=0;
 
-portfolio.forEach(p=>{
-let q=dataMap[p.symbol];
-let row=rows[p.id];
-if(!row) return;
+  symbols.forEach(s=>{
+    let d=portfolio[s];
+    let price=100; // demo
 
-let price=q?.c||0;
-let change=q&&q.pc?(q.c-q.pc):0;
+    let val=price*(d.shares||0);
+    let income=(d.dividend||0)*(d.shares||0);
 
-let val=price*p.shares;
-let invested=p.cost*p.shares;
-let realGain=val-invested;
+    total+=val;
+    incomeTotal+=income;
+    monthly+=income/12;
 
-total+=val;
-gainTotal+=realGain;
+    rows[s].children[7].innerText=fmtMoney(val);
+    rows[s].children[8].innerText=fmtMoney(income);
+  });
 
-row.children[1].innerText=fmtMoney(price);
-row.children[2].innerText=fmtMoney(change);
-row.children[6].innerText=p.cost||0;
-row.children[7].innerText=fmtMoney(val);
+  pVal.innerText=fmtMoney0(total);
+  iVal.innerText=fmtMoney0(incomeTotal);
+  mVal.innerText=fmtMoney0(monthly);
 
-// gain coloring
-row.children[7].style.background =
-  realGain>0?"#ecfdf5":
-  realGain<0?"#fef2f2":"transparent";
+  updateProjection(total);
 
-});
+  // NET WORTH
+  let nw = total
+    + (+cash.value||0)
+    + (+realEstate.value||0)
+    - (+debt.value||0);
 
-pVal.innerText=fmtMoney0(total);
-gVal.innerText=fmtMoney0(gainTotal);
+  netVal.innerText=fmtMoney0(nw);
 }
 
-async function init(){
-const {data}=await supabase.auth.getSession();
-user=data.session?.user;
-if(user) showApp();
-}
-
-init();
+showLogin();
 
 });
 </script>
