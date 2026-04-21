@@ -306,16 +306,16 @@ function showApp(){
 
       <div class="tableWrap">
         <div class="header">
-          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-          <div class="col">PRICE<div class="resizer"></div></div>
-          <div class="col">CHANGE<div class="resizer"></div></div>
-          <div class="col">DIV<div class="resizer"></div></div>
-          <div class="col">YIELD<div class="resizer"></div></div>
-          <div class="col">SHARES<div class="resizer"></div></div>
-          <div class="col">COST<div class="resizer"></div></div>
-          <div class="col">VALUE<div class="resizer"></div></div>
-          <div class="col">INCOME<div class="resizer"></div></div>
-        </div>
+  <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+  <div class="col">PRICE<div class="resizer"></div></div>
+  <div class="col">CHANGE<div class="resizer"></div></div>
+  <div class="col">SHARES<div class="resizer"></div></div>
+  <div class="col">COST<div class="resizer"></div></div>
+  <div class="col">VALUE<div class="resizer"></div></div>
+  <div class="col">DIV<div class="resizer"></div></div>
+  <div class="col">YIELD<div class="resizer"></div></div>
+  <div class="col">INCOME<div class="resizer"></div></div>
+</div>
         <div id="list"></div>
       </div>
 <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
@@ -452,15 +452,15 @@ function createRow(p){
   let row=document.createElement("div");
   row.className="row";
 
-  row.innerHTML = `
+row.innerHTML = `
   <div class="sticky">${sym}</div>
   <div>N/A</div>
   <div>N/A</div>
-  <input value="${d.dividend?fmtNumber(d.dividend):""}">
-  <div>0%</div>
   <input value="${d.shares?fmtNumber(d.shares):""}">
   <input value="${d.cost?fmtMoney(d.cost):""}">
   <div>$0</div>
+  <input value="${d.dividend?fmtNumber(d.dividend):""}">
+  <div>0%</div>
   <div>$0</div>
 `;
 const del = document.createElement("button");
@@ -477,9 +477,9 @@ del.style.cssText = `
 
 del.onclick = () => deleteRow(p.id);
 row.children[0].appendChild(del); // attach to SYMBOL column
-row.children[5].oninput = e => saveField(p.id,"shares",e.target.value);
-row.children[3].oninput = e => saveField(p.id,"dividend",e.target.value);
-row.children[6].oninput = e => saveField(p.id,"cost",e.target.value);
+row.children[3].oninput = e => saveField(p.id,"shares",e.target.value);
+row.children[6].oninput = e => saveField(p.id,"dividend",e.target.value);
+row.children[4].oninput = e => saveField(p.id,"cost",e.target.value);
 
   rows[p.id]=row;
   return row;
@@ -558,8 +558,8 @@ function refresh(){
       change > 0 ? "#16a34a" :
       change < 0 ? "#dc2626" : "#999";
 
-    row.children[4].innerText = fmtPercent(yieldVal);
-    row.children[7].innerText = fmtMoney(val);
+    row.children[7].innerText = fmtPercent(yieldVal);
+    row.children[5].innerText = fmtMoney(val);
     row.children[8].innerText = fmtMoney(income);
 
     // styling
@@ -708,7 +708,7 @@ function createToolbar(){
     </button>
 
     <button id="resetOrderBtn" class="toolBtn blue">
-      🔄 <span>SORT Alphabetically</span>
+      🔄 <span>SORT ALPHABETICALLY</span>
     </button>
   `;
 
