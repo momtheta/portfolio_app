@@ -42,10 +42,23 @@ body{
 }
 
 .card{
+  flex:0 0 auto;
+  min-width:120px;
+  padding:10px 12px;
+
+  background:#ecfdf5;         /* keep green */
+  border-radius:10px;
+
+  border:1px solid #d1fae5;    /* 🔥 subtle edge so it stands out */
+  box-shadow:0 1px 2px rgba(0,0,0,0.05); /* 🔥 depth */
+
   display:flex;
   flex-direction:column;
   justify-content:center;
 }
+#pVal { color:#111; }
+#gVal { font-weight:700; }
+#todayVal { font-weight:600; }
 
 /* tighter text */
 .card div{
