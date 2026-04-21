@@ -434,9 +434,6 @@ function updateProjection(current){
 }
 
 function refresh(){
-  let total=0,incomeTotal=0,gainTotal=0;
-  let monthlyTotal = 0;
-  let dailyGainTotal = 0;
 
   symbols.forEach(s=>{
     let q=dataMap[s];
@@ -455,7 +452,8 @@ function refresh(){
     let income=dividend*shares;
     monthlyTotal += income / 12;
     let change=(q&&q.pc)?(q.c-q.pc):0;
-    dailyGainTotal += change * shares;
+    gainTotal += realGain;        // ✅ REAL gains
+    dailyGainTotal += change * shares; // ✅ keep daily separate
     let yieldVal=price?dividend/price:0;
 
     total+=val;
@@ -495,11 +493,8 @@ if (realGain > 0) {
   ? "2px solid #dc2626"
   : "none";
     row.children[8].innerText=fmtMoney(income);
-    if (income > 0) {
-    row.children[7].style.background = "#eff6ff"; // light blue
-    } else {
-    row.children[7].style.background = "transparent";
-    }
+    row.children[8].style.background = income > 0 ? "#eff6ff" : "transparent";
+  
   });
 
   pVal.innerText=fmtMoney0(total);
