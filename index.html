@@ -213,16 +213,16 @@ function showLogin(){
   </div>`;
   
   // load saved email
-  const savedEmail = localStorage.getItem("rememberEmail");
-  const emailEl = document.getElementById("email");
-  const rememberEl = document.getElementById("rememberMe");
-  const savedEmail = localStorage.getItem("rememberEmail");
-  if(savedEmail){
-    emailEl.value = savedEmail;
-    rememberEl.checked = true;
+ const savedEmail = localStorage.getItem("rememberEmail");
+const emailEl = document.getElementById("email");
+const rememberEl = document.getElementById("rememberMe");
+
+if(savedEmail){
+  emailEl.value = savedEmail;
+  rememberEl.checked = true;
   }
   
-  loginBtn.onclick=login;
+  document.getElementById("loginBtn").onclick = window.login;
 }
 
 window.login = async function(){
@@ -323,9 +323,9 @@ async function loadAll(){
   const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
   portfolio={};
-  data.forEach(r=>{
-    portfolio[r.symbol]=r;
-  });
+  (data || []).forEach(r=>{
+  portfolio[r.symbol]=r;
+});
 
   symbols=Object.keys(portfolio);
 
@@ -364,7 +364,8 @@ function render(){
 }
 
 async function save(sym,field,val){
-  portfolio[sym][field]=+val||0;
+  portfolio[sym] = portfolio[sym] || {};
+  portfolio[sym][field] = +val || 0;
 
   await supabase.from("portfolio").upsert({
     user_id:user.id,
@@ -421,7 +422,18 @@ function refresh(){
   netVal.innerText=fmtMoney0(nw);
 }
 
-showLogin();
+async function start(){
+  const { data } = await supabase.auth.getSession();
+  user = data.session?.user;
+
+  if(user){
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+
+start();
 
 });
 </script>
