@@ -366,18 +366,18 @@ function enableResize(){
 }
 
 async function loadAll(){
-  const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
+  const {data}=await supabase
+    .from("portfolio")
+    .select("*")
+    .eq("user_id",user.id);
 
-  let portfolio = [];   // array now
-  (data||[]).forEach(r=>{
-    portfolio.push({
-  id: r.id,                  // 🔥 important (unique row id)
-  symbol: r.symbol,
-  shares:+r.shares||0,
-  dividend:+r.dividend||0,
-  cost:+r.cost||0
-});
-  });
+  portfolio = (data || []).map(r => ({
+    id: r.id,
+    symbol: r.symbol,
+    shares: +r.shares || 0,
+    dividend: +r.dividend || 0,
+    cost: +r.cost || 0
+  }));
 
   symbols = portfolio.map(p => p.symbol);
 
@@ -386,19 +386,22 @@ async function loadAll(){
   symbols.forEach(fetchQuote);
 }
 
-async function saveField(sym,field,val){
+async function saveField(id, field, val){
   let row = portfolio.find(x => x.id === id);
-row[field] = +val || 0;
+  if(!row) return;
+
+  row[field] = +val || 0;
 
   refresh();
 
-  await supabase.from("portfolio").upsert({
-    user_id:user.id,
-    symbol:sym,
-    shares:portfolio[sym].shares||0,
-    dividend:portfolio[sym].dividend||0,
-    cost:portfolio[sym].cost||0
-  }, {onConflict:"user_id,symbol"});
+  await supabase
+    .from("portfolio")
+    .update({
+      shares: row.shares,
+      dividend: row.dividend,
+      cost: row.cost
+    })
+    .eq("id", id);
 }
 
 async function fetchQuote(sym){
@@ -428,11 +431,11 @@ function createRow(p){
     <div>$0</div>
   `;
 
-  row.children[5].oninput=e=>saveField(p.id,"shares",e.target.value);
-  row.children[3].oninput=e=>saveField(sym,"dividend",e.target.value);
-  row.children[6].oninput = e => saveField(sym,"cost",e.target.value);
+ row.children[5].oninput = e => saveField(p.id,"shares",e.target.value);
+row.children[3].oninput = e => saveField(p.id,"dividend",e.target.value);
+row.children[6].oninput = e => saveField(p.id,"cost",e.target.value);
 
-  rows[sym]=row;
+  rows[p.id]=row;
   return row;
 }
 
@@ -479,7 +482,8 @@ function refresh(){
 
   symbols.forEach(s=>{
     let q = dataMap[s];
-    let d = portfolio[s] || {};
+    let s = p.symbol;
+    let d = p;
     let row = rows[s];
     if(!row) return;
 
