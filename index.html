@@ -174,12 +174,20 @@ body{
   display:flex;
   gap:12px;
   margin-top:20px;
+  align-items:flex-start;
 }
 
 /* both cards share same look */
-.projectionCard,
 .netWorthCard{
-  flex:1;
+  flex:0 0 45%;   /* 👈 fixed half width */
+  background:#f0fdf4;
+  padding:16px;
+  border-radius:12px;
+}
+
+.projectionCard{
+  flex:0 0 auto;   /* 👈 prevents stretching */
+  width:280px;     /* 👈 keeps it compact */
   background:#f0fdf4;
   padding:16px;
   border-radius:12px;
@@ -345,7 +353,7 @@ function showApp(){
 
   <!-- NET WORTH (FIRST) -->
   <div class="netWorthCard">
-    <h3>Net Worth</h3>
+    <h3>NET WORTH</h3>
     <input id="cash" placeholder="Cash"><br>
     <input id="realEstate" placeholder="Real Estate"><br>
     <input id="debt" placeholder="Debt"><br>
@@ -354,13 +362,15 @@ function showApp(){
 
   <!-- PROJECTION (SECOND) -->
   <div class="projectionCard">
-    <h3>Projection
-      <select id="rateSelect">
-        <option value="0.05">5%</option>
-        <option value="0.1" selected>10%</option>
-        <option value="0.15">15%</option>
-      </select>
-    </h3>
+   <div style="display:flex; align-items:center; gap:8px;">
+  
+<div style="display:flex;align-items:center;gap:6px;">
+  <h3 style="margin:0;">PROJECTION</h3>
+
+  <button onclick="setRate(0.05)">5%</button>
+  <button onclick="setRate(0.1)">10%</button>
+  <button onclick="setRate(0.15)">15%</button>
+</div>
     <div id="proj1y"></div>
     <div id="proj5y"></div>
     <div id="proj10y"></div>
@@ -440,6 +450,11 @@ async function save(sym,field,val){
     ...portfolio[sym]
   });
 
+  refresh();
+}
+
+function setRate(r){
+  rateSelect.value = r;
   refresh();
 }
 
