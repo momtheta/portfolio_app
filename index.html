@@ -225,6 +225,7 @@ body{
 <div id="app">Loading...</div>
 
 <script>
+let currentRate = 0.10; // default 10%  
 window.addEventListener("load", () => {
 
 const app = document.getElementById("app");
@@ -461,16 +462,29 @@ function setRate(r){
 }
 
 function updateProjection(total){
-  let rate=parseFloat(rateSelect.value);
+  if(!total || isNaN(total)) return;
 
-  function f(y){return total*Math.pow(1+rate,y)}
+  function future(val, years){
+    return val * Math.pow(1 + currentRate, years);
+  }
 
-  proj1y.innerText="1Y → "+fmtMoney0(f(1));
-  proj5y.innerText="5Y → "+fmtMoney0(f(5));
-  proj10y.innerText="10Y → "+fmtMoney0(f(10));
-  proj20y.innerText="20Y → "+fmtMoney0(f(20));
-  proj30y.innerText="30Y → "+fmtMoney0(f(30));
-  proj40y.innerText="40Y → "+fmtMoney0(f(40));
+  document.getElementById("proj1y").innerText =
+    "1Y → " + fmtMoney0(future(total,1));
+
+  document.getElementById("proj5y").innerText =
+    "5Y → " + fmtMoney0(future(total,5));
+
+  document.getElementById("proj10y").innerText =
+    "10Y → " + fmtMoney0(future(total,10));
+
+  document.getElementById("proj20y").innerText =
+    "20Y → " + fmtMoney0(future(total,20));
+
+  document.getElementById("proj30y").innerText =
+    "30Y → " + fmtMoney0(future(total,30));
+
+  document.getElementById("proj40y").innerText =
+    "40Y → " + fmtMoney0(future(total,40));
 }
 
 function refresh(){
@@ -504,6 +518,11 @@ function refresh(){
     - (+debt.value||0);
 
   netVal.innerText=fmtMoney0(nw);
+}
+
+function setRate(r){
+  currentRate = r;
+  refresh(); // 🔥 forces projection update
 }
 
 async function start(){
