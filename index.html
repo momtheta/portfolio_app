@@ -368,12 +368,18 @@ function enableResize(){
 async function loadAll(){
   const {data}=await supabase.from("portfolio").select("*").eq("user_id",user.id);
 
-  portfolio={};
+  let portfolio = [];   // array now
   (data||[]).forEach(r=>{
-    portfolio[r.symbol]={shares:+r.shares||0,dividend:+r.dividend||0,cost:+r.cost||0};
+    portfolio.push({
+  id: r.id,                  // 🔥 important (unique row id)
+  symbol: r.symbol,
+  shares:+r.shares||0,
+  dividend:+r.dividend||0,
+  cost:+r.cost||0
+});
   });
 
-  symbols=[...new Set([...defaultSymbols,...Object.keys(portfolio)])];
+  symbols = portfolio.map(p => p.symbol);
 
   render();
   refresh();
@@ -381,8 +387,8 @@ async function loadAll(){
 }
 
 async function saveField(sym,field,val){
-  portfolio[sym]=portfolio[sym]||{};
-  portfolio[sym][field]=+val||0;
+  let row = portfolio.find(x => x.id === id);
+row[field] = +val || 0;
 
   refresh();
 
@@ -404,8 +410,9 @@ async function fetchQuote(sym){
   }catch{}
 }
 
-function createRow(sym){
-  let d=portfolio[sym]||{};
+function createRow(p){
+  let d = p;
+  let sym = p.symbol;
   let row=document.createElement("div");
   row.className="row";
 
@@ -421,7 +428,7 @@ function createRow(sym){
     <div>$0</div>
   `;
 
-  row.children[5].oninput=e=>saveField(sym,"shares",e.target.value);
+  row.children[5].oninput=e=>saveField(p.id,"shares",e.target.value);
   row.children[3].oninput=e=>saveField(sym,"dividend",e.target.value);
   row.children[6].oninput = e => saveField(sym,"cost",e.target.value);
 
@@ -432,7 +439,7 @@ function createRow(sym){
 function render(){
   list.innerHTML="";
   rows={};
-  symbols.forEach(s=>list.appendChild(createRow(s)));
+  portfolio.forEach(p => list.appendChild(createRow(p)));
 }
 
 function updateProjection(current){
