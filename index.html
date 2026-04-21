@@ -236,12 +236,23 @@ function showApp(){
   app.innerHTML=`
     <div class="app">
       <div class="cards">
-        <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-        <div class="card"><div>GAINS</div><h2 id="gVal">$0</h2></div>
-        <div class="card"><div>MONTHLY INCOME</div><h2 id="mVal">$0</h2></div>
-        <div class="card"><div>ANNUAL INCOME</div><h2 id="iVal">$0</h2></div>
-        <button id="logoutBtn">Logout</button>
-      </div>
+  <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+
+  <div class="card">
+    <div>TOTAL GAIN</div>
+    <h2 id="gVal">$0</h2>
+  </div>
+
+  <div class="card">
+    <div>TODAY</div>
+    <h2 id="todayVal">$0</h2>
+  </div>
+
+  <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
+  <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
+
+  <button id="logoutBtn">Logout</button>
+</div>
 
       <div class="tableWrap">
         <div class="header">
@@ -495,13 +506,23 @@ function refresh(){
   pVal.innerText = fmtMoney0(total);
   iVal.innerText = fmtMoney0(incomeTotal);
 
-  let todayText = ` (${dailyGainTotal > 0 ? "+" : ""}${fmtMoney0(dailyGainTotal)} today)`;
+ // TOTAL GAIN
+gVal.innerText = fmtMoney0(gainTotal);
+gVal.style.color =
+  gainTotal > 0 ? "#16a34a" :
+  gainTotal < 0 ? "#dc2626" : "#333";
 
-  gVal.innerText = fmtMoney0(gainTotal) + todayText;
+// TODAY
+const todayVal = document.getElementById("todayVal");
 
-  gVal.style.color =
+if(todayVal){
+  todayVal.innerText =
+    (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
+
+  todayVal.style.color =
     dailyGainTotal > 0 ? "#16a34a" :
     dailyGainTotal < 0 ? "#dc2626" : "#333";
+}
 
   mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined,{
     minimumFractionDigits:0,
