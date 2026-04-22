@@ -522,12 +522,13 @@ async function loadAll(){
     .eq("user_id",user.id);
 
   portfolio = (data || []).map(r => ({
-    id: r.id,
-    symbol: r.symbol,
-    shares: +r.shares || 0,
-    dividend: +r.dividend || 0,
-    cost: +r.cost || 0
-  }));
+  id: r.id,
+  symbol: r.symbol,
+  shares: +r.shares || 0,
+  dividend: +r.dividend || 0,
+  cost: +r.cost || 0,
+  last_price: +r.last_price || 0   // 🔥 ADD THIS
+}));
 
   symbols = portfolio.map(p => p.symbol);
   portfolio.sort((a,b) => a.symbol.localeCompare(b.symbol));
@@ -557,9 +558,27 @@ async function saveField(id, field, val){
 
 async function fetchQuote(sym){
   try{
-    let r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
-    let d=await r.json();
-    if(d.c) dataMap[sym]=d;
+    let r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
+    let d = await r.json();
+
+    if(d.c){
+      dataMap[sym] = d;
+
+      // 🔥 SAVE TO DB
+      const row = portfolio.find(p => p.symbol === sym);
+      if(row){
+        row.last_price = d.c;
+
+        await supabase
+          .from("portfolio")
+          .update({
+            last_price: d.c,
+            last_price_updated: new Date().toISOString()
+          })
+          .eq("id", row.id);
+      }
+    }
+
     refresh();
   }catch{}
 }
@@ -655,7 +674,7 @@ for(let i=0;i<9;i++){
   row.children[i].style.background = "transparent";
 }
 
-    let price = q?.c || 0;
+    let price = q?.c || p.last_price || 0;
     let shares = p.shares || 0;
     let dividend = p.dividend || 0;
     let cost = p.cost || 0;
@@ -675,7 +694,7 @@ for(let i=0;i<9;i++){
     dailyGainTotal += change * shares;
 
     // UI
-    row.children[1].innerText = q ? fmtMoney(price) : "N/A";
+    row.children[1].innerText =(q || p.last_price) ? fmtMoney(price) : "N/A";
     row.children[2].innerText = q ? fmtMoney(change) : "N/A";
     row.children[2].style.color =
       change > 0 ? "#16a34a" :
@@ -695,7 +714,7 @@ for(let i=0;i<9;i++){
       row.children[5].style.background = "transparent";
     }
 
-row.children[8].style.background =
+   row.children[8].style.background =
   income > 0 ? "#dbeafe" : "transparent";
 
 row.children[8].style.color =
