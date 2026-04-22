@@ -220,6 +220,9 @@ body{
 #proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
   margin-top:6px;
   font-weight:500;
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
 }
 /* target COST input specifically */
 .row input:nth-of-type(3){
@@ -318,6 +321,7 @@ function showApp(){
 </div>
         <div id="list"></div>
       </div>
+
 <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
   <div style="display:flex;align-items:center;gap:10px">
     <h3 style="margin:0">PROJECTION</h3>
@@ -336,12 +340,29 @@ function showApp(){
     </select>
   </div>
 
-  <div id="proj1y">1Y → $0</div>
-  <div id="proj5y">5Y → $0</div>
-  <div id="proj10y">10Y → $0</div>
-  <div id="proj20y">20Y → $0</div>
-  <div id="proj30y">30Y → $0</div>
-  <div id="proj40y">40Y → $0</div>
+<div style="display:flex; gap:12px; align-items:stretch;">
+
+  <!-- LEFT: projection values -->
+  <div style="flex:1;">
+    <div id="proj1y">1Y → $0</div>
+    <div id="proj5y">5Y → $0</div>
+    <div id="proj10y">10Y → $0</div>
+    <div id="proj20y">20Y → $0</div>
+    <div id="proj30y">30Y → $0</div>
+    <div id="proj40y">40Y → $0</div>
+  </div>
+
+  <!-- RIGHT: sparkline -->
+  <div style="
+    width:120px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  ">
+    <canvas id="projChart" height="80"></canvas>
+  </div>
+
+</div>
 </div>
       
     <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
