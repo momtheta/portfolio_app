@@ -220,9 +220,6 @@ body{
 #proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
   margin-top:6px;
   font-weight:500;
-  display:flex;
-  justify-content:space-between;
-  font-size:12px;
 }
 /* target COST input specifically */
 .row input:nth-of-type(3){
@@ -321,7 +318,6 @@ function showApp(){
 </div>
         <div id="list"></div>
       </div>
-
 <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
   <div style="display:flex;align-items:center;gap:10px">
     <h3 style="margin:0">PROJECTION</h3>
@@ -340,29 +336,12 @@ function showApp(){
     </select>
   </div>
 
-<div style="display:flex; gap:12px; align-items:stretch;">
-
-  <!-- LEFT: projection values -->
-  <div style="flex:1;">
-    <div id="proj1y">1Y → $0</div>
-    <div id="proj5y">5Y → $0</div>
-    <div id="proj10y">10Y → $0</div>
-    <div id="proj20y">20Y → $0</div>
-    <div id="proj30y">30Y → $0</div>
-    <div id="proj40y">40Y → $0</div>
-  </div>
-
-  <!-- RIGHT: sparkline -->
-  <div style="
-    width:120px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  ">
-    <canvas id="projChart" height="80"></canvas>
-  </div>
-
-</div>
+  <div id="proj1y">1Y → $0</div>
+  <div id="proj5y">5Y → $0</div>
+  <div id="proj10y">10Y → $0</div>
+  <div id="proj20y">20Y → $0</div>
+  <div id="proj30y">30Y → $0</div>
+  <div id="proj40y">40Y → $0</div>
 </div>
       
     <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
@@ -538,52 +517,6 @@ function updateProjection(current){
     }
   });
 }
-let projChart;
-
-function drawProjectionChart(current){
-
-  if(!current || isNaN(current)) return;
-
-  const rateEl = document.getElementById("rateSelect");
-  const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
-
-  // generate yearly data (1 → 40 years)
-  const years = [];
-  const values = [];
-
-  for(let y = 1; y <= 40; y++){
-    years.push(y + "Y");
-    values.push(current * Math.pow(1 + rate, y));
-  }
-
-  const ctx = document.getElementById("projChart");
-  if(!ctx) return;
-
-  if(projChart){
-    projChart.destroy();
-  }
-
-  projChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: years,
-      datasets: [{
-        data: values,
-        borderWidth: 2,
-        tension: 0.3,
-        pointRadius: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: { display: false }
-      }
-    }
-  });
-}
 
 function refresh(){
 
@@ -645,8 +578,6 @@ for(let i=0;i<9;i++){
 
     row.children[8].style.background =
       income > 0 ? "#eff6ff" : "transparent";
-      updateProjection(total);
-drawProjectionChart(total);
   });
 
   // TOP CARDS
