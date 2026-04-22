@@ -225,6 +225,71 @@ body{
 .row input:nth-of-type(3){
   border-bottom: none !important;
 }  
+/* PROJECTION CARD */
+.projCard{
+  margin-top:16px;
+  background:#ffffff;
+  border-radius:12px;
+  padding:12px 14px;
+  border:1px solid #e5e7eb;
+  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* header */
+.projHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.projTitle{
+  font-size:13px;
+  font-weight:600;
+  color:#111;
+  letter-spacing:0.02em;
+}
+
+/* rate selector (pill style) */
+.ratePill{
+  appearance:none;
+  border:none;
+  background:#111827;
+  color:#fff;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  cursor:pointer;
+}
+
+/* grid layout */
+.projGrid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:8px 12px;
+}
+
+/* each row */
+.projGrid div{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* label (1Y, 5Y...) */
+.projGrid span{
+  font-size:11px;
+  color:#6b7280;
+}
+
+/* value */
+.projGrid b{
+  font-size:14px;
+  font-weight:600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing:0.02em;
+}
+
 </style>
 
 </head>
@@ -318,16 +383,16 @@ function showApp(){
 </div>
         <div id="list"></div>
       </div>
-<div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
-  <div style="display:flex;align-items:center;gap:10px">
-    <h3 style="margin:0">PROJECTION</h3>
+  
+      <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+    
+<div class="projCard">
 
-    <select id="rateSelect" style="
-      padding:4px 8px;
-      border-radius:6px;
-      border:1px solid #d1d5db;
-      font-size:13px;
-    ">
+  <div class="projHeader">
+    <span class="projTitle">PROJECTION</span>
+
+    <select id="rateSelect" class="ratePill">
       <option value="0.05">5%</option>
       <option value="0.08">8%</option>
       <option value="0.10" selected>10%</option>
@@ -336,12 +401,15 @@ function showApp(){
     </select>
   </div>
 
-  <div id="proj1y">1Y → $0</div>
-  <div id="proj5y">5Y → $0</div>
-  <div id="proj10y">10Y → $0</div>
-  <div id="proj20y">20Y → $0</div>
-  <div id="proj30y">30Y → $0</div>
-  <div id="proj40y">40Y → $0</div>
+  <div class="projGrid">
+    <div><span>1Y</span><b id="proj1y">$0</b></div>
+    <div><span>5Y</span><b id="proj5y">$0</b></div>
+    <div><span>10Y</span><b id="proj10y">$0</b></div>
+    <div><span>20Y</span><b id="proj20y">$0</b></div>
+    <div><span>30Y</span><b id="proj30y">$0</b></div>
+    <div><span>40Y</span><b id="proj40y">$0</b></div>
+  </div>
+
 </div>
       
     <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
@@ -513,7 +581,7 @@ function updateProjection(current){
   Object.entries(map).forEach(([id, yrs])=>{
     const el = document.getElementById(id);
     if(el){
-      el.innerText = `${yrs}Y → ${fmtMoney0(future(current, yrs))}`;
+      el.innerText = fmtMoney0(future(current, yrs));
     }
   });
 }
