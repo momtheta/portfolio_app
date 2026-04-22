@@ -589,6 +589,7 @@ async function fetchQuote(sym){
     );
 
     const d = await res.json();
+    console.log(d.cached ? "CACHE" : "LIVE", sym);
 
     if(d.c){
       dataMap[sym] = d;
