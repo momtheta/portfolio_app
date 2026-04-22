@@ -373,7 +373,7 @@ function showLogin(){
         <p id="msg"></p>
       </div>
     </div>`;
-  loginBtn.onclick=login;
+  document.getElementById("loginBtn").onclick = login;
 }
 
 async function login(){
@@ -422,15 +422,10 @@ function showApp(){
         <div id="list"></div>
       </div>
 
-      <!-- 🔥 SIDE-BY-SIDE PANELS -->
+      <!-- PANELS -->
       <div class="bottomPanels">
-        <div class="bottomPanels">
 
-  <div class="sectionHeader">
-    <span>PORTFOLIO ANALYTICS</span>
-  </div>
-
-        <!-- LEFT: PORTFOLIO HISTORY -->
+        <!-- LEFT: HISTORY -->
         <div class="historyCard">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <h3>PORTFOLIO HISTORY</h3>
@@ -445,10 +440,8 @@ function showApp(){
 
         <!-- RIGHT: PROJECTION -->
         <div class="projCard">
-
           <div class="projHeader">
             <span class="projTitle">PROJECTION</span>
-
             <select id="rateSelect" class="ratePill">
               <option value="0.05">5%</option>
               <option value="0.08">8%</option>
@@ -466,7 +459,6 @@ function showApp(){
             <div><span>30Y</span><b id="proj30y">$0</b></div>
             <div><span>40Y</span><b id="proj40y">$0</b></div>
           </div>
-
         </div>
 
       </div>
@@ -474,6 +466,7 @@ function showApp(){
     </div>
   `;
 
+  // 🔐 actions
   logoutBtn.onclick = logout;
   createToolbar();
   loadWidths();
@@ -484,10 +477,31 @@ function showApp(){
   if(rateSelect){
     rateSelect.onchange = () => refresh();
   }
+
+  // 📊 chart setup (correct timing)
+  setTimeout(() => {
+    initChart();
+    updateHistorySafe(); // initial draw
+
+    // range buttons
+    document.querySelectorAll(".rangeBtn").forEach(btn=>{
+      btn.onclick = () => {
+        currentRange = btn.dataset.range === "all"
+          ? "all"
+          : parseInt(btn.dataset.range);
+
+        updateHistorySafe();
+      };
+    });
+
+    // auto update every minute
+    setInterval(updateHistorySafe, 60000);
+
+  }, 200);
 }
 
 function loadWidths(){
-  for(let i=1;i<=8;i++){
+  for(let i=1;i<=9;i++){
     let w=localStorage.getItem("col"+i);
     if(w) document.documentElement.style.setProperty(`--c${i}`,w);
   }
@@ -531,18 +545,17 @@ async function loadAll(){
 }));
 
   symbols = portfolio.map(p => p.symbol);
-  portfolio.sort((a,b) => a.symbol.localeCompare(b.symbol));
+  portfolio.sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
   render();
   refresh();
-  symbols.forEach(fetchQuote);
-  
+  fetchAllQuotes();
 }
 
 async function saveField(id, field, val){
   let row = portfolio.find(x => x.id === id);
   if(!row) return;
 
-  row[field] = +val || 0;
+  row[field] = parseFloat(val.replace(/,/g,"")) || 0;
 
   refresh();
 
@@ -554,6 +567,15 @@ async function saveField(id, field, val){
       cost: row.cost
     })
     .eq("id", id);
+}
+async function fetchAllQuotes(){
+  const chunkSize = 5;
+
+  for (let i = 0; i < symbols.length; i += chunkSize){
+    const chunk = symbols.slice(i, i + chunkSize);
+    await Promise.all(chunk.map(fetchQuote));
+    await new Promise(r => setTimeout(r, 1000)); // pause between batches
+  }
 }
 
 async function fetchQuote(sym){
@@ -580,7 +602,9 @@ async function fetchQuote(sym){
     }
 
     refresh();
-  }catch{}
+  }catch(err){
+  console.error("Quote error:", sym, err);
+}
 }
 
 function createRow(p){
@@ -630,7 +654,7 @@ function render(){
 }
 
 function updateProjection(current){
-  if(!current || isNaN(current)) return;
+  if(isNaN(current)) return;   // ✅ allow 0 but skip if not a number
 
   const rateEl = document.getElementById("rateSelect");
   const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
@@ -694,7 +718,7 @@ for(let i=0;i<9;i++){
     dailyGainTotal += change * shares;
 
     // UI
-    row.children[1].innerText =(q || p.last_price) ? fmtMoney(price) : "N/A";
+    row.children[1].innerText = price ? fmtMoney(price) : "N/A";
     row.children[2].innerText = q ? fmtMoney(change) : "N/A";
     row.children[2].style.color =
       change > 0 ? "#16a34a" :
@@ -749,10 +773,10 @@ row.children[8].style.fontWeight =
   });
 
   updateProjection(total);
+  updateHistorySafe();
 }
 
 async function addRow(){
-
   const symbol = prompt("Enter symbol (e.g. AAPL)");
   if(!symbol) return;
 
@@ -940,8 +964,6 @@ if (!last || last.key !== todayKey) {
   localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
 }
 
-  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
-
   if(chart){
 let filtered = historyData;
 
@@ -955,21 +977,7 @@ chart.data.datasets[0].data = filtered.map(d => d.value);
   }
 }
 
-/* wait for UI */
-setTimeout(()=>{
-  initChart();
-  
-  document.querySelectorAll(".rangeBtn").forEach(btn=>{
-  btn.onclick = () => {
-    currentRange = btn.dataset.range === "all"
-      ? "all"
-      : parseInt(btn.dataset.range);
 
-    updateHistorySafe(); // redraw chart
-  };
-});
-  setInterval(updateHistorySafe, 60000);
-}, 1500);  
 
 </script>
 
