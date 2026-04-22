@@ -579,31 +579,18 @@ async function fetchAllQuotes(){
 async function fetchQuote(sym){
   try{
     const res = await fetch(
-      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbol=${sym}`,
-      {
-        headers: {
-          "apikey": "YOUR_ANON_KEY",
-          "Authorization": "Bearer YOUR_ANON_KEY"
-        }
-      }
+      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbol=${sym}`
     );
 
     const d = await res.json();
-    console.log(d.cached ? "CACHE" : "LIVE", sym);
 
     if(d.c){
       dataMap[sym] = d;
-
-      // optional: still store last_price locally
-      const row = portfolio.find(p => p.symbol === sym);
-      if(row){
-        row.last_price = d.c;
-      }
     }
 
     refresh();
-  }catch(e){
-    console.error(e);
+  }catch(err){
+    console.error("Quote error", err);
   }
 }
 
