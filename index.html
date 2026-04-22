@@ -592,9 +592,10 @@ del.style.cssText = `
   padding:2px 6px;
   cursor:pointer;
 `;
-
+del.style.marginRight = "6px";
+del.style.marginLeft = "0";
 del.onclick = () => deleteRow(p.id);
-row.children[0].appendChild(del); // attach to SYMBOL column
+row.children[0].prepend(del); // attach to SYMBOL column
 row.children[3].oninput = e => saveField(p.id,"shares",e.target.value);
 row.children[6].oninput = e => saveField(p.id,"dividend",e.target.value);
 row.children[4].oninput = e => saveField(p.id,"cost",e.target.value);
