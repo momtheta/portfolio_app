@@ -538,6 +538,52 @@ function updateProjection(current){
     }
   });
 }
+let projChart;
+
+function drawProjectionChart(current){
+
+  if(!current || isNaN(current)) return;
+
+  const rateEl = document.getElementById("rateSelect");
+  const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
+
+  // generate yearly data (1 → 40 years)
+  const years = [];
+  const values = [];
+
+  for(let y = 1; y <= 40; y++){
+    years.push(y + "Y");
+    values.push(current * Math.pow(1 + rate, y));
+  }
+
+  const ctx = document.getElementById("projChart");
+  if(!ctx) return;
+
+  if(projChart){
+    projChart.destroy();
+  }
+
+  projChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: years,
+      datasets: [{
+        data: values,
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    }
+  });
+}
 
 function refresh(){
 
@@ -599,6 +645,8 @@ for(let i=0;i<9;i++){
 
     row.children[8].style.background =
       income > 0 ? "#eff6ff" : "transparent";
+      updateProjection(total);
+drawProjectionChart(total);
   });
 
   // TOP CARDS
