@@ -695,8 +695,14 @@ for(let i=0;i<9;i++){
       row.children[5].style.background = "transparent";
     }
 
-    row.children[8].style.background =
-      income > 0 ? "#eff6ff" : "transparent";
+row.children[8].style.background =
+  income > 0 ? "#dbeafe" : "transparent";
+
+row.children[8].style.color =
+  income > 0 ? "#1d4ed8" : "#111";
+
+row.children[8].style.fontWeight =
+  income > 0 ? "600" : "400";
   });
 
   // TOP CARDS
