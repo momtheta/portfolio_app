@@ -281,15 +281,13 @@ body{
 
 /* grid layout */
 .projGrid{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:8px 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* each row */
 .projGrid div{
-  display:flex;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns: 40px 1fr;
   align-items:center;
 }
 
@@ -299,12 +297,11 @@ body{
   color:#6b7280;
 }
 
-/* value */
 .projGrid b{
   font-size:14px;
   font-weight:600;
   font-variant-numeric: tabular-nums;
-  letter-spacing:0.02em;
+  text-align:right;
 }
 
 </style>
