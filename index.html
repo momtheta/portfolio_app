@@ -219,18 +219,29 @@ body{
 .bottomPanels{
   display:flex;
   gap:16px;
-  margin-top:20px;
+  margin-top:28px; /* 🔥 give space for header */
+
+  background:#16a34a;
+  color:white;
+  padding:18px 14px 14px 14px;
+  border-radius:14px;
+
+  position:relative; /* 🔥 required */
 }
 
 .historyCard{
   flex:2;
   background:white;
-  padding:16px;
   border-radius:12px;
+  padding:16px;
 }
 
 .projCard{
   flex:1;
+  background:#ecfdf5;
+  border-radius:12px;
+  padding:16px;
+  border:1px solid #d1fae5;
 }
 
 /* projection card spacing */
@@ -242,6 +253,23 @@ body{
 .row input:nth-of-type(3){
   border-bottom: none !important;
 }  
+
+.sectionHeader{
+  position:absolute;
+  top:-10px;
+  left:14px;
+
+  background:#111827;
+  color:white;
+
+  font-size:11px;
+  letter-spacing:0.08em;
+  font-weight:600;
+
+  padding:4px 10px;
+  border-radius:6px;
+}
+
 /* PROJECTION CARD */
 .projCard{
   margin-top:16px;
@@ -402,6 +430,11 @@ function showApp(){
 
       <!-- 🔥 SIDE-BY-SIDE PANELS -->
       <div class="bottomPanels">
+        <div class="bottomPanels">
+
+  <div class="sectionHeader">
+    <span>PORTFOLIO ANALYTICS</span>
+  </div>
 
         <!-- LEFT: PORTFOLIO HISTORY -->
         <div class="historyCard">
