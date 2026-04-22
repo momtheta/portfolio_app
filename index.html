@@ -219,11 +219,14 @@ body{
 .bottomPanels{
   display:flex;
   gap:16px;
-  margin-top:28px;
-  background:#f9fafb;
-  padding:14px;
+  margin-top:28px; /* 🔥 give space for header */
+
+  background:#16a34a;
+  color:white;
+  padding:18px 14px 14px 14px;
   border-radius:14px;
-  position:relative;
+
+  position:relative; /* 🔥 required */
 }
 
 .historyCard{
@@ -231,9 +234,6 @@ body{
   background:white;
   border-radius:12px;
   padding:16px;
-
-  display:flex;
-  flex-direction:column;
 }
 
 .projCard{
@@ -242,37 +242,6 @@ body{
   border-radius:12px;
   padding:16px;
   border:1px solid #d1fae5;
-
-  display:flex;
-  flex-direction:column;
-}
-
-.historyHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-
-.historyHeader h3{
-  margin:0;
-  font-size:14px;
-  font-weight:600;
-  letter-spacing:0.05em;
-}
-
-.rangeGroup{
-  display:flex;
-  gap:6px;
-}
-
-.rangeBtn{
-  padding:4px 10px;
-  border-radius:6px;
-  border:none;
-  background:#e5e7eb;
-  font-size:12px;
-  cursor:pointer;
 }
 
 /* projection card spacing */
@@ -319,45 +288,48 @@ body{
   margin-bottom:10px;
 }
 
-.projHeader h3{
-  margin:0;
-  font-size:14px;
+.projTitle{
+  font-size:13px;
   font-weight:600;
-  letter-spacing:0.05em;
+  color:#111;
+  letter-spacing:0.02em;
 }
 
+/* rate selector (pill style) */
 .ratePill{
-  background:#111827;
-  color:white;
+  appearance:none;
   border:none;
-  border-radius:999px;
+  background:#111827;
+  color:#fff;
   padding:4px 10px;
+  border-radius:999px;
   font-size:12px;
+  cursor:pointer;
 }
 
 /* grid layout */
 .projGrid{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:6px;
-  margin-top:6px;
+  font-variant-numeric: tabular-nums;
 }
 
+/* each row */
 .projGrid div{
   display:grid;
   grid-template-columns: 40px 1fr;
   align-items:center;
 }
 
+/* label (1Y, 5Y...) */
 .projGrid span{
   font-size:11px;
   color:#6b7280;
 }
 
 .projGrid b{
-  text-align:right;
+  font-size:14px;
   font-weight:600;
   font-variant-numeric: tabular-nums;
+  text-align:right;
 }
 
 </style>
@@ -465,33 +437,32 @@ function showApp(){
   </div>
 
         <!-- LEFT: PORTFOLIO HISTORY -->
-       <div class="historyHeader">
-  <h3>PORTFOLIO HISTORY</h3>
-
-  <div class="rangeGroup">
-    <button class="rangeBtn" data-range="7">1W</button>
-    <button class="rangeBtn" data-range="30">1M</button>
-    <button class="rangeBtn" data-range="all">ALL</button>
-  </div>
-</div>
-
+        <div class="historyCard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3>PORTFOLIO HISTORY</h3>
+            <div>
+              <button class="rangeBtn" data-range="7">1W</button>
+              <button class="rangeBtn" data-range="30">1M</button>
+              <button class="rangeBtn" data-range="all">ALL</button>
+            </div>
+          </div>
           <canvas id="historyChart" height="140"></canvas>
         </div>
 
         <!-- RIGHT: PROJECTION -->
         <div class="projCard">
 
-         <div class="projHeader">
-  <h3>PROJECTION</h3>
+          <div class="projHeader">
+            <span class="projTitle">PROJECTION</span>
 
-  <select id="rateSelect" class="ratePill">
-    <option value="0.05">5%</option>
-    <option value="0.08">8%</option>
-    <option value="0.10" selected>10%</option>
-    <option value="0.12">12%</option>
-    <option value="0.15">15%</option>
-  </select>
-</div>
+            <select id="rateSelect" class="ratePill">
+              <option value="0.05">5%</option>
+              <option value="0.08">8%</option>
+              <option value="0.10" selected>10%</option>
+              <option value="0.12">12%</option>
+              <option value="0.15">15%</option>
+            </select>
+          </div>
 
           <div class="projGrid">
             <div><span>1Y</span><b id="proj1y">$0</b></div>
@@ -645,7 +616,6 @@ function render(){
 }
 
 function updateProjection(current){
-
   if(!current || isNaN(current)) return;
 
   const rateEl = document.getElementById("rateSelect");
@@ -667,7 +637,7 @@ function updateProjection(current){
   Object.entries(map).forEach(([id, yrs])=>{
     const el = document.getElementById(id);
     if(el){
-      el.innerText = fmtMoney0(future(current, yrs)); // ✅ ONLY value
+      el.innerText = fmtMoney0(future(current, yrs));
     }
   });
 }
