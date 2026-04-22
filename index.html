@@ -665,7 +665,7 @@ for(let i=0;i<9;i++){
     let dividend = p.dividend || 0;
     let cost = p.cost || 0;
 
-    let val = price * shares;
+    let val = price ? price * shares : cost * shares;
     let invested = cost * shares;
     let realGain = val - invested;
     let income = dividend * shares;
