@@ -216,6 +216,23 @@ body{
   height:100%;
   cursor:col-resize;
 }
+.bottomPanels{
+  display:flex;
+  gap:16px;
+  margin-top:20px;
+}
+
+.historyCard{
+  flex:2;
+  background:white;
+  padding:16px;
+  border-radius:12px;
+}
+
+.projCard{
+  flex:1;
+}
+
 /* projection card spacing */
 #proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
   margin-top:6px;
@@ -358,82 +375,91 @@ async function logout(){
 function showApp(){
   app.innerHTML=`
     <div class="app">
+
+      <!-- TOP CARDS -->
       <div class="cards">
-      <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-      <div class="card"><div>TOTAL GAIN</div><h2 id="gVal">$0</h2></div>
-      <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div> 
-      <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
-      <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
+        <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
+        <div class="card"><div>TOTAL GAIN</div><h2 id="gVal">$0</h2></div>
+        <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div> 
+        <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
+        <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
 
-      <button id="logoutBtn">LOGOUT</button>
-    </div>
-</div>
+        <button id="logoutBtn">LOGOUT</button>
+      </div>
 
+      <!-- TABLE -->
       <div class="tableWrap">
         <div class="header">
-  <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-  <div class="col">PRICE<div class="resizer"></div></div>
-  <div class="col">CHANGE<div class="resizer"></div></div>
-  <div class="col">SHARES<div class="resizer"></div></div>
-  <div class="col">COST<div class="resizer"></div></div>
-  <div class="col">VALUE<div class="resizer"></div></div>
-  <div class="col">DIV<div class="resizer"></div></div>
-  <div class="col">YIELD<div class="resizer"></div></div>
-  <div class="col">INCOME<div class="resizer"></div></div>
-</div>
+          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+          <div class="col">PRICE<div class="resizer"></div></div>
+          <div class="col">CHANGE<div class="resizer"></div></div>
+          <div class="col">SHARES<div class="resizer"></div></div>
+          <div class="col">COST<div class="resizer"></div></div>
+          <div class="col">VALUE<div class="resizer"></div></div>
+          <div class="col">DIV<div class="resizer"></div></div>
+          <div class="col">YIELD<div class="resizer"></div></div>
+          <div class="col">INCOME<div class="resizer"></div></div>
+        </div>
         <div id="list"></div>
       </div>
-  
-      <div style="margin-top:20px;background:#f0fdf4;padding:16px;border-radius:12px">
-      <div style="display:flex;align-items:center;gap:10px">
-    
-<div class="projCard">
 
-  <div class="projHeader">
-    <span class="projTitle">PROJECTION</span>
+      <!-- 🔥 SIDE-BY-SIDE PANELS -->
+      <div class="bottomPanels">
 
-    <select id="rateSelect" class="ratePill">
-      <option value="0.05">5%</option>
-      <option value="0.08">8%</option>
-      <option value="0.10" selected>10%</option>
-      <option value="0.12">12%</option>
-      <option value="0.15">15%</option>
-    </select>
-  </div>
+        <!-- LEFT: PORTFOLIO HISTORY -->
+        <div class="historyCard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3>PORTFOLIO HISTORY</h3>
+            <div>
+              <button class="rangeBtn" data-range="7">1W</button>
+              <button class="rangeBtn" data-range="30">1M</button>
+              <button class="rangeBtn" data-range="all">ALL</button>
+            </div>
+          </div>
+          <canvas id="historyChart" height="140"></canvas>
+        </div>
 
-  <div class="projGrid">
-    <div><span>1Y</span><b id="proj1y">$0</b></div>
-    <div><span>5Y</span><b id="proj5y">$0</b></div>
-    <div><span>10Y</span><b id="proj10y">$0</b></div>
-    <div><span>20Y</span><b id="proj20y">$0</b></div>
-    <div><span>30Y</span><b id="proj30y">$0</b></div>
-    <div><span>40Y</span><b id="proj40y">$0</b></div>
-  </div>
+        <!-- RIGHT: PROJECTION -->
+        <div class="projCard">
 
-</div>
-      
-    <div style="margin-top:20px;background:white;padding:16px;border-radius:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>PORTFOLIO HISTORY</h3>
-      <div>
-        <button class="rangeBtn" data-range="7">1W</button>
-        <button class="rangeBtn" data-range="30">1M</button>
-        <button class="rangeBtn" data-range="all">ALL</button>
+          <div class="projHeader">
+            <span class="projTitle">PROJECTION</span>
+
+            <select id="rateSelect" class="ratePill">
+              <option value="0.05">5%</option>
+              <option value="0.08">8%</option>
+              <option value="0.10" selected>10%</option>
+              <option value="0.12">12%</option>
+              <option value="0.15">15%</option>
+            </select>
+          </div>
+
+          <div class="projGrid">
+            <div><span>1Y</span><b id="proj1y">$0</b></div>
+            <div><span>5Y</span><b id="proj5y">$0</b></div>
+            <div><span>10Y</span><b id="proj10y">$0</b></div>
+            <div><span>20Y</span><b id="proj20y">$0</b></div>
+            <div><span>30Y</span><b id="proj30y">$0</b></div>
+            <div><span>40Y</span><b id="proj40y">$0</b></div>
+          </div>
+
+        </div>
+
       </div>
-    </div>
-    <canvas id="historyChart" height="120"></canvas>
-  </div>
-</div>`;
 
-  logoutBtn.onclick=logout;
+    </div>
+  `;
+
+  logoutBtn.onclick = logout;
   createToolbar();
   loadWidths();
   loadAll();
   enableResize();
+
   const rateSelect = document.getElementById("rateSelect");
-if(rateSelect){
-  rateSelect.onchange = () => refresh();
-}
+  if(rateSelect){
+    rateSelect.onchange = () => refresh();
+  }
 }
 
 function loadWidths(){
