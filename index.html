@@ -676,68 +676,85 @@ function refresh(){
   let dailyGainTotal = 0;
 
   portfolio.forEach(p => {
-    let s = p.symbol;
-    let q = dataMap[s];
-    let row = rows[p.id];
+
+    const sym = (p.symbol || "").toUpperCase();
+    const q = dataMap[sym];
+    const row = rows[p.id];
     if(!row) return;
-    // 🔥 reset all cell backgrounds first
-for(let i=0;i<9;i++){
-  row.children[i].style.background = "transparent";
-}
 
-    let price = q?.c || p.last_price || 0;
-    let shares = p.shares || 0;
-    let dividend = p.dividend || 0;
-    let cost = p.cost || 0;
-
-    let val = price ? price * shares : cost * shares;
-    let invested = cost * shares;
-    let realGain = val - invested;
-    let income = dividend * shares;
-
-    let change = (q && typeof q.c === "number" && typeof q.pc === "number") ? (q.c - q.pc) : null;
-    let yieldVal = price ? dividend / price : 0;
-
-    total += val;
-    incomeTotal += income;
-    gainTotal += realGain;
-    monthlyTotal += income / 12;
-    if (change !== null) {dailyGainTotal += change * shares;}
-
-    // UI
-    row.children[1].innerText = price ? fmtMoney(price) : "N/A";
-    row.children[2].innerText = change !== null ? fmtMoney(change) : "N/A";
-    row.children[2].style.color =
-  change === null ? "#999" :
-  change > 0 ? "#16a34a" :
-  change < 0 ? "#dc2626" : "#999";
-
-    row.children[7].innerText = fmtPercent(yieldVal);
-    row.children[7].style.background = "transparent";
-    row.children[5].innerText = fmtMoney(val);
-    row.children[8].innerText = fmtMoney(income);
-
-    // styling
-    if (realGain > 0) {
-      row.children[5].style.background = "#ecfdf5";
-    } else if (realGain < 0) {
-      row.children[5].style.background = "#fef2f2";
-    } else {
-      row.children[5].style.background = "transparent";
+    // 🧼 Reset backgrounds
+    for(let i=0;i<9;i++){
+      row.children[i].style.background = "transparent";
     }
 
-   row.children[8].style.background =
-  income > 0 ? "#dbeafe" : "transparent";
+    // 🧮 Safe values
+    const price = (q && typeof q.c === "number") ? q.c : (p.last_price || 0);
+    const prevClose = (q && typeof q.pc === "number") ? q.pc : null;
 
-row.children[8].style.color =
-  income > 0 ? "#1d4ed8" : "#111";
+    const shares = Number(p.shares) || 0;
+    const dividend = Number(p.dividend) || 0;
+    const cost = Number(p.cost) || 0;
 
-row.children[8].style.fontWeight =
-  income > 0 ? "600" : "400";
+    // 💰 Calculations
+    const value = price ? price * shares : cost * shares;
+    const invested = cost * shares;
+    const gain = value - invested;
+    const income = dividend * shares;
+
+    const change = (price && prevClose) ? (price - prevClose) : null;
+    const yieldVal = price ? (dividend / price) : 0;
+
+    // 📊 Totals (SAFE — no NaN)
+    total += value;
+    incomeTotal += income;
+    gainTotal += gain;
+    monthlyTotal += income / 12;
+
+    if(change !== null){
+      dailyGainTotal += change * shares;
+    }
+
+    // 🎯 UI — PRICE
+    row.children[1].innerText = price ? fmtMoney(price) : "N/A";
+
+    // 🎯 UI — CHANGE
+    if(change !== null){
+      row.children[2].innerText = fmtMoney(change);
+      row.children[2].style.color =
+        change > 0 ? "#16a34a" :
+        change < 0 ? "#dc2626" : "#999";
+    } else {
+      row.children[2].innerText = "N/A";
+      row.children[2].style.color = "#999";
+    }
+
+    // 🎯 UI — VALUE + INCOME
+    row.children[5].innerText = fmtMoney(value);
+    row.children[8].innerText = fmtMoney(income);
+
+    // 🎯 UI — YIELD
+    row.children[7].innerText = fmtPercent(yieldVal);
+
+    // 🎨 VALUE color
+    if (gain > 0) {
+      row.children[5].style.background = "#ecfdf5";
+    } else if (gain < 0) {
+      row.children[5].style.background = "#fef2f2";
+    }
+
+    // 🎨 INCOME highlight
+    if(income > 0){
+      row.children[8].style.background = "#dbeafe";
+      row.children[8].style.color = "#1d4ed8";
+      row.children[8].style.fontWeight = "600";
+    }
+
   });
 
-  // TOP CARDS
+  // 🧾 TOP CARDS
+
   pVal.innerText = fmtMoney0(total);
+
   iVal.innerText = fmtMoney0(incomeTotal);
 
   gVal.innerText = fmtMoney0(gainTotal);
@@ -745,12 +762,12 @@ row.children[8].style.fontWeight =
     gainTotal > 0 ? "#16a34a" :
     gainTotal < 0 ? "#dc2626" : "#333";
 
-  const todayVal = document.getElementById("todayVal");
-  if(todayVal){
-    todayVal.innerText =
+  const todayEl = document.getElementById("todayVal");
+  if(todayEl){
+    todayEl.innerText =
       (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
 
-    todayVal.style.color =
+    todayEl.style.color =
       dailyGainTotal > 0 ? "#16a34a" :
       dailyGainTotal < 0 ? "#dc2626" : "#333";
   }
@@ -760,6 +777,7 @@ row.children[8].style.fontWeight =
     maximumFractionDigits:0
   });
 
+  // 📈 Projection + History
   updateProjection(total);
   updateHistorySafe();
 }
