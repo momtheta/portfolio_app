@@ -542,7 +542,7 @@ async function loadAll(){
   last_price: +r.last_price || 0   // 🔥 ADD THIS
 }));
 
-  symbols = portfolio.map(p => p.symbol);
+  symbols = portfolio.map(p => p.symbol.trim().toUpperCase());
   portfolio.sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
   render();
   fetchAllQuotes();
@@ -578,17 +578,25 @@ async function fetchAllQuotes(){
 
 async function fetchQuote(sym){
   try{
+    const cleanSym = sym.trim().toUpperCase();
+
     const res = await fetch(
-      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbol=${sym}`
+      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbol=${cleanSym}`
     );
 
     const d = await res.json();
 
-    if(d.c){
-      dataMap[sym] = d;
+    console.log("API:", cleanSym, d); // 🔍 DEBUG
+
+    if(typeof d.c === "number"){
+      dataMap[cleanSym] = {
+        c: Number(d.c),
+        pc: Number(d.pc)
+      };
     }
 
     refresh();
+
   }catch(err){
     console.error("Quote error", err);
   }
@@ -677,7 +685,7 @@ function refresh(){
 
   portfolio.forEach(p => {
 
-    const sym = (p.symbol || "").toUpperCase();
+    const sym = (p.symbol || "").trim().toUpperCase();
     const q = dataMap[sym];
     const row = rows[p.id];
     if(!row) return;
@@ -701,7 +709,7 @@ function refresh(){
     const gain = value - invested;
     const income = dividend * shares;
 
-    const change = (price && prevClose) ? (price - prevClose) : null;
+    const change = (prevClose !== null) ? (price - prevClose) : null;
     const yieldVal = price ? (dividend / price) : 0;
 
     // 📊 Totals (SAFE — no NaN)
