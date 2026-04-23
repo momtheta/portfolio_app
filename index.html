@@ -433,7 +433,9 @@ function showApp(){
               <button class="rangeBtn" data-range="all">ALL</button>
             </div>
           </div>
-          <canvas id="historyChart" height="140"></canvas>
+          <div style="height:160px; width:100%; position:relative;">
+  <canvas id="historyChart"></canvas>
+</div>
         </div>
 
         <!-- RIGHT: PROJECTION -->
@@ -914,6 +916,7 @@ function initChart(){
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
         x: { display: false },
