@@ -462,8 +462,11 @@ function showApp(){
       </div>
 
     </div>
-    setInterval(fetchAllQuotes, 30000); // every 30 seconds
   `;
+
+ if (!window.quoteInterval) {
+  window.quoteInterval = setInterval(fetchAllQuotes, 30000);
+}
 
   // 🔐 actions
   logoutBtn.onclick = logout;
