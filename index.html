@@ -345,8 +345,6 @@ const supabase = window.supabase.createClient(
   {auth:{persistSession:true,storage:window.localStorage}}
 );
 
-const API_KEY = "d7f97chr01qpjqqju8f0d7f97chr01qpjqqju8fg";
-
 const defaultSymbols = [
   "AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX",
   "NFLX","DOMO","RELX","SMCY","PGBAX"
@@ -568,43 +566,26 @@ async function saveField(id, field, val){
     })
     .eq("id", id);
 }
+
 async function fetchAllQuotes(){
-  const chunkSize = 5;
 
-  for (let i = 0; i < symbols.length; i += chunkSize){
-    const chunk = symbols.slice(i, i + chunkSize);
-    await Promise.all(chunk.map(fetchQuote));
-    await new Promise(r => setTimeout(r, 1000)); // pause between batches
-  }
-}
-
-async function fetchQuote(sym){
   try{
-    let r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${API_KEY}`);
-    let d = await r.json();
+    const res = await fetch(
+      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
+    );
 
-    if(d.c){
-      dataMap[sym] = d;
+    const data = await res.json();
 
-      // 🔥 SAVE TO DB
-      const row = portfolio.find(p => p.symbol === sym);
-      if(row){
-        row.last_price = d.c;
-
-        await supabase
-          .from("portfolio")
-          .update({
-            last_price: d.c,
-            last_price_updated: new Date().toISOString()
-          })
-          .eq("id", row.id);
-      }
-    }
+    // ✅ store correctly into dataMap
+    Object.keys(data).forEach(sym => {
+      dataMap[sym] = data[sym];
+    });
 
     refresh();
-  }catch(err){
-  console.error("Quote error:", sym, err);
-}
+
+  } catch(err){
+    console.error("Batch quote error", err);
+  }
 }
 
 function createRow(p){
@@ -811,7 +792,6 @@ async function addRow(){
   const newRow = createRow(portfolio[portfolio.length - 1]);
   list.appendChild(newRow);
 
-  fetchQuote(data.symbol);
 }
 
 async function deleteRow(id){
