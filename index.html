@@ -1,373 +1,433 @@
-<!-- Author: Theresa De Leon -->
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-<style>
-body{
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-  background:#f5f7f9;
-  margin:0;
-}
+  <style>
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f7f9;
+      margin: 0;
+    }
 
-.app{
-  padding:16px;
-  max-width:1400px;
-  margin:0 auto;
-}
+    .app {
+      padding: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-/* LOGIN */
-.loginWrap{display:flex;justify-content:center;padding-top:40px}
-.loginCard{
-  max-width:420px;width:100%;
-  background:white;padding:24px;border-radius:16px;
-  display:flex;flex-direction:column;gap:12px
-}
-.loginCard input{padding:14px}
-.loginCard button{
-  padding:12px;background:#16a34a;color:white;
-  border:none;border-radius:8px
-}
+    /* LOGIN */
+    .loginWrap {
+      display: flex;
+      justify-content: center;
+      padding-top: 40px
+    }
 
-/* CARDS */
-.cards{
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-  align-items:center;
-  flex-wrap:wrap; /* allows wrapping if needed */
-}
+    .loginCard {
+      max-width: 420px;
+      width: 100%;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
 
-.card{
-  flex:0 0 auto;
-  min-width:120px;
-  padding:10px 12px;
+    .loginCard input {
+      padding: 14px
+    }
 
-  background:#ecfdf5;         /* keep green */
-  border-radius:10px;
+    .loginCard button {
+      padding: 12px;
+      background: #16a34a;
+      color: white;
+      border: none;
+      border-radius: 8px
+    }
 
-  border:1px solid #d1fae5;    /* 🔥 subtle edge so it stands out */
-  box-shadow:0 1px 2px rgba(0,0,0,0.05); /* 🔥 depth */
+    /* CARDS */
+    .cards {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      /* allows wrapping if needed */
+    }
 
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-#pVal { color:#111; }
-#gVal { font-weight:700; }
-#todayVal { font-weight:600; }
+    .card {
+      flex: 0 0 auto;
+      min-width: 120px;
+      padding: 10px 12px;
 
-/* tighter text */
-.card div{
-  font-size:11px;
-  color:#555;
-}
+      background: #ecfdf5;
+      /* keep green */
+      border-radius: 10px;
 
-.card h2{
-  font-size:16px;
-  margin:2px 0 0 0;
-  font-weight:600;
-}
+      border: 1px solid #d1fae5;
+      /* 🔥 subtle edge so it stands out */
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      /* 🔥 depth */
 
-#logoutBtn{
-  background:#16a34a;color:white;
-  border:none;padding:10px;border-radius:8px;height:40px;
-}
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-.toolBtn{
-  display:flex;
-  align-items:center;
-  gap:4px;
+    #pVal {
+      color: #111;
+    }
 
-  padding:6px 10px;
-  font-size:12px;
+    #gVal {
+      font-weight: 700;
+    }
 
-  border:none;
-  border-radius:6px;
+    #todayVal {
+      font-weight: 600;
+    }
 
-  background:#111827;
-  color:#e5e7eb;
+    /* tighter text */
+    .card div {
+      font-size: 11px;
+      color: #555;
+    }
 
-  cursor:pointer;
-  transition:all 0.15s ease;
-}
+    .card h2 {
+      font-size: 16px;
+      margin: 2px 0 0 0;
+      font-weight: 600;
+    }
 
-.toolBtn span{
-  font-weight:500;
-}
+    #logoutBtn {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      height: 40px;
+    }
 
-.toolBtn:hover{
-  transform:translateY(-1px);
-  box-shadow:0 2px 4px rgba(0,0,0,0.1);
-}
+    .toolBtn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
 
-.toolBtn.blue{
-  background:#1d4ed8;
-}
+      padding: 6px 10px;
+      font-size: 12px;
 
-/* TABLE */
-.tableWrap{width:100%;overflow-x:auto}
+      border: none;
+      border-radius: 6px;
 
-/* column widths */
-:root{
-  --c1:140px; --c2:140px; --c3:140px; --c4:140px;
-  --c5:140px; --c6:140px; --c7:140px; --c8:140px; --c9:140px;
-}
+      background: #111827;
+      color: #e5e7eb;
 
-.header .sticky{
-  position: sticky;
-  top: 0;     /* ← THIS is the missing piece */
-  left: 0;
-  z-index: 10;
-  background: white;
-}  
-  
-.header,.row{
-  display:grid;
-  grid-template-columns:
-    var(--c1) var(--c2) var(--c3) var(--c4)
-    var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
-  min-width:900px;
-}
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
 
-/* HEADER */
-.header{
-  position:sticky;
-  top:0;
-  background:white;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.04em;
-  color:#444;
+    .toolBtn span {
+      font-weight: 500;
+    }
 
-  /* 🔥 NEW: horizontal divider */
-  border-bottom:2px solid #d1d5db;
-}
+    .toolBtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
-/* CELLS */
-.header > div,
-.row > div{
-  padding:10px;
-  border-right:1px solid #e5e7eb;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
-}
-  
-/* left-align SYMBOL column (data only) */
-.row .sticky{
-  justify-content: flex-start;
-  text-align: left;
-}  
+    .toolBtn.blue {
+      background: #1d4ed8;
+    }
 
-/* INPUT CELLS */
-.row input{
-  width:100%;
-  height:100%;
-  padding:0;
-  margin:0;
-  border:none;
-  outline:none;
-  background:transparent;
+    /* TABLE */
+    .tableWrap {
+      width: 100%;
+      overflow-x: auto
+    }
 
-  border-right:1px solid #d1d5db;
+    /* column widths */
+    :root {
+      --c1: 140px;
+      --c2: 140px;
+      --c3: 140px;
+      --c4: 140px;
+      --c5: 140px;
+      --c6: 140px;
+      --c7: 140px;
+      --c8: 140px;
+      --c9: 140px;
+    }
 
-  text-align:center;
-  font-variant-numeric:tabular-nums;
-  box-sizing:border-box;
-}
+    .header .sticky {
+      position: sticky;
+      top: 0;
+      /* ← THIS is the missing piece */
+      left: 0;
+      z-index: 10;
+      background: white;
+    }
 
-/* remove last column border */
-.header > div:last-child,
-.row > div:last-child,
-.row input:last-child {
-  border-right:none;
-}
+    .header,
+    .row {
+      display: grid;
+      grid-template-columns:
+        var(--c1) var(--c2) var(--c3) var(--c4) var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
+      min-width: 900px;
+    }
 
-/* sticky symbol */
-.sticky{
-  position:sticky;
-  left:0;
-  background:white;
-  z-index:5; /* ← ADD THIS LINE ONLY */
-}
+    /* HEADER */
+    .header {
+      position: sticky;
+      top: 0;
+      background: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #444;
 
-/* rows */
-.row{
-  background:white;
-  font-size:14px;
-}
+      /* 🔥 NEW: horizontal divider */
+      border-bottom: 2px solid #d1d5db;
+    }
 
-.row:hover{
-  background:#f9fafb;
-}
+    /* CELLS */
+    .header>div,
+    .row>div {
+      padding: 10px;
+      border-right: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
 
-/* RESIZER */
-.col{position:relative}
-.resizer{
-  position:absolute;
-  right:-3px;   /* shift to center on border */
-  top:0;
-  width:6px;
-  height:100%;
-  cursor:col-resize;
-}
-.bottomPanels{
-  display:flex;
-  gap:16px;
-  margin-top:28px; /* 🔥 give space for header */
+    /* left-align SYMBOL column (data only) */
+    .row .sticky {
+      justify-content: flex-start;
+      text-align: left;
+    }
 
-  background:#16a34a;
-  color:white;
-  padding:18px 14px 14px 14px;
-  border-radius:14px;
+    /* INPUT CELLS */
+    .row input {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      border: none;
+      outline: none;
+      background: transparent;
 
-  position:relative; /* 🔥 required */
-}
+      border-right: 1px solid #d1d5db;
 
-.historyCard{
-  flex:0 0 50%;   /* 🔥 fixed half width */
-  max-width:50%;
-  background:white;
-  border-radius:12px;
-  padding:16px;
-  color:#111;
-}
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-sizing: border-box;
+    }
+
+    /* remove last column border */
+    .header>div:last-child,
+    .row>div:last-child,
+    .row input:last-child {
+      border-right: none;
+    }
+
+    /* sticky symbol */
+    .sticky {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 5;
+      /* ← ADD THIS LINE ONLY */
+    }
+
+    /* rows */
+    .row {
+      background: white;
+      font-size: 14px;
+    }
+
+    .row:hover {
+      background: #f9fafb;
+    }
+
+    /* RESIZER */
+    .col {
+      position: relative
+    }
+
+    .resizer {
+      position: absolute;
+      right: -3px;
+      /* shift to center on border */
+      top: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+    }
+
+    .bottomPanels {
+      display: flex;
+      gap: 16px;
+      margin-top: 28px;
+      /* 🔥 give space for header */
+
+      background: #16a34a;
+      color: white;
+      padding: 18px 14px 14px 14px;
+      border-radius: 14px;
+
+      position: relative;
+      /* 🔥 required */
+    }
+
+    .historyCard {
+      flex: 0 0 50%;
+      /* 🔥 fixed half width */
+      max-width: 50%;
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      color: #111;
+    }
 
 
-/* projection card spacing */
-#proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
-  margin-top:6px;
-  font-weight:500;
-}
-/* target COST input specifically */
-.row input:nth-of-type(3){
-  border-bottom: none !important;
-}  
+    /* projection card spacing */
+    #proj1y,
+    #proj5y,
+    #proj10y,
+    #proj20y,
+    #proj30y,
+    #proj40y {
+      margin-top: 6px;
+      font-weight: 500;
+    }
 
-.sectionHeader{
-  position:absolute;
-  top:-10px;
-  left:14px;
+    /* target COST input specifically */
+    .row input:nth-of-type(3) {
+      border-bottom: none !important;
+    }
 
-  background:#111827;
-  color:white;
+    .sectionHeader {
+      position: absolute;
+      top: -10px;
+      left: 14px;
 
-  font-size:11px;
-  letter-spacing:0.08em;
-  font-weight:600;
+      background: #111827;
+      color: white;
 
-  padding:4px 10px;
-  border-radius:6px;
-}
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 600;
 
-/* PROJECTION CARD */
-.projCard{
-  flex:0 0 30%;
-  max-width:30%;
-  margin-top:16px;
-  background:#ffffff;
-  border-radius:12px;
-  padding:12px 14px;
-  border:1px solid #e5e7eb;
-  box-shadow:0 1px 2px rgba(0,0,0,0.05);
-  color:#111; /* 🔥 ADD THIS LINE HERE */
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
 
-}
+    /* PROJECTION CARD */
+    .projCard {
+      flex: 0 0 30%;
+      max-width: 30%;
+      margin-top: 16px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      color: #111;
+      /* 🔥 ADD THIS LINE HERE */
 
-/* header */
-.projHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
+    }
 
-.projTitle{
-  font-size:13px;
-  font-weight:600;
-  color:#111;
-  letter-spacing:0.02em;
-}
+    /* header */
+    .projHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
 
-/* rate selector (pill style) */
-.ratePill{
-  appearance:none;
-  border:none;
-  background:#111827;
-  color:#fff;
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:12px;
-  cursor:pointer;
-}
+    .projTitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111;
+      letter-spacing: 0.02em;
+    }
 
-/* grid layout */
-.projGrid{
-  font-variant-numeric: tabular-nums;
-}
+    /* rate selector (pill style) */
+    .ratePill {
+      appearance: none;
+      border: none;
+      background: #111827;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
 
-/* each row */
-.projGrid div{
-  display:grid;
-  grid-template-columns: 40px 1fr;
-  align-items:center;
-}
+    /* grid layout */
+    .projGrid {
+      font-variant-numeric: tabular-nums;
+    }
 
-/* label (1Y, 5Y...) */
-.projGrid span{
-  font-size:11px;
-  color:#6b7280;
-}
+    /* each row */
+    .projGrid div {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      align-items: center;
+    }
 
-.projGrid b{
-  font-size:14px;
-  font-weight:600;
-  font-variant-numeric: tabular-nums;
-  text-align:right;
-}
+    /* label (1Y, 5Y...) */
+    .projGrid span {
+      font-size: 11px;
+      color: #6b7280;
+    }
 
-</style>
+    .projGrid b {
+      font-size: 14px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+  </style>
 
 </head>
 
 <body>
 
-<div id="app">Loading...</div>
+  <div id="app">Loading...</div>
 
-<script>
-window.addEventListener("load", () => {
+  <script>
+    window.addEventListener("load", () => {
 
-const app = document.getElementById("app");
+      const app = document.getElementById("app");
 
-const supabase = window.supabase.createClient(
-  "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-  "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-  {auth:{persistSession:true,storage:window.localStorage}}
-);
+      const supabase = window.supabase.createClient(
+        "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+        "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+        { auth: { persistSession: true, storage: window.localStorage } }
+      );
 
-const defaultSymbols = [
-  "AAPL","AMZN","MSFT","NVDA","QYLD","VTSAX",
-  "NFLX","DOMO","RELX","SMCY","PGBAX"
-];
+      const defaultSymbols = [
+        "AAPL", "AMZN", "MSFT", "NVDA", "QYLD", "VTSAX",
+        "NFLX", "DOMO", "RELX", "SMCY", "PGBAX"
+      ];
 
-let user=null, symbols=[], portfolio=[], dataMap={}, rows={};
+      let user = null, symbols = [], portfolio = [], dataMap = {}, rows = {};
 
-const fmtMoney=n=>"$"+(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtMoney0 = n => "$" + (n || 0).toLocaleString(undefined, {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0
-});  
-const fmtNumber=n=>(n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
-const fmtPercent=n=>(n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
+      const fmtMoney = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtMoney0 = n => "$" + (n || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      const fmtNumber = n => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      const fmtPercent = n => (n * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
 
-function showLogin(){
-  app.innerHTML=`
+      function showLogin() {
+        app.innerHTML = `
     <div class="loginWrap">
       <div class="loginCard">
         <h2>Login</h2>
@@ -377,26 +437,26 @@ function showLogin(){
         <p id="msg"></p>
       </div>
     </div>`;
-  document.getElementById("loginBtn").onclick = login;
-}
+        document.getElementById("loginBtn").onclick = login;
+      }
 
-async function login(){
-  const {data,error}=await supabase.auth.signInWithPassword({
-    email:email.value,password:pass.value
-  });
-  if(error){ msg.innerText=error.message; return; }
-  user=data.user;
-  showApp();
-}
+      async function login() {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.value, password: pass.value
+        });
+        if (error) { msg.innerText = error.message; return; }
+        user = data.user;
+        showApp();
+      }
 
-async function logout(){
-  await supabase.auth.signOut();
-  user=null;
-  showLogin();
-}
+      async function logout() {
+        await supabase.auth.signOut();
+        user = null;
+        showLogin();
+      }
 
-function showApp(){
-  app.innerHTML=`
+      function showApp() {
+        app.innerHTML = `
     <div class="app">
 
       <!-- TOP CARDS -->
@@ -472,160 +532,160 @@ function showApp(){
     </div>
   `;
 
- if (!window.quoteInterval) {
-  window.quoteInterval = setInterval(fetchAllQuotes, 30000);
-}
+        if (!window.quoteInterval) {
+          window.quoteInterval = setInterval(fetchAllQuotes, 30000);
+        }
 
-  // 🔐 actions
-  logoutBtn.onclick = logout;
-  createToolbar();
-  loadWidths();
-  loadAll();
-  enableResize();
+        // 🔐 actions
+        logoutBtn.onclick = logout;
+        createToolbar();
+        loadWidths();
+        loadAll();
+        enableResize();
 
-  const rateSelect = document.getElementById("rateSelect");
-  if(rateSelect){
-    rateSelect.onchange = () => refresh();
-  }
+        const rateSelect = document.getElementById("rateSelect");
+        if (rateSelect) {
+          rateSelect.onchange = () => refresh();
+        }
 
-  // 📊 chart setup (correct timing)
-  setTimeout(() => {
-    initChart();
-    updateHistorySafe(); // initial draw
+        // 📊 chart setup (correct timing)
+        setTimeout(() => {
+          initChart();
+          updateHistorySafe(); // initial draw
 
-    // range buttons
-    document.querySelectorAll(".rangeBtn").forEach(btn=>{
-      btn.onclick = () => {
-        currentRange = btn.dataset.range === "all"
-          ? "all"
-          : parseInt(btn.dataset.range);
+          // range buttons
+          document.querySelectorAll(".rangeBtn").forEach(btn => {
+            btn.onclick = () => {
+              currentRange = btn.dataset.range === "all"
+                ? "all"
+                : parseInt(btn.dataset.range);
 
-        updateHistorySafe();
-      };
-    });
+              updateHistorySafe();
+            };
+          });
 
-    // auto update every minute
-    setInterval(updateHistorySafe, 60000);
+          // auto update every minute
+          setInterval(updateHistorySafe, 60000);
 
-  }, 200);
-}
-
-function loadWidths(){
-  for(let i=1;i<=9;i++){
-    let w=localStorage.getItem("col"+i);
-    if(w) document.documentElement.style.setProperty(`--c${i}`,w);
-  }
-}
-function saveWidth(i,w){
-  localStorage.setItem("col"+i,w);
-}
-
-function enableResize(){
-  document.querySelectorAll(".header .col").forEach((col,i)=>{
-    let resizer=col.querySelector(".resizer");
-    let startX,startW;
-
-    resizer.onmousedown=e=>{
-      startX=e.clientX;
-      startW=col.offsetWidth;
-
-      document.onmousemove=e=>{
-        let w=Math.max(80,startW+(e.clientX-startX));
-        document.documentElement.style.setProperty(`--c${i+1}`,w+"px");
-        saveWidth(i+1,w+"px");
-      };
-      document.onmouseup=()=>document.onmousemove=null;
-    };
-  });
-}
-
-async function loadAll(){
-  const {data}=await supabase
-    .from("portfolio")
-    .select("*")
-    .eq("user_id",user.id);
-
-  portfolio = (data || []).map(r => ({
-  id: r.id,
-  symbol: r.symbol,
-  shares: +r.shares || 0,
-  dividend: +r.dividend || 0,
-  cost: +r.cost || 0,
-  last_price: +r.last_price || 0   // 🔥 ADD THIS
-}));
-
-  symbols = portfolio.map(p => p.symbol);
-  portfolio.sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
-  render();
-  refresh();
-  fetchAllQuotes();
-}
-
-async function saveField(id, field, val){
-  let row = portfolio.find(x => x.id === id);
-  if(!row) return;
-
-  row[field] = parseFloat(val.replace(/,/g,"")) || 0;
-
-  refresh();
-
-  await supabase
-    .from("portfolio")
-    .update({
-      shares: row.shares,
-      dividend: row.dividend,
-      cost: row.cost
-    })
-    .eq("id", id);
-}
-
-async function fetchAllQuotes(){
-  try{
-    if(!symbols.length) return;
-
-    const res = await fetch(
-      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
-    );
-
-    const data = await res.json();
-
-    console.log("QUOTE DATA:", data);
-
-    if(!data || typeof data !== "object") return;
-
-    Object.keys(data).forEach(sym => {
-      if(data[sym] && data[sym].c){
-        dataMap[sym] = data[sym];
+        }, 200);
       }
-    });
 
-    refresh();
+      function loadWidths() {
+        for (let i = 1; i <= 9; i++) {
+          let w = localStorage.getItem("col" + i);
+          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+        }
+      }
+      function saveWidth(i, w) {
+        localStorage.setItem("col" + i, w);
+      }
 
-  } catch(err){
-    console.error("Batch quote error", err);
-  }
-}
+      function enableResize() {
+        document.querySelectorAll(".header .col").forEach((col, i) => {
+          let resizer = col.querySelector(".resizer");
+          let startX, startW;
 
-function createRow(p){
-  let d = p;
-  let sym = p.symbol;
-  let row=document.createElement("div");
-  row.className="row";
+          resizer.onmousedown = e => {
+            startX = e.clientX;
+            startW = col.offsetWidth;
 
-row.innerHTML = `
+            document.onmousemove = e => {
+              let w = Math.max(80, startW + (e.clientX - startX));
+              document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
+              saveWidth(i + 1, w + "px");
+            };
+            document.onmouseup = () => document.onmousemove = null;
+          };
+        });
+      }
+
+      async function loadAll() {
+        const { data } = await supabase
+          .from("portfolio")
+          .select("*")
+          .eq("user_id", user.id);
+
+        portfolio = (data || []).map(r => ({
+          id: r.id,
+          symbol: r.symbol,
+          shares: +r.shares || 0,
+          dividend: +r.dividend || 0,
+          cost: +r.cost || 0,
+          last_price: +r.last_price || 0   // 🔥 ADD THIS
+        }));
+
+        symbols = portfolio.map(p => p.symbol);
+        portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        render();
+        refresh();
+        fetchAllQuotes();
+      }
+
+      async function saveField(id, field, val) {
+        let row = portfolio.find(x => x.id === id);
+        if (!row) return;
+
+        row[field] = parseFloat(val.replace(/,/g, "")) || 0;
+
+        refresh();
+
+        await supabase
+          .from("portfolio")
+          .update({
+            shares: row.shares,
+            dividend: row.dividend,
+            cost: row.cost
+          })
+          .eq("id", id);
+      }
+
+      async function fetchAllQuotes() {
+        try {
+          if (!symbols.length) return;
+
+          const res = await fetch(
+            `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
+          );
+
+          const data = await res.json();
+
+          console.log("QUOTE DATA:", data);
+
+          if (!data || typeof data !== "object") return;
+
+          Object.keys(data).forEach(sym => {
+            if (data[sym] && data[sym].c) {
+              dataMap[sym] = data[sym];
+            }
+          });
+
+          refresh();
+
+        } catch (err) {
+          console.error("Batch quote error", err);
+        }
+      }
+
+      function createRow(p) {
+        let d = p;
+        let sym = p.symbol;
+        let row = document.createElement("div");
+        row.className = "row";
+
+        row.innerHTML = `
   <div class="sticky">${sym}</div>
   <div>N/A</div>
   <div>N/A</div>
-  <input value="${d.shares?fmtNumber(d.shares):""}">
-  <input value="${d.cost?fmtMoney(d.cost):""}">
+  <input value="${d.shares ? fmtNumber(d.shares) : ""}">
+  <input value="${d.cost ? fmtMoney(d.cost) : ""}">
   <div>$0</div>
-  <input value="${d.dividend?fmtNumber(d.dividend):""}">
+  <input value="${d.dividend ? fmtNumber(d.dividend) : ""}">
   <div>0%</div>
   <div>$0</div>
 `;
-const del = document.createElement("button");
-del.innerText = "✕";
-del.style.cssText = `
+        const del = document.createElement("button");
+        del.innerText = "✕";
+        del.style.cssText = `
   margin-left:6px;
   background:#ef4444;
   color:white;
@@ -634,246 +694,246 @@ del.style.cssText = `
   padding:2px 6px;
   cursor:pointer;
 `;
-del.style.marginRight = "6px";
-del.style.marginLeft = "0";
-del.onclick = () => deleteRow(p.id);
-row.children[0].prepend(del); // attach to SYMBOL column
-row.children[3].oninput = e => saveField(p.id,"shares",e.target.value);
-row.children[6].oninput = e => saveField(p.id,"dividend",e.target.value);
-row.children[4].oninput = e => saveField(p.id,"cost",e.target.value);
+        del.style.marginRight = "6px";
+        del.style.marginLeft = "0";
+        del.onclick = () => deleteRow(p.id);
+        row.children[0].prepend(del); // attach to SYMBOL column
+        row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
+        row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
+        row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
 
-  rows[p.id]=row;
-  return row;
-}
+        rows[p.id] = row;
+        return row;
+      }
 
-function render(){
-  list.innerHTML="";
-  rows={};
-  portfolio.forEach(p => list.appendChild(createRow(p)));
-}
+      function render() {
+        list.innerHTML = "";
+        rows = {};
+        portfolio.forEach(p => list.appendChild(createRow(p)));
+      }
 
-function updateProjection(current){
-  if(isNaN(current)) return;   // ✅ allow 0 but skip if not a number
+      function updateProjection(current) {
+        if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
 
-  const rateEl = document.getElementById("rateSelect");
-  const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
+        const rateEl = document.getElementById("rateSelect");
+        const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
 
-  function future(val, years){
-    return val * Math.pow(1 + rate, years);
-  }
+        function future(val, years) {
+          return val * Math.pow(1 + rate, years);
+        }
 
-  const map = {
-    proj1y: 1,
-    proj5y: 5,
-    proj10y: 10,
-    proj20y: 20,
-    proj30y: 30,
-    proj40y: 40
-  };
+        const map = {
+          proj1y: 1,
+          proj5y: 5,
+          proj10y: 10,
+          proj20y: 20,
+          proj30y: 30,
+          proj40y: 40
+        };
 
-  Object.entries(map).forEach(([id, yrs])=>{
-    const el = document.getElementById(id);
-    if(el){
-      el.innerText = fmtMoney0(future(current, yrs));
-    }
-  });
-}
+        Object.entries(map).forEach(([id, yrs]) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.innerText = fmtMoney0(future(current, yrs));
+          }
+        });
+      }
 
-function refresh(){
+      function refresh() {
 
-  let total = 0;
-  let incomeTotal = 0;
-  let gainTotal = 0;
-  let monthlyTotal = 0;
-  let dailyGainTotal = 0;
+        let total = 0;
+        let incomeTotal = 0;
+        let gainTotal = 0;
+        let monthlyTotal = 0;
+        let dailyGainTotal = 0;
 
-  portfolio.forEach(p => {
-    let s = p.symbol;
-    let q = dataMap[s];
-    let row = rows[p.id];
-    if(!row) return;
-    // 🔥 reset all cell backgrounds first
-for(let i=0;i<9;i++){
-  row.children[i].style.background = "transparent";
-}
+        portfolio.forEach(p => {
+          let s = p.symbol;
+          let q = dataMap[s];
+          let row = rows[p.id];
+          if (!row) return;
+          // 🔥 reset all cell backgrounds first
+          for (let i = 0; i < 9; i++) {
+            row.children[i].style.background = "transparent";
+          }
 
-    let price = q?.c || p.last_price || 0;
-    let shares = p.shares || 0;
-    let dividend = p.dividend || 0;
-    let cost = p.cost || 0;
+          let price = q?.c || p.last_price || 0;
+          let shares = p.shares || 0;
+          let dividend = p.dividend || 0;
+          let cost = p.cost || 0;
 
-    let val = price ? price * shares : cost * shares;
-    let invested = cost * shares;
-    let realGain = val - invested;
-    let income = dividend * shares;
+          let val = price ? price * shares : cost * shares;
+          let invested = cost * shares;
+          let realGain = val - invested;
+          let income = dividend * shares;
 
-    let change = (q && q.pc) ? (q.c - q.pc) : 0;
-    let yieldVal = price ? dividend / price : 0;
+          let change = (q && q.pc) ? (q.c - q.pc) : 0;
+          let yieldVal = price ? dividend / price : 0;
 
-    total += val;
-    incomeTotal += income;
-    gainTotal += realGain;
-    monthlyTotal += income / 12;
-    dailyGainTotal += change * shares;
+          total += val;
+          incomeTotal += income;
+          gainTotal += realGain;
+          monthlyTotal += income / 12;
+          dailyGainTotal += change * shares;
 
-    // UI
-    row.children[1].innerText = price ? fmtMoney(price) : "N/A";
-    row.children[2].innerText = q ? fmtMoney(change) : "N/A";
-    row.children[2].style.color =
-      change > 0 ? "#16a34a" :
-      change < 0 ? "#dc2626" : "#999";
+          // UI
+          row.children[1].innerText = price ? fmtMoney(price) : "N/A";
+          row.children[2].innerText = q ? fmtMoney(change) : "N/A";
+          row.children[2].style.color =
+            change > 0 ? "#16a34a" :
+              change < 0 ? "#dc2626" : "#999";
 
-    row.children[7].innerText = fmtPercent(yieldVal);
-    row.children[7].style.background = "transparent";
-    row.children[5].innerText = fmtMoney(val);
-    row.children[8].innerText = fmtMoney(income);
+          row.children[7].innerText = fmtPercent(yieldVal);
+          row.children[7].style.background = "transparent";
+          row.children[5].innerText = fmtMoney(val);
+          row.children[8].innerText = fmtMoney(income);
 
-    // styling
-    if (realGain > 0) {
-      row.children[5].style.background = "#ecfdf5";
-    } else if (realGain < 0) {
-      row.children[5].style.background = "#fef2f2";
-    } else {
-      row.children[5].style.background = "transparent";
-    }
+          // styling
+          if (realGain > 0) {
+            row.children[5].style.background = "#ecfdf5";
+          } else if (realGain < 0) {
+            row.children[5].style.background = "#fef2f2";
+          } else {
+            row.children[5].style.background = "transparent";
+          }
 
-   row.children[8].style.background =
-  income > 0 ? "#dbeafe" : "transparent";
+          row.children[8].style.background =
+            income > 0 ? "#dbeafe" : "transparent";
 
-row.children[8].style.color =
-  income > 0 ? "#1d4ed8" : "#111";
+          row.children[8].style.color =
+            income > 0 ? "#1d4ed8" : "#111";
 
-row.children[8].style.fontWeight =
-  income > 0 ? "600" : "400";
-  });
+          row.children[8].style.fontWeight =
+            income > 0 ? "600" : "400";
+        });
 
-  // TOP CARDS
-  pVal.innerText = fmtMoney0(total);
-  iVal.innerText = fmtMoney0(incomeTotal);
+        // TOP CARDS
+        pVal.innerText = fmtMoney0(total);
+        iVal.innerText = fmtMoney0(incomeTotal);
 
-  gVal.innerText = fmtMoney0(gainTotal);
-  gVal.style.color =
-    gainTotal > 0 ? "#16a34a" :
-    gainTotal < 0 ? "#dc2626" : "#333";
+        gVal.innerText = fmtMoney0(gainTotal);
+        gVal.style.color =
+          gainTotal > 0 ? "#16a34a" :
+            gainTotal < 0 ? "#dc2626" : "#333";
 
-  const todayVal = document.getElementById("todayVal");
-  if(todayVal){
-    todayVal.innerText =
-      (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
+        const todayVal = document.getElementById("todayVal");
+        if (todayVal) {
+          todayVal.innerText =
+            (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
 
-    todayVal.style.color =
-      dailyGainTotal > 0 ? "#16a34a" :
-      dailyGainTotal < 0 ? "#dc2626" : "#333";
-  }
+          todayVal.style.color =
+            dailyGainTotal > 0 ? "#16a34a" :
+              dailyGainTotal < 0 ? "#dc2626" : "#333";
+        }
 
-  mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined,{
-    minimumFractionDigits:0,
-    maximumFractionDigits:0
-  });
+        mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
 
-  updateProjection(total);
-  updateHistorySafe();
-}
+        updateProjection(total);
+        updateHistorySafe();
+      }
 
-async function addRow(){
-  const symbol = prompt("Enter symbol (e.g. AAPL)");
-  if(!symbol) return;
+      async function addRow() {
+        const symbol = prompt("Enter symbol (e.g. AAPL)");
+        if (!symbol) return;
 
-  const { data, error } = await supabase
-    .from("portfolio")
-    .insert({
-      user_id: user.id,
-      symbol: symbol.toUpperCase(),
-      shares: 0,
-      dividend: 0,
-      cost: 0
-    })
-    .select()
-    .single();
+        const { data, error } = await supabase
+          .from("portfolio")
+          .insert({
+            user_id: user.id,
+            symbol: symbol.toUpperCase(),
+            shares: 0,
+            dividend: 0,
+            cost: 0
+          })
+          .select()
+          .single();
 
-  if(error){
-    alert(error.message);
-    return;
-  }
+        if (error) {
+          alert(error.message);
+          return;
+        }
 
-  // add locally
-  portfolio.push({
-    id: data.id,
-    symbol: data.symbol,
-    shares: 0,
-    dividend: 0,
-    cost: 0
-  });
+        // add locally
+        portfolio.push({
+          id: data.id,
+          symbol: data.symbol,
+          shares: 0,
+          dividend: 0,
+          cost: 0
+        });
 
-  symbols.push(data.symbol);
+        symbols.push(data.symbol);
 
-  const newRow = createRow(portfolio[portfolio.length - 1]);
-  list.appendChild(newRow);
+        const newRow = createRow(portfolio[portfolio.length - 1]);
+        list.appendChild(newRow);
 
-}
+      }
 
-async function deleteRow(id){
+      async function deleteRow(id) {
 
-  if(!confirm("Delete this row?")) return;
+        if (!confirm("Delete this row?")) return;
 
-  await supabase
-    .from("portfolio")
-    .delete()
-    .eq("id", id);
+        await supabase
+          .from("portfolio")
+          .delete()
+          .eq("id", id);
 
-  // remove locally
-  portfolio = portfolio.filter(p => p.id !== id);
+        // remove locally
+        portfolio = portfolio.filter(p => p.id !== id);
 
-  // remove DOM
-  if(rows[id]){
-    rows[id].remove();
-    delete rows[id];
-  }
+        // remove DOM
+        if (rows[id]) {
+          rows[id].remove();
+          delete rows[id];
+        }
 
-  refresh();
-}
+        refresh();
+      }
 
-async function resetOrder(){
+      async function resetOrder() {
 
-  if(!confirm("Sort alphabetically?")) return;
+        if (!confirm("Sort alphabetically?")) return;
 
-  // fetch fresh data
-  const { data, error } = await supabase
-    .from("portfolio")
-    .select("id, symbol")
-    .eq("user_id", user.id);
+        // fetch fresh data
+        const { data, error } = await supabase
+          .from("portfolio")
+          .select("id, symbol")
+          .eq("user_id", user.id);
 
-  if(error){
-    alert(error.message);
-    return;
-  }
+        if (error) {
+          alert(error.message);
+          return;
+        }
 
-  // sort alphabetically
-  data.sort((a,b) => a.symbol.localeCompare(b.symbol));
+        // sort alphabetically
+        data.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
-  // assign new positions
-  for(let i = 0; i < data.length; i++){
-    await supabase
-      .from("portfolio")
-      .update({ position: i + 1 })
-      .eq("id", data[i].id);
-  }
+        // assign new positions
+        for (let i = 0; i < data.length; i++) {
+          await supabase
+            .from("portfolio")
+            .update({ position: i + 1 })
+            .eq("id", data[i].id);
+        }
 
-  // reload app
-  loadAll();
-}
-function createToolbar(){
+        // reload app
+        loadAll();
+      }
+      function createToolbar() {
 
-  const wrap = document.createElement("div");
+        const wrap = document.createElement("div");
 
-  wrap.style.cssText = `
+        wrap.style.cssText = `
     display:flex;
     gap:8px;
     margin-bottom:12px;
     align-items:center;
   `;
 
-  wrap.innerHTML = `
+        wrap.innerHTML = `
     <button id="addRowBtn" class="toolBtn">
       ➕ <span>ADD SYMBOL</span>
     </button>
@@ -883,112 +943,113 @@ function createToolbar(){
     </button>
   `;
 
-  // insert ABOVE table
-  const table = document.querySelector(".tableWrap");
-  table.parentNode.insertBefore(wrap, table);
+        // insert ABOVE table
+        const table = document.querySelector(".tableWrap");
+        table.parentNode.insertBefore(wrap, table);
 
-  // wire actions
-  document.getElementById("addRowBtn").onclick = addRow;
-  document.getElementById("resetOrderBtn").onclick = resetOrder;
-}
+        // wire actions
+        document.getElementById("addRowBtn").onclick = addRow;
+        document.getElementById("resetOrderBtn").onclick = resetOrder;
+      }
 
-async function initAuth(){
-  showLogin();
-  const {data}=await supabase.auth.getSession();
-  user=data.session?.user;
-  if(user) showApp();
-}
+      async function initAuth() {
+        showLogin();
+        const { data } = await supabase.auth.getSession();
+        user = data.session?.user;
+        if (user) showApp();
+      }
 
-initAuth();
+      initAuth();
 
-});
-let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
-let chart;
-let currentRange = "all";
-  
-function initChart(){
-  const ctx = document.getElementById("historyChart");
-  if(!ctx) return;
+    });
+    let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
+    let chart;
+    let currentRange = "all";
 
-  chart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: [],
-      datasets: [{
-        label: "Portfolio",
-        data: [],
-        tension: 0.3
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { display: false },
-        y: {
-          ticks: {
-            callback: v => "$" + v.toLocaleString()
+    function initChart() {
+      const ctx = document.getElementById("historyChart");
+      if (!ctx) return;
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [{
+            label: "Portfolio",
+            data: [],
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: {
+              ticks: {
+                callback: v => "$" + v.toLocaleString()
+              }
+            }
           }
         }
+      });
+    }
+
+    function updateHistorySafe() {
+      const el = document.getElementById("pVal");
+      if (!el) return;
+
+      let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g, ""));
+      if (isNaN(val)) return;
+
+      let d = new Date();
+      let today = d.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+
+      // check last saved date
+      let last = historyData[historyData.length - 1];
+
+      let todayKey = new Date().toDateString();
+
+      if (!last || last.key !== todayKey) {
+        historyData.push({ key: todayKey, time: today, value: val });
+
+        if (historyData.length > 100) historyData.shift();
+
+        localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+      }
+
+      if (chart) {
+        let filtered = historyData;
+
+        if (currentRange !== "all") {
+          filtered = historyData.slice(-currentRange);
+        }
+
+        chart.data.labels = filtered.map(d => d.time);
+        chart.data.datasets[0].data = filtered.map(d => d.value);
+        chart.update();
       }
     }
-  });
-}
-
-function updateHistorySafe(){
-  const el = document.getElementById("pVal");
-  if(!el) return;
-
-  let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g,""));
-  if(isNaN(val)) return;
-
-let d = new Date();
-let today = d.toLocaleDateString(undefined, {
-  weekday: "short",
-  month: "short",
-  day: "numeric"
-});
-
-// check last saved date
-let last = historyData[historyData.length - 1];
-
-let todayKey = new Date().toDateString();
-
-if (!last || last.key !== todayKey) {
-  historyData.push({ key: todayKey, time: today, value: val });
-
-  if (historyData.length > 100) historyData.shift();
-
-  localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
-}
-
-  if(chart){
-let filtered = historyData;
-
-if (currentRange !== "all") {
-  filtered = historyData.slice(-currentRange);
-}
-
-chart.data.labels = filtered.map(d => d.time);
-chart.data.datasets[0].data = filtered.map(d => d.value);
-    chart.update();
-  }
-}
 
 
 
-</script>
+  </script>
 
-<script>
-function sendHeight(){
-  parent.postMessage({type:"resize",height:document.body.scrollHeight},"*");
-}
-window.addEventListener("load",sendHeight);
-window.addEventListener("resize",sendHeight);
-setInterval(sendHeight,800);
+  <script>
+    function sendHeight() {
+      parent.postMessage({ type: "resize", height: document.body.scrollHeight }, "*");
+    }
+    window.addEventListener("load", sendHeight);
+    window.addEventListener("resize", sendHeight);
+    setInterval(sendHeight, 800);
 
-</script>
+  </script>
 
 </body>
+
 </html>
