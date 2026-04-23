@@ -462,6 +462,7 @@ function showApp(){
       </div>
 
     </div>
+    setInterval(fetchAllQuotes, 30000); // every 30 seconds
   `;
 
   // 🔐 actions
@@ -568,17 +569,23 @@ async function saveField(id, field, val){
 }
 
 async function fetchAllQuotes(){
-
   try{
+    if(!symbols.length) return;
+
     const res = await fetch(
       `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
     );
 
     const data = await res.json();
 
-    // ✅ store correctly into dataMap
+    console.log("QUOTE DATA:", data);
+
+    if(!data || typeof data !== "object") return;
+
     Object.keys(data).forEach(sym => {
-      dataMap[sym] = data[sym];
+      if(data[sym] && data[sym].c){
+        dataMap[sym] = data[sym];
+      }
     });
 
     refresh();
