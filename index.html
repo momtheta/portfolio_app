@@ -567,78 +567,25 @@ async function saveField(id, field, val){
     .eq("id", id);
 }
 
-// 🔒 Prevent overlapping calls
-let isFetching = false;
+async function fetchAllQuotes(){
 
-async function fetchAllQuotes() {
-  if (isFetching) return;
-  isFetching = true;
+  try{
+    const res = await fetch(
+      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
+    );
 
-  try {
-    // 🔥 1. Get ALL symbols from your table
-   const rows = document.querySelectorAll(".row");
-
-    const symbols = [];
-    rows.forEach(row => {
-      const sym = row.children[0]?.innerText?.trim();
-      if (sym) symbols.push(sym);
-    });
-
-    if (symbols.length === 0) {
-      isFetching = false;
-      return;
-    }
-
-    // remove duplicates
-    const uniqueSymbols = [...new Set(symbols)];
-
-    // 🔥 2. Call YOUR Supabase function
-    const url = "https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=" + uniqueSymbols.join(",");
-
-    const res = await fetch(url);
     const data = await res.json();
 
-    console.log("BATCH DATA:", data);
-
-    // 🔥 3. Update UI row-by-row
-    rows.forEach(row => {
-      const sym = row.children[0]?.innerText?.trim();
-     if (!sym || !data[sym]) return;
-
-dataMap[sym] = data[sym]; // 🔥 THIS FIXES YOUR ENTIRE APP
-
-const price = data[sym].c;
-const prev = data[sym].pc;
-
-      const change = (price && prev) ? price - prev : null;
-
-      // PRICE column (adjust index if needed)
-      row.children[1].innerText = price ? `$${price.toFixed(2)}` : "N/A";
-
-      // CHANGE column
-      const changeCell = row.children[2];
-
-      if (change !== null) {
-        changeCell.innerText = `$${change.toFixed(2)}`;
-
-        if (change > 0) {
-          changeCell.style.color = "#16a34a";
-        } else if (change < 0) {
-          changeCell.style.color = "#dc2626";
-        } else {
-          changeCell.style.color = "#999";
-        }
-      } else {
-        changeCell.innerText = "N/A";
-        changeCell.style.color = "#999";
-      }
+    // ✅ store correctly into dataMap
+    Object.keys(data).forEach(sym => {
+      dataMap[sym] = data[sym];
     });
 
-  } catch (err) {
+    refresh();
+
+  } catch(err){
     console.error("Batch quote error", err);
   }
-
-  isFetching = false;
 }
 
 function createRow(p){
@@ -935,8 +882,6 @@ async function initAuth(){
 }
 
 initAuth();
-// 🔁 Auto refresh quotes every 30s (safe, no overlap)
-setInterval(fetchAllQuotes, 30000);
 
 });
 let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
