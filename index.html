@@ -545,7 +545,6 @@ async function loadAll(){
   symbols = portfolio.map(p => p.symbol);
   portfolio.sort((a,b) => (a.position ?? 0) - (b.position ?? 0));
   render();
-  refresh();
   fetchAllQuotes();
 }
 
@@ -574,6 +573,7 @@ async function fetchAllQuotes(){
     await Promise.all(chunk.map(fetchQuote));
     await new Promise(r => setTimeout(r, 1000)); // pause between batches
   }
+  refresh(); // ✅ run AFTER all data loaded
 }
 
 async function fetchQuote(sym){
@@ -695,14 +695,14 @@ for(let i=0;i<9;i++){
     let realGain = val - invested;
     let income = dividend * shares;
 
-    let change = (q && typeof q.pc === "number") ? (q.c - q.pc) : null;
+    let change = (q && typeof q.c === "number" && typeof q.pc === "number") ? (q.c - q.pc) : null;
     let yieldVal = price ? dividend / price : 0;
 
     total += val;
     incomeTotal += income;
     gainTotal += realGain;
     monthlyTotal += income / 12;
-    dailyGainTotal += change * shares;
+    if (change !== null) {dailyGainTotal += change * shares;}
 
     // UI
     row.children[1].innerText = price ? fmtMoney(price) : "N/A";
