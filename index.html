@@ -567,25 +567,76 @@ async function saveField(id, field, val){
     .eq("id", id);
 }
 
-async function fetchAllQuotes(){
+// 🔒 Prevent overlapping calls
+let isFetching = false;
 
-  try{
-    const res = await fetch(
-      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
-    );
+async function fetchAllQuotes() {
+  if (isFetching) return;
+  isFetching = true;
 
-    const data = await res.json();
+  try {
+    // 🔥 1. Get ALL symbols from your table
+    const rows = document.querySelectorAll("table tbody tr");
 
-    // ✅ store correctly into dataMap
-    Object.keys(data).forEach(sym => {
-      dataMap[sym] = data[sym];
+    const symbols = [];
+    rows.forEach(row => {
+      const sym = row.children[0]?.innerText?.trim();
+      if (sym) symbols.push(sym);
     });
 
-    refresh();
+    if (symbols.length === 0) {
+      isFetching = false;
+      return;
+    }
 
-  } catch(err){
+    // remove duplicates
+    const uniqueSymbols = [...new Set(symbols)];
+
+    // 🔥 2. Call YOUR Supabase function
+    const url = "https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=" + uniqueSymbols.join(",");
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    console.log("BATCH DATA:", data);
+
+    // 🔥 3. Update UI row-by-row
+    rows.forEach(row => {
+      const sym = row.children[0]?.innerText?.trim();
+      if (!sym || !data[sym]) return;
+
+      const price = data[sym].c;
+      const prev = data[sym].pc;
+
+      const change = (price && prev) ? price - prev : null;
+
+      // PRICE column (adjust index if needed)
+      row.children[1].innerText = price ? `$${price.toFixed(2)}` : "N/A";
+
+      // CHANGE column
+      const changeCell = row.children[2];
+
+      if (change !== null) {
+        changeCell.innerText = `$${change.toFixed(2)}`;
+
+        if (change > 0) {
+          changeCell.style.color = "#16a34a";
+        } else if (change < 0) {
+          changeCell.style.color = "#dc2626";
+        } else {
+          changeCell.style.color = "#999";
+        }
+      } else {
+        changeCell.innerText = "N/A";
+        changeCell.style.color = "#999";
+      }
+    });
+
+  } catch (err) {
     console.error("Batch quote error", err);
   }
+
+  isFetching = false;
 }
 
 function createRow(p){
@@ -968,6 +1019,7 @@ function sendHeight(){
 window.addEventListener("load",sendHeight);
 window.addEventListener("resize",sendHeight);
 setInterval(sendHeight,800);
+setInterval(fetchAllQuotes, 30000); // every 30 seconds
 
 </script>
 
