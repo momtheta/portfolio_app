@@ -230,12 +230,14 @@ body{
 }
 
 .historyCard{
-  flex:2;
+  flex:0 0 50%;   /* 🔥 fixed half width */
+  max-width:50%;
   background:white;
   border-radius:12px;
   padding:16px;
-  color:#111
+  color:#111;
 }
+
 
 /* projection card spacing */
 #proj1y, #proj5y, #proj10y, #proj20y, #proj30y, #proj40y{
@@ -265,6 +267,8 @@ body{
 
 /* PROJECTION CARD */
 .projCard{
+  flex:0 0 30%;
+  max-width:30%;
   margin-top:16px;
   background:#ffffff;
   border-radius:12px;
