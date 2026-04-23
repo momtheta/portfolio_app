@@ -565,29 +565,24 @@ async function saveField(id, field, val){
     })
     .eq("id", id);
 }
+
 async function fetchAllQuotes(){
   try {
-    if (!symbols.length) return;
+    const uniqueSymbols = [...new Set(symbols)].join(",");
 
-    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(",")}`;
+    const res = await fetch(
+      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${uniqueSymbols}`
+    );
 
-    const res = await fetch(url);
-    const json = await res.json();
+    const data = await res.json();
 
-    const results = json?.quoteResponse?.result || [];
-
-    results.forEach(q => {
-      if (q && q.symbol && typeof q.regularMarketPrice === "number") {
-        dataMap[q.symbol] = {
-          c: q.regularMarketPrice,
-          pc: q.regularMarketPreviousClose
-        };
-      }
+    Object.keys(data).forEach(sym => {
+      dataMap[sym] = data[sym];
     });
 
     refresh();
 
-  } catch (err) {
+  } catch(err){
     console.error("Batch quote error", err);
   }
 }
