@@ -957,33 +957,14 @@ let filtered = historyData;
 if (currentRange !== "all") {
   filtered = historyData.slice(-currentRange);
 }
-pushChartPoint(val);
+
+chart.data.labels = filtered.map(d => d.time);
+chart.data.datasets[0].data = filtered.map(d => d.value);
+    chart.update();
   }
 }
 
-// 🔥 Smooth sliding window patch
-const MAX_POINTS = 30;
 
-function pushChartPoint(value){
-  if(!chart) return;
-
-  const now = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-  const labels = chart.data.labels;
-  const data = chart.data.datasets[0].data;
-
-  // 👉 add new point
-  labels.push(now);
-  data.push(value);
-
-  // 👉 keep fixed window (Robinhood behavior)
-  if(labels.length > MAX_POINTS){
-    labels.shift();
-    data.shift();
-  }
-
-  chart.update("active"); // 🔥 smooth animation
-}
 
 </script>
 
