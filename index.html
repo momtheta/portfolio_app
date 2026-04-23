@@ -566,40 +566,34 @@ async function saveField(id, field, val){
     .eq("id", id);
 }
 async function fetchAllQuotes(){
-  const chunkSize = 5;
+  try {
+    if (!symbols.length) return;
 
-  for (let i = 0; i < symbols.length; i += chunkSize){
-    const chunk = symbols.slice(i, i + chunkSize);
-    await Promise.all(chunk.map(fetchQuote));
-    await new Promise(r => setTimeout(r, 1000)); // pause between batches
-  }
-  refresh(); // ✅ run AFTER all data loaded
-}
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(",")}`;
 
-async function fetchQuote(sym){
-  try{
-    const cleanSym = sym.trim().toUpperCase();
+    const res = await fetch(url);
+    const json = await res.json();
 
-    const res = await fetch(
-      `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbol=${cleanSym}`
-    );
+    const results = json?.quoteResponse?.result || [];
 
-    const d = await res.json();
-
-    console.log("API:", cleanSym, d); // 🔍 DEBUG
-
-    if(typeof d.c === "number"){
-      dataMap[cleanSym] = {
-        c: Number(d.c),
-        pc: Number(d.pc)
-      };
-    }
+    results.forEach(q => {
+      if (q && q.symbol && typeof q.regularMarketPrice === "number") {
+        dataMap[q.symbol] = {
+          c: q.regularMarketPrice,
+          pc: q.regularMarketPreviousClose
+        };
+      }
+    });
 
     refresh();
 
-  }catch(err){
-    console.error("Quote error", err);
+  } catch (err) {
+    console.error("Batch quote error", err);
   }
+}
+
+async function fetchQuote(sym){
+  // no longer used
 }
 
 function createRow(p){
@@ -699,6 +693,10 @@ function refresh(){
     // 🧮 Safe values
     const price = (q && typeof q.c === "number") ? q.c : (p.last_price || 0);
     const prevClose = (q && typeof q.pc === "number") ? q.pc : null;
+    // store last price for fallback next refresh
+if (price) {
+  p.last_price = price;
+}
 
     const shares = Number(p.shares) || 0;
     const dividend = Number(p.dividend) || 0;
@@ -710,7 +708,16 @@ function refresh(){
     const gain = value - invested;
     const income = dividend * shares;
 
-    const change = (prevClose !== null) ? (price - prevClose) : null;
+    // 🔥 robust change calculation
+let change = null;
+
+if (price && prevClose) {
+  change = price - prevClose;
+} 
+// fallback: use last known price if prevClose missing
+else if (price && p.last_price && p.last_price !== price) {
+  change = price - p.last_price;
+}
     const yieldVal = price ? (dividend / price) : 0;
 
     // 📊 Totals (SAFE — no NaN)
@@ -727,15 +734,29 @@ function refresh(){
     row.children[1].innerText = price ? fmtMoney(price) : "N/A";
 
     // 🎯 UI — CHANGE
-    if(change !== null){
-      row.children[2].innerText = fmtMoney(change);
-      row.children[2].style.color =
-        change > 0 ? "#16a34a" :
-        change < 0 ? "#dc2626" : "#999";
-    } else {
-      row.children[2].innerText = "N/A";
-      row.children[2].style.color = "#999";
-    }
+   const changeCell = row.children[2];
+
+if (change !== null) {
+  changeCell.innerText = fmtMoney(change);
+
+  if (change > 0) {
+    changeCell.style.color = "#16a34a";
+    changeCell.style.background = "#ecfdf5";
+  } 
+  else if (change < 0) {
+    changeCell.style.color = "#dc2626";
+    changeCell.style.background = "#fef2f2";
+  } 
+  else {
+    changeCell.style.color = "#999";
+    changeCell.style.background = "transparent";
+  }
+
+} else {
+  changeCell.innerText = "N/A";
+  changeCell.style.color = "#999";
+  changeCell.style.background = "transparent";
+}
 
     // 🎯 UI — VALUE + INCOME
     row.children[5].innerText = fmtMoney(value);
@@ -825,8 +846,8 @@ async function addRow(){
 
   const newRow = createRow(portfolio[portfolio.length - 1]);
   list.appendChild(newRow);
+  fetchAllQuotes();
 
-  fetchQuote(data.symbol);
 }
 
 async function deleteRow(id){
