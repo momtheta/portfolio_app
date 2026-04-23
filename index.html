@@ -576,7 +576,7 @@ async function fetchAllQuotes() {
 
   try {
     // 🔥 1. Get ALL symbols from your table
-    const rows = document.querySelectorAll("table tbody tr");
+   const rows = document.querySelectorAll(".row");
 
     const symbols = [];
     rows.forEach(row => {
@@ -603,10 +603,12 @@ async function fetchAllQuotes() {
     // 🔥 3. Update UI row-by-row
     rows.forEach(row => {
       const sym = row.children[0]?.innerText?.trim();
-      if (!sym || !data[sym]) return;
+     if (!sym || !data[sym]) return;
 
-      const price = data[sym].c;
-      const prev = data[sym].pc;
+dataMap[sym] = data[sym]; // 🔥 THIS FIXES YOUR ENTIRE APP
+
+const price = data[sym].c;
+const prev = data[sym].pc;
 
       const change = (price && prev) ? price - prev : null;
 
@@ -933,6 +935,8 @@ async function initAuth(){
 }
 
 initAuth();
+// 🔁 Auto refresh quotes every 30s (safe, no overlap)
+setInterval(fetchAllQuotes, 30000);
 
 });
 let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
@@ -1019,7 +1023,6 @@ function sendHeight(){
 window.addEventListener("load",sendHeight);
 window.addEventListener("resize",sendHeight);
 setInterval(sendHeight,800);
-setInterval(fetchAllQuotes, 30000); // every 30 seconds
 
 </script>
 
