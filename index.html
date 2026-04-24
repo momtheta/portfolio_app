@@ -144,10 +144,11 @@
       background: #1d4ed8;
     }
 
-    /* TABLE */
+    /* TABLE WRAPPER */
     .tableWrap {
       width: 100%;
-      overflow-x: auto
+      overflow-x: auto;
+      position: relative;
     }
 
     /* column widths */
@@ -166,12 +167,12 @@
     .header .sticky {
       position: sticky;
       top: 0;
-      /* ← THIS is the missing piece */
       left: 0;
       z-index: 10;
       background: white;
     }
 
+    /* GRID */
     .header,
     .row {
       display: grid;
@@ -184,17 +185,16 @@
     .header {
       position: sticky;
       top: 0;
+      z-index: 20;
+      /* ABOVE everything */
       background: white;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #444;
+      border-bottom: 2px solid #d1d5db;
 
       /* 🔥 NEW: horizontal divider */
       border-bottom: 2px solid #d1d5db;
     }
 
-    /* CELLS */
+    /* ALL CELLS */
     .header>div,
     .row>div {
       padding: 10px;
@@ -202,7 +202,29 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-sizing: border-box;
+      background: white;
+    }
+
+    /* 🔥 CRITICAL: STICKY SYMBOL COLUMN */
+    /* sticky symbol column */
+    .header .sticky,
+    .row .sticky {
+      position: sticky;
+      left: 0;
+      z-index: 50;
+      background: white;
+
+      isolation: isolate;
+
+      box-shadow:
+        0 0 0 1000px white inset,
+        2px 0 0 #e5e7eb;
+    }
+
+    /* 🔥 Prevent weird stacking bugs */
+    .row>div:not(.sticky) {
+      position: relative;
+      z-index: 1;
     }
 
     /* left-align SYMBOL column (data only) */
@@ -237,19 +259,22 @@
 
     /* sticky symbol */
     .sticky {
+      box-shadow: 2px 0 0 #e5e7eb;
       position: sticky;
       left: 0;
       background: white;
-      z-index: 5;
+      z-index: 15;
       /* ← ADD THIS LINE ONLY */
     }
 
-    /* rows */
+    /* ROW */
     .row {
+      position: relative;
+      z-index: 1;
       background: white;
-      font-size: 14px;
     }
 
+    /* hover */
     .row:hover {
       background: #f9fafb;
     }
@@ -778,18 +803,22 @@
           dailyGainTotal += change * shares;
 
           // UI
-          row.children[1].innerText = price ? fmtMoney(price) : "N/A";
-          row.children[2].innerText = q ? fmtMoney(change) : "N/A";
+          const priceText = price ? fmtMoney(price) : "N/A";
+          if (row.children[1].innerText !== priceText) {
+            row.children[1].innerText = priceText;
+          }
+          const changeText = q ? fmtMoney(change) : "N/A";
+          if (row.children[2].innerText !== changeText) {
+            row.children[2].innerText = changeText;
+          }
           row.children[2].style.color =
             change > 0 ? "#16a34a" :
               change < 0 ? "#dc2626" : "#999";
 
-          row.children[7].innerText = fmtPercent(yieldVal);
-          row.children[7].style.background = "transparent";
-          row.children[5].innerText = fmtMoney(val);
-          row.children[8].innerText = fmtMoney(income);
-
-          // styling
+          const valueText = fmtMoney(val);
+          if (row.children[5].innerText !== valueText) {
+            row.children[5].innerText = valueText;
+          }
           if (realGain > 0) {
             row.children[5].style.background = "#ecfdf5";
           } else if (realGain < 0) {
@@ -798,12 +827,17 @@
             row.children[5].style.background = "transparent";
           }
 
+          row.children[7].innerText = fmtPercent(yieldVal);
+          row.children[7].style.background = "transparent";
+
+          const incomeText = fmtMoney(income);
+          if (row.children[8].innerText !== incomeText) {
+            row.children[8].innerText = incomeText;
+          }
           row.children[8].style.background =
             income > 0 ? "#dbeafe" : "transparent";
-
           row.children[8].style.color =
             income > 0 ? "#1d4ed8" : "#111";
-
           row.children[8].style.fontWeight =
             income > 0 ? "600" : "400";
         });
@@ -997,47 +1031,39 @@
       });
     }
 
-    function updateHistorySafe() {
-      const el = document.getElementById("pVal");
-      if (!el) return;
+    if (chart) {
 
-      let val = parseFloat(el.innerText.replace(/[^0-9.-]+/g, ""));
-      if (isNaN(val)) return;
+      let filtered = historyData;
 
-      let d = new Date();
-      let today = d.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric"
-      });
-
-      // check last saved date
-      let last = historyData[historyData.length - 1];
-
-      let todayKey = new Date().toDateString();
-
-      if (!last || last.key !== todayKey) {
-        historyData.push({ key: todayKey, time: today, value: val });
-
-        if (historyData.length > 100) historyData.shift();
-
-        localStorage.setItem("portfolioHistory", JSON.stringify(historyData));
+      if (currentRange !== "all") {
+        filtered = historyData.slice(-currentRange);
       }
 
-      if (chart) {
-        let filtered = historyData;
+      const newLabels = filtered.map(d => d.time);
+      const newData = filtered.map(d => d.value);
 
-        if (currentRange !== "all") {
-          filtered = historyData.slice(-currentRange);
+      const oldData = chart.data.datasets[0].data;
+
+      // ✅ append instead of replace
+      if (newData.length > oldData.length) {
+        chart.data.labels.push(newLabels[newLabels.length - 1]);
+        oldData.push(newData[newData.length - 1]);
+
+        // 🔥 sliding window (fixed width)
+        const MAX_POINTS = 60;
+        if (oldData.length > MAX_POINTS) {
+          chart.data.labels.shift();
+          oldData.shift();
         }
 
-        chart.data.labels = filtered.map(d => d.time);
-        chart.data.datasets[0].data = filtered.map(d => d.value);
-        chart.update();
+      } else {
+        // fallback (range change etc)
+        chart.data.labels = newLabels;
+        chart.data.datasets[0].data = newData;
       }
+
+      chart.update("none"); // 🔥 NO animation = no flicker
     }
-
-
 
   </script>
 
