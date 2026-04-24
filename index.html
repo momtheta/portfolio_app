@@ -104,15 +104,6 @@
       font-weight: 600;
     }
 
-    #logoutBtn {
-      background: #16a34a;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      height: 40px;
-    }
-
     .toolBtn {
       display: flex;
       align-items: center;
@@ -352,7 +343,7 @@
     }
 
     /* PROJECTION CARD */
-     .projCard {
+    .projCard {
       flex: 0 0 25%;
       max-width: 25%;
       background: #ffffff;
@@ -414,6 +405,93 @@
       font-variant-numeric: tabular-nums;
       text-align: right;
     }
+
+    .networthCard {
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .chartBox {
+      margin-top: 10px;
+      background: #f9fafb;
+      /* soft gray */
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      height: 260px;
+      /* fixed height */
+      position: relative;
+      background: #f3f4f6;
+    }
+    /* 🔥 PREMIUM HEADER BAR */
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 14px;
+  margin-bottom: 16px;
+
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(229, 231, 235, 0.6);
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* 📅 DATE (left side) */
+#todayDate {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+
+  letter-spacing: 0.02em;
+}
+
+/* 🔓 LOGOUT BUTTON */
+#logoutBtn {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+
+  border: none;
+  border-radius: 999px;
+
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+/* hover */
+#logoutBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);
+}
+
+/* click */
+#logoutBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ✨ subtle glow on hover */
+.topBar:hover {
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
   </style>
 
 </head>
@@ -432,7 +510,7 @@
         "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
         { auth: { persistSession: true, storage: window.localStorage } }
       );
-
+      window.supabaseClient = supabase;
       const defaultSymbols = [
         "AAPL", "AMZN", "MSFT", "NVDA", "QYLD", "VTSAX",
         "NFLX", "DOMO", "RELX", "SMCY", "PGBAX"
@@ -468,6 +546,7 @@
         });
         if (error) { msg.innerText = error.message; return; }
         user = data.user;
+        window.currentUser = user;
         showApp();
       }
 
@@ -480,7 +559,11 @@
       function showApp() {
         app.innerHTML = `
     <div class="app">
-
+  <!-- 🔥 HEADER BAR -->
+  <div class="topBar">
+    <div id="todayDate"></div>
+    <button id="logoutBtn">LOGOUT</button>
+  </div>
       <!-- TOP CARDS -->
       <div class="cards">
         <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
@@ -488,8 +571,6 @@
         <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div> 
         <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
         <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
-
-        <button id="logoutBtn">LOGOUT</button>
       </div>
 
       <!-- TABLE -->
@@ -522,8 +603,8 @@
             </div>
           </div>
           <div style="height:160px; width:100%; position:relative;">
-  <canvas id="historyChart"></canvas>
-</div>
+            <canvas id="historyChart"></canvas>
+          </div>
         </div>
 
         <!-- RIGHT: PROJECTION -->
@@ -552,8 +633,44 @@
       </div>
 
     </div>
-  `;
 
+    <div class="networthCard">
+
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h3>NET WORTH</h3>
+    <button id="editNetBtn" class="toolBtn">✏️ EDIT</button>
+  </div>
+
+   <!-- 🔥 NEW WRAPPER -->
+  <div class="chartBox">
+    <canvas id="networthChart"></canvas>
+  </div>
+
+  <!-- Hidden editor (we’ll activate later) -->
+  <div id="networthEditor" style="display:none; margin-top:12px;"></div>
+
+</div>
+  `;
+const todayEl = document.getElementById("todayDate");
+
+const today = new Date();
+const formatted = today.toLocaleDateString(undefined, {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric"
+});
+
+document.getElementById("todayDate").innerText = "Today: " + formatted;
+
+todayEl.innerText =
+  "Today: " +
+  today.toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
         if (!window.quoteInterval) {
           window.quoteInterval = setInterval(fetchAllQuotes, 30000);
         }
@@ -571,130 +688,115 @@
         }
 
         // 📊 chart setup (correct timing)
-        setTimeout(() => {
-          initChart();
-          updateHistorySafe(); // initial draw
-
-          // range buttons
-          document.querySelectorAll(".rangeBtn").forEach(btn => {
-            btn.onclick = () => {
-              currentRange = btn.dataset.range === "all"
-                ? "all"
-                : parseInt(btn.dataset.range);
-
-              updateHistorySafe();
-            };
-          });
-
-          // auto update every minute
-          setInterval(updateHistorySafe, 60000);
-
-        }, 200);
+        initChart();
+        initNetworthChart();
       }
 
-      function loadWidths() {
-        for (let i = 1; i <= 9; i++) {
-          let w = localStorage.getItem("col" + i);
-          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+        function loadWidths() {
+          for (let i = 1; i <= 9; i++) {
+            let w = localStorage.getItem("col" + i);
+            if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+          }
         }
-      }
-      function saveWidth(i, w) {
-        localStorage.setItem("col" + i, w);
-      }
+        function saveWidth(i, w) {
+          localStorage.setItem("col" + i, w);
+        }
 
-      function enableResize() {
-        document.querySelectorAll(".header .col").forEach((col, i) => {
-          let resizer = col.querySelector(".resizer");
-          let startX, startW;
+        function enableResize() {
+          document.querySelectorAll(".header .col").forEach((col, i) => {
+            let resizer = col.querySelector(".resizer");
+            let startX, startW;
 
-          resizer.onmousedown = e => {
-            startX = e.clientX;
-            startW = col.offsetWidth;
+            resizer.onmousedown = e => {
+              startX = e.clientX;
+              startW = col.offsetWidth;
 
-            document.onmousemove = e => {
-              let w = Math.max(80, startW + (e.clientX - startX));
-              document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
-              saveWidth(i + 1, w + "px");
+              document.onmousemove = e => {
+                let w = Math.max(80, startW + (e.clientX - startX));
+                document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
+                saveWidth(i + 1, w + "px");
+              };
+              document.onmouseup = () => document.onmousemove = null;
             };
-            document.onmouseup = () => document.onmousemove = null;
-          };
-        });
-      }
-
-      async function loadAll() {
-        const { data } = await supabase
-          .from("portfolio")
-          .select("*")
-          .eq("user_id", user.id);
-
-        portfolio = (data || []).map(r => ({
-          id: r.id,
-          symbol: r.symbol,
-          shares: +r.shares || 0,
-          dividend: +r.dividend || 0,
-          cost: +r.cost || 0,
-          last_price: +r.last_price || 0   // 🔥 ADD THIS
-        }));
-
-        symbols = portfolio.map(p => p.symbol);
-        portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-        render();
-        refresh();
-        fetchAllQuotes();
-      }
-
-      async function saveField(id, field, val) {
-        let row = portfolio.find(x => x.id === id);
-        if (!row) return;
-
-        row[field] = parseFloat(val.replace(/,/g, "")) || 0;
-
-        refresh();
-
-        await supabase
-          .from("portfolio")
-          .update({
-            shares: row.shares,
-            dividend: row.dividend,
-            cost: row.cost
-          })
-          .eq("id", id);
-      }
-
-      async function fetchAllQuotes() {
-        try {
-          if (!symbols.length) return;
-
-          const res = await fetch(
-            `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
-          );
-
-          const data = await res.json();
-
-          console.log("QUOTE DATA:", data);
-
-          if (!data || typeof data !== "object") return;
-
-          Object.keys(data).forEach(sym => {
-            if (data[sym] && data[sym].c) {
-              dataMap[sym] = data[sym];
-            }
           });
+        }
+
+        async function loadAll() {
+          const { data } = await supabase
+            .from("portfolio")
+            .select("*")
+            .eq("user_id", user.id);
+
+          portfolio = (data || []).map(r => ({
+            id: r.id,
+            symbol: r.symbol,
+            shares: +r.shares || 0,
+            dividend: +r.dividend || 0,
+            cost: +r.cost || 0,
+            last_price: +r.last_price || 0   // 🔥 ADD THIS
+          }));
+
+          symbols = portfolio.map(p => p.symbol);
+          portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+          render();
+          refresh();
+          fetchAllQuotes();
+        }
+
+        async function saveField(id, field, val) {
+          let row = portfolio.find(x => x.id === id);
+          if (!row) return;
+
+          row[field] = parseFloat(val.replace(/,/g, "")) || 0;
 
           refresh();
 
-        } catch (err) {
-          console.error("Batch quote error", err);
+          await supabase
+            .from("portfolio")
+            .update({
+              shares: row.shares,
+              dividend: row.dividend,
+              cost: row.cost
+            })
+            .eq("id", id);
         }
-      }
 
-      function createRow(p) {
-        let d = p;
-        let sym = p.symbol;
-        let row = document.createElement("div");
-        row.className = "row";
 
-        row.innerHTML = `
+
+        async function fetchAllQuotes() {
+          try {
+            if (!symbols.length) return;
+
+            const res = await fetch(
+              `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
+            );
+
+            const data = await res.json();
+
+            console.log("QUOTE DATA:", data);
+
+            if (!data || typeof data !== "object") return;
+
+            Object.keys(data).forEach(sym => {
+              if (data[sym] && data[sym].c) {
+                dataMap[sym] = data[sym];
+              }
+            });
+
+            refresh();
+
+          } catch (err) {
+            console.error("Batch quote error", err);
+          }
+        }
+
+        function createRow(p) {
+          let d = p;
+          let sym = p.symbol;
+          let row = document.createElement("div");
+          row.className = "row";
+
+          row.innerHTML = `
   <div class="sticky">${sym}</div>
   <div>N/A</div>
   <div>N/A</div>
@@ -705,9 +807,9 @@
   <div>0%</div>
   <div>$0</div>
 `;
-        const del = document.createElement("button");
-        del.innerText = "✕";
-        del.style.cssText = `
+          const del = document.createElement("button");
+          del.innerText = "✕";
+          del.style.cssText = `
   margin-left:6px;
   background:#ef4444;
   color:white;
@@ -716,255 +818,255 @@
   padding:2px 6px;
   cursor:pointer;
 `;
-        del.style.marginRight = "6px";
-        del.style.marginLeft = "0";
-        del.onclick = () => deleteRow(p.id);
-        row.children[0].prepend(del); // attach to SYMBOL column
-        row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
-        row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
-        row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
+          del.style.marginRight = "6px";
+          del.style.marginLeft = "0";
+          del.onclick = () => deleteRow(p.id);
+          row.children[0].prepend(del); // attach to SYMBOL column
+          row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
+          row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
+          row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
 
-        rows[p.id] = row;
-        return row;
-      }
-
-      function render() {
-        list.innerHTML = "";
-        rows = {};
-        portfolio.forEach(p => list.appendChild(createRow(p)));
-      }
-
-      function updateProjection(current) {
-        if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
-
-        const rateEl = document.getElementById("rateSelect");
-        const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
-
-        function future(val, years) {
-          return val * Math.pow(1 + rate, years);
+          rows[p.id] = row;
+          return row;
         }
 
-        const map = {
-          proj1y: 1,
-          proj5y: 5,
-          proj10y: 10,
-          proj20y: 20,
-          proj30y: 30,
-          proj40y: 40
-        };
-
-        Object.entries(map).forEach(([id, yrs]) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.innerText = fmtMoney0(future(current, yrs));
-          }
-        });
-      }
-
-      function refresh() {
-
-        let total = 0;
-        let incomeTotal = 0;
-        let gainTotal = 0;
-        let monthlyTotal = 0;
-        let dailyGainTotal = 0;
-
-        portfolio.forEach(p => {
-          let s = p.symbol;
-          let q = dataMap[s];
-          let row = rows[p.id];
-          if (!row) return;
-          // 🔥 reset all cell backgrounds first
-          for (let i = 0; i < 9; i++) {
-            row.children[i].style.background = "transparent";
-          }
-
-          let price = q?.c || p.last_price || 0;
-          let shares = p.shares || 0;
-          let dividend = p.dividend || 0;
-          let cost = p.cost || 0;
-
-          let val = price ? price * shares : cost * shares;
-          let invested = cost * shares;
-          let realGain = val - invested;
-          let income = dividend * shares;
-
-          let change = (q && q.pc) ? (q.c - q.pc) : 0;
-          let yieldVal = price ? dividend / price : 0;
-
-          total += val;
-          incomeTotal += income;
-          gainTotal += realGain;
-          monthlyTotal += income / 12;
-          dailyGainTotal += change * shares;
-
-          // UI
-          const priceText = price ? fmtMoney(price) : "N/A";
-          if (row.children[1].innerText !== priceText) {
-            row.children[1].innerText = priceText;
-          }
-          const changeText = q ? fmtMoney(change) : "N/A";
-          if (row.children[2].innerText !== changeText) {
-            row.children[2].innerText = changeText;
-          }
-          row.children[2].style.color =
-            change > 0 ? "#16a34a" :
-              change < 0 ? "#dc2626" : "#999";
-
-          const valueText = fmtMoney(val);
-          if (row.children[5].innerText !== valueText) {
-            row.children[5].innerText = valueText;
-          }
-          if (realGain > 0) {
-            row.children[5].style.background = "#ecfdf5";
-          } else if (realGain < 0) {
-            row.children[5].style.background = "#fef2f2";
-          } else {
-            row.children[5].style.background = "transparent";
-          }
-
-          row.children[7].innerText = fmtPercent(yieldVal);
-          row.children[7].style.background = "transparent";
-
-          const incomeText = fmtMoney(income);
-          if (row.children[8].innerText !== incomeText) {
-            row.children[8].innerText = incomeText;
-          }
-          row.children[8].style.background =
-            income > 0 ? "#dbeafe" : "transparent";
-          row.children[8].style.color =
-            income > 0 ? "#1d4ed8" : "#111";
-          row.children[8].style.fontWeight =
-            income > 0 ? "600" : "400";
-        });
-
-        // TOP CARDS
-        pVal.innerText = fmtMoney0(total);
-        iVal.innerText = fmtMoney0(incomeTotal);
-
-        gVal.innerText = fmtMoney0(gainTotal);
-        gVal.style.color =
-          gainTotal > 0 ? "#16a34a" :
-            gainTotal < 0 ? "#dc2626" : "#333";
-
-        const todayVal = document.getElementById("todayVal");
-        if (todayVal) {
-          todayVal.innerText =
-            (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
-
-          todayVal.style.color =
-            dailyGainTotal > 0 ? "#16a34a" :
-              dailyGainTotal < 0 ? "#dc2626" : "#333";
+        function render() {
+          list.innerHTML = "";
+          rows = {};
+          portfolio.forEach(p => list.appendChild(createRow(p)));
         }
 
-        mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        });
+        function updateProjection(current) {
+          if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
 
-        updateProjection(total);
-        updateHistorySafe();
-      }
+          const rateEl = document.getElementById("rateSelect");
+          const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
 
-      async function addRow() {
-        const symbol = prompt("Enter symbol (e.g. AAPL)");
-        if (!symbol) return;
+          function future(val, years) {
+            return val * Math.pow(1 + rate, years);
+          }
 
-        const { data, error } = await supabase
-          .from("portfolio")
-          .insert({
-            user_id: user.id,
-            symbol: symbol.toUpperCase(),
+          const map = {
+            proj1y: 1,
+            proj5y: 5,
+            proj10y: 10,
+            proj20y: 20,
+            proj30y: 30,
+            proj40y: 40
+          };
+
+          Object.entries(map).forEach(([id, yrs]) => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.innerText = fmtMoney0(future(current, yrs));
+            }
+          });
+        }
+
+        function refresh() {
+
+          let total = 0;
+          let incomeTotal = 0;
+          let gainTotal = 0;
+          let monthlyTotal = 0;
+          let dailyGainTotal = 0;
+
+          portfolio.forEach(p => {
+            let s = p.symbol;
+            let q = dataMap[s];
+            let row = rows[p.id];
+            if (!row) return;
+            // 🔥 reset all cell backgrounds first
+            for (let i = 0; i < 9; i++) {
+              row.children[i].style.background = "transparent";
+            }
+
+            let price = q?.c || p.last_price || 0;
+            let shares = p.shares || 0;
+            let dividend = p.dividend || 0;
+            let cost = p.cost || 0;
+
+            let val = price ? price * shares : cost * shares;
+            let invested = cost * shares;
+            let realGain = val - invested;
+            let income = dividend * shares;
+
+            let change = (q && q.pc) ? (q.c - q.pc) : 0;
+            let yieldVal = price ? dividend / price : 0;
+
+            total += val;
+            incomeTotal += income;
+            gainTotal += realGain;
+            monthlyTotal += income / 12;
+            dailyGainTotal += change * shares;
+
+            // UI
+            const priceText = price ? fmtMoney(price) : "N/A";
+            if (row.children[1].innerText !== priceText) {
+              row.children[1].innerText = priceText;
+            }
+            const changeText = q ? fmtMoney(change) : "N/A";
+            if (row.children[2].innerText !== changeText) {
+              row.children[2].innerText = changeText;
+            }
+            row.children[2].style.color =
+              change > 0 ? "#16a34a" :
+                change < 0 ? "#dc2626" : "#999";
+
+            const valueText = fmtMoney(val);
+            if (row.children[5].innerText !== valueText) {
+              row.children[5].innerText = valueText;
+            }
+            if (realGain > 0) {
+              row.children[5].style.background = "#ecfdf5";
+            } else if (realGain < 0) {
+              row.children[5].style.background = "#fef2f2";
+            } else {
+              row.children[5].style.background = "transparent";
+            }
+
+            row.children[7].innerText = fmtPercent(yieldVal);
+            row.children[7].style.background = "transparent";
+
+            const incomeText = fmtMoney(income);
+            if (row.children[8].innerText !== incomeText) {
+              row.children[8].innerText = incomeText;
+            }
+            row.children[8].style.background =
+              income > 0 ? "#dbeafe" : "transparent";
+            row.children[8].style.color =
+              income > 0 ? "#1d4ed8" : "#111";
+            row.children[8].style.fontWeight =
+              income > 0 ? "600" : "400";
+          });
+
+          // TOP CARDS
+          pVal.innerText = fmtMoney0(total);
+          iVal.innerText = fmtMoney0(incomeTotal);
+
+          gVal.innerText = fmtMoney0(gainTotal);
+          gVal.style.color =
+            gainTotal > 0 ? "#16a34a" :
+              gainTotal < 0 ? "#dc2626" : "#333";
+
+          const todayVal = document.getElementById("todayVal");
+          if (todayVal) {
+            todayVal.innerText =
+              (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
+
+            todayVal.style.color =
+              dailyGainTotal > 0 ? "#16a34a" :
+                dailyGainTotal < 0 ? "#dc2626" : "#333";
+          }
+
+          mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+          });
+
+          updateProjection(total);
+          // updateHistorySafe();
+        }
+
+        async function addRow() {
+          const symbol = prompt("Enter symbol (e.g. AAPL)");
+          if (!symbol) return;
+
+          const { data, error } = await supabase
+            .from("portfolio")
+            .insert({
+              user_id: user.id,
+              symbol: symbol.toUpperCase(),
+              shares: 0,
+              dividend: 0,
+              cost: 0
+            })
+            .select()
+            .single();
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          // add locally
+          portfolio.push({
+            id: data.id,
+            symbol: data.symbol,
             shares: 0,
             dividend: 0,
             cost: 0
-          })
-          .select()
-          .single();
+          });
 
-        if (error) {
-          alert(error.message);
-          return;
+          symbols.push(data.symbol);
+
+          const newRow = createRow(portfolio[portfolio.length - 1]);
+          list.appendChild(newRow);
+
         }
 
-        // add locally
-        portfolio.push({
-          id: data.id,
-          symbol: data.symbol,
-          shares: 0,
-          dividend: 0,
-          cost: 0
-        });
+        async function deleteRow(id) {
 
-        symbols.push(data.symbol);
+          if (!confirm("Delete this row?")) return;
 
-        const newRow = createRow(portfolio[portfolio.length - 1]);
-        list.appendChild(newRow);
-
-      }
-
-      async function deleteRow(id) {
-
-        if (!confirm("Delete this row?")) return;
-
-        await supabase
-          .from("portfolio")
-          .delete()
-          .eq("id", id);
-
-        // remove locally
-        portfolio = portfolio.filter(p => p.id !== id);
-
-        // remove DOM
-        if (rows[id]) {
-          rows[id].remove();
-          delete rows[id];
-        }
-
-        refresh();
-      }
-
-      async function resetOrder() {
-
-        if (!confirm("Sort alphabetically?")) return;
-
-        // fetch fresh data
-        const { data, error } = await supabase
-          .from("portfolio")
-          .select("id, symbol")
-          .eq("user_id", user.id);
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        // sort alphabetically
-        data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-        // assign new positions
-        for (let i = 0; i < data.length; i++) {
           await supabase
             .from("portfolio")
-            .update({ position: i + 1 })
-            .eq("id", data[i].id);
+            .delete()
+            .eq("id", id);
+
+          // remove locally
+          portfolio = portfolio.filter(p => p.id !== id);
+
+          // remove DOM
+          if (rows[id]) {
+            rows[id].remove();
+            delete rows[id];
+          }
+
+          refresh();
         }
 
-        // reload app
-        loadAll();
-      }
-      function createToolbar() {
+        async function resetOrder() {
 
-        const wrap = document.createElement("div");
+          if (!confirm("Sort alphabetically?")) return;
 
-        wrap.style.cssText = `
+          // fetch fresh data
+          const { data, error } = await supabase
+            .from("portfolio")
+            .select("id, symbol")
+            .eq("user_id", user.id);
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          // sort alphabetically
+          data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+          // assign new positions
+          for (let i = 0; i < data.length; i++) {
+            await supabase
+              .from("portfolio")
+              .update({ position: i + 1 })
+              .eq("id", data[i].id);
+          }
+
+          // reload app
+          loadAll();
+        }
+        function createToolbar() {
+
+          const wrap = document.createElement("div");
+
+          wrap.style.cssText = `
     display:flex;
     gap:8px;
     margin-bottom:12px;
     align-items:center;
   `;
 
-        wrap.innerHTML = `
+          wrap.innerHTML = `
     <button id="addRowBtn" class="toolBtn">
       ➕ <span>ADD SYMBOL</span>
     </button>
@@ -974,28 +1076,106 @@
     </button>
   `;
 
-        // insert ABOVE table
-        const table = document.querySelector(".tableWrap");
-        table.parentNode.insertBefore(wrap, table);
+          // insert ABOVE table
+          const table = document.querySelector(".tableWrap");
+          table.parentNode.insertBefore(wrap, table);
 
-        // wire actions
-        document.getElementById("addRowBtn").onclick = addRow;
-        document.getElementById("resetOrderBtn").onclick = resetOrder;
-      }
+          // wire actions
+          document.getElementById("addRowBtn").onclick = addRow;
+          document.getElementById("resetOrderBtn").onclick = resetOrder;
+        }
 
-      async function initAuth() {
-        showLogin();
-        const { data } = await supabase.auth.getSession();
-        user = data.session?.user;
-        if (user) showApp();
-      }
+        async function initAuth() {
+          showLogin();
+          const { data } = await supabase.auth.getSession();
+          user = data.session?.user;
 
-      initAuth();
+          if (user) {
+            window.currentUser = user;   // 🔥 ADD THIS LINE
+            showApp();
+          }
+        }
 
-    });
+        initAuth();
+
+      });
     let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
     let chart;
     let currentRange = "all";
+
+    let netChart;
+
+   async function fetchNetworthData() {
+  const supabase = window.supabaseClient;
+
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData.user;
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("net_worth")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("date", { ascending: true });
+
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  return data;
+}
+
+    async function initNetworthChart() {
+
+      const data = await fetchNetworthData();
+      console.log("NET DATA:", data);
+      if (!window.currentUser) return;
+
+      const ctx = document.getElementById("networthChart");
+      if (!ctx) {
+        console.warn("Canvas not ready — retrying...");
+        setTimeout(initNetworthChart, 200);
+        return;
+      }
+
+      if (netChart) netChart.destroy(); // 🔥 prevent duplicates
+
+      netChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [
+            { label: "Cash", data: data.map(d => d.cash), borderColor: "#1f77b4", tension: 0.35 },
+            { label: "Retirement", data: data.map(d => d.retirement), borderColor: "#ff7f0e", tension: 0.35 },
+            { label: "Stocks", data: data.map(d => d.stocks), borderColor: "#2ca02c", tension: 0.35 },
+            { label: "Properties", data: data.map(d => d.properties), borderColor: "#17becf", tension: 0.35 },
+            { label: "Mortgage", data: data.map(d => d.mortgage), borderColor: "#d62728", tension: 0.35 },
+            {
+              label: "Net",
+              data: data.map(d =>
+                d.stocks + d.properties + d.retirement + d.cash - d.mortgage
+              ),
+              borderColor: "#9467bd",
+              borderWidth: 3,
+              tension: 0.35
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: { legend: { position: "right" } },
+          scales: {
+            y: {
+              ticks: { callback: v => "$" + v.toLocaleString() }
+            }
+          }
+        }
+      });
+    }
 
     function initChart() {
       const ctx = document.getElementById("historyChart");
