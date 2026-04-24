@@ -288,16 +288,54 @@
     .bottomPanels {
       display: flex;
       gap: 16px;
-      margin-top: 28px;
+      margin-top: 20px;
       /* 🔥 give space for header */
-
       background: #16a34a;
       color: white;
       padding: 18px 14px 14px 14px;
       border-radius: 14px;
-
       position: relative;
+      align-items: stretch;
+      /* 🔥 important */
       /* 🔥 required */
+    }
+
+  .networthCard.large {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.projCard.large {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+    /* 👇 ADD THIS PART */
+    .networthCard.large {
+      flex: 3;
+    }
+
+    .projCard.large {
+      flex: 1;
+    }
+
+    .networthCard h3,
+    .projCard h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .networthCard>div:first-child {
+      margin-bottom: 10px;
+      z-index: 2;
+      position: relative;
+    }
+
+    .projCard.large {
+      flex: 1.2;
     }
 
     .historyCard {
@@ -391,6 +429,8 @@
       display: grid;
       grid-template-columns: 40px 1fr;
       align-items: center;
+      padding: 2px 0;
+      /* 👈 ADD THIS LINE ONLY */
     }
 
     /* label (1Y, 5Y...) */
@@ -406,10 +446,11 @@
       text-align: right;
     }
 
-    .networthCard {
+    .networthCard,
+    .projCard {
       margin-top: 20px;
       background: white;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 16px;
       border: 1px solid #e5e7eb;
     }
@@ -421,77 +462,110 @@
       border-radius: 10px;
       padding: 10px;
       border: 1px solid #e5e7eb;
-      height: 260px;
       /* fixed height */
       position: relative;
       background: #f3f4f6;
+      z-index: 1;
     }
+
+    .netHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      /* 👈 keeps it ABOVE chart */
+    }
+
     /* 🔥 PREMIUM HEADER BAR */
-.topBar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    .topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
 
-  padding: 12px 14px;
-  margin-bottom: 16px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
 
-  border-radius: 12px;
+      border-radius: 12px;
 
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
 
-  border: 1px solid rgba(229, 231, 235, 0.6);
+      border: 1px solid rgba(229, 231, 235, 0.6);
 
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
 
-/* 📅 DATE (left side) */
-#todayDate {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
+    /* 🔥 HEADER LEFT GROUP (date + market) */
+    .topLeft {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
 
-  letter-spacing: 0.02em;
-}
+    /* 📊 MARKET STATUS */
+    #marketStatus {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
 
-/* 🔓 LOGOUT BUTTON */
-#logoutBtn {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: white;
+    /* 🟢 OPEN */
+    .market-open {
+      color: #16a34a;
+    }
 
-  border: none;
-  border-radius: 999px;
+    /* 🔴 CLOSED */
+    .market-closed {
+      color: #dc2626;
+    }
 
-  padding: 8px 16px;
-  font-size: 12px;
-  font-weight: 600;
+    /* 📅 DATE (left side) */
+    #todayDate {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
 
-  cursor: pointer;
+      letter-spacing: 0.02em;
+    }
 
-  transition: all 0.2s ease;
-}
+    /* 🔓 LOGOUT BUTTON */
+    #logoutBtn {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
 
-/* hover */
-#logoutBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);
-}
+      border: none;
+      border-radius: 999px;
 
-/* click */
-#logoutBtn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
 
-/* ✨ subtle glow on hover */
-.topBar:hover {
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-}
+      cursor: pointer;
+
+      transition: all 0.2s ease;
+    }
+
+    /* hover */
+    #logoutBtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);
+    }
+
+    /* click */
+    #logoutBtn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ✨ subtle glow on hover */
+    .topBar:hover {
+      box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
   </style>
 
 </head>
@@ -561,7 +635,10 @@
     <div class="app">
   <!-- 🔥 HEADER BAR -->
   <div class="topBar">
-    <div id="todayDate"></div>
+    <div class="topLeft">
+  <div id="todayDate"></div>
+  <div id="marketStatus"></div>
+</div>
     <button id="logoutBtn">LOGOUT</button>
   </div>
       <!-- TOP CARDS -->
@@ -589,94 +666,76 @@
         <div id="list"></div>
       </div>
 
-      <!-- PANELS -->
-      <div class="bottomPanels">
+<!-- PANELS -->
+<div class="bottomPanels">
 
-        <!-- LEFT: HISTORY -->
-        <div class="historyCard">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <h3>PORTFOLIO HISTORY</h3>
-            <div>
-              <button class="rangeBtn" data-range="7">1W</button>
-              <button class="rangeBtn" data-range="30">1M</button>
-              <button class="rangeBtn" data-range="all">ALL</button>
-            </div>
-          </div>
-          <div style="height:160px; width:100%; position:relative;">
-            <canvas id="historyChart"></canvas>
-          </div>
-        </div>
+  <!-- 🔥 NET WORTH (LEFT / BIG) -->
+  <div class="networthCard large">
 
-        <!-- RIGHT: PROJECTION -->
-        <div class="projCard">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <h3>PROJECTION</h3>
-            <select id="rateSelect" class="ratePill">
-              <option value="0.05">5%</option>
-              <option value="0.08">8%</option>
-              <option value="0.10" selected>10%</option>
-              <option value="0.12">12%</option>
-              <option value="0.15">15%</option>
-            </select>
-          </div>
+   <div class="netHeader">
+  <h3>NET WORTH</h3>
+  <button id="editNetBtn" class="toolBtn">✏️ EDIT</button>
+</div>
 
-          <div class="projGrid">
-            <div><span>1Y</span><b id="proj1y">$0</b></div>
-            <div><span>5Y</span><b id="proj5y">$0</b></div>
-            <div><span>10Y</span><b id="proj10y">$0</b></div>
-            <div><span>20Y</span><b id="proj20y">$0</b></div>
-            <div><span>30Y</span><b id="proj30y">$0</b></div>
-            <div><span>40Y</span><b id="proj40y">$0</b></div>
-          </div>
-        </div>
-
-      </div>
-
+    <div class="chartBox">
+      <canvas id="networthChart"></canvas>
     </div>
 
-    <div class="networthCard">
+    <div id="networthEditor" style="display:none; margin-top:12px;"></div>
 
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h3>NET WORTH</h3>
-    <button id="editNetBtn" class="toolBtn">✏️ EDIT</button>
   </div>
 
-   <!-- 🔥 NEW WRAPPER -->
-  <div class="chartBox">
-    <canvas id="networthChart"></canvas>
-  </div>
+  <!-- 🔥 PROJECTION (RIGHT) -->
+  <div class="projCard large">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>PROJECTION</h3>
+      <select id="rateSelect" class="ratePill">
+        <option value="0.05">5%</option>
+        <option value="0.08">8%</option>
+        <option value="0.10" selected>10%</option>
+        <option value="0.12">12%</option>
+        <option value="0.15">15%</option>
+      </select>
+    </div>
 
-  <!-- Hidden editor (we’ll activate later) -->
-  <div id="networthEditor" style="display:none; margin-top:12px;"></div>
+    <div class="projGrid">
+      <div><span>1Y</span><b id="proj1y">$0</b></div>
+      <div><span>5Y</span><b id="proj5y">$0</b></div>
+      <div><span>10Y</span><b id="proj10y">$0</b></div>
+      <div><span>20Y</span><b id="proj20y">$0</b></div>
+      <div><span>30Y</span><b id="proj30y">$0</b></div>
+      <div><span>40Y</span><b id="proj40y">$0</b></div>
+    </div>
+  </div>
 
 </div>
   `;
-const todayEl = document.getElementById("todayDate");
+        const todayEl = document.getElementById("todayDate");
 
-const today = new Date();
-const formatted = today.toLocaleDateString(undefined, {
-  weekday: "long",
-  year: "numeric",
-  month: "long",
-  day: "numeric"
-});
+        const today = new Date();
+        const formatted = today.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        });
 
-document.getElementById("todayDate").innerText = "Today: " + formatted;
+        document.getElementById("todayDate").innerText = "Today: " + formatted;
 
-todayEl.innerText =
-  "Today: " +
-  today.toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
+        todayEl.innerText =
+          "Today: " +
+          today.toLocaleDateString(undefined, {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+          });
         if (!window.quoteInterval) {
           window.quoteInterval = setInterval(fetchAllQuotes, 30000);
         }
 
         // 🔐 actions
-        logoutBtn.onclick = logout;
+        document.getElementById("logoutBtn")?.addEventListener("click", logout);
         createToolbar();
         loadWidths();
         loadAll();
@@ -690,113 +749,115 @@ todayEl.innerText =
         // 📊 chart setup (correct timing)
         initChart();
         initNetworthChart();
+        updateMarketStatus();
+        setInterval(updateMarketStatus, 60000);
       }
 
-        function loadWidths() {
-          for (let i = 1; i <= 9; i++) {
-            let w = localStorage.getItem("col" + i);
-            if (w) document.documentElement.style.setProperty(`--c${i}`, w);
-          }
+      function loadWidths() {
+        for (let i = 1; i <= 9; i++) {
+          let w = localStorage.getItem("col" + i);
+          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
         }
-        function saveWidth(i, w) {
-          localStorage.setItem("col" + i, w);
-        }
+      }
+      function saveWidth(i, w) {
+        localStorage.setItem("col" + i, w);
+      }
 
-        function enableResize() {
-          document.querySelectorAll(".header .col").forEach((col, i) => {
-            let resizer = col.querySelector(".resizer");
-            let startX, startW;
+      function enableResize() {
+        document.querySelectorAll(".header .col").forEach((col, i) => {
+          let resizer = col.querySelector(".resizer");
+          let startX, startW;
 
-            resizer.onmousedown = e => {
-              startX = e.clientX;
-              startW = col.offsetWidth;
+          resizer.onmousedown = e => {
+            startX = e.clientX;
+            startW = col.offsetWidth;
 
-              document.onmousemove = e => {
-                let w = Math.max(80, startW + (e.clientX - startX));
-                document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
-                saveWidth(i + 1, w + "px");
-              };
-              document.onmouseup = () => document.onmousemove = null;
+            document.onmousemove = e => {
+              let w = Math.max(80, startW + (e.clientX - startX));
+              document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
+              saveWidth(i + 1, w + "px");
             };
+            document.onmouseup = () => document.onmousemove = null;
+          };
+        });
+      }
+
+      async function loadAll() {
+        const { data } = await supabase
+          .from("portfolio")
+          .select("*")
+          .eq("user_id", user.id);
+
+        portfolio = (data || []).map(r => ({
+          id: r.id,
+          symbol: r.symbol,
+          shares: +r.shares || 0,
+          dividend: +r.dividend || 0,
+          cost: +r.cost || 0,
+          last_price: +r.last_price || 0   // 🔥 ADD THIS
+        }));
+
+        symbols = portfolio.map(p => p.symbol);
+        portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        render();
+        refresh();
+        fetchAllQuotes();
+      }
+
+      async function saveField(id, field, val) {
+        let row = portfolio.find(x => x.id === id);
+        if (!row) return;
+
+        row[field] = parseFloat(val.replace(/,/g, "")) || 0;
+
+        refresh();
+
+        await supabase
+          .from("portfolio")
+          .update({
+            shares: row.shares,
+            dividend: row.dividend,
+            cost: row.cost
+          })
+          .eq("id", id);
+      }
+
+
+
+      async function fetchAllQuotes() {
+        try {
+          if (!symbols.length) return;
+
+          const res = await fetch(
+            `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
+          );
+
+          const data = await res.json();
+
+          console.log("QUOTE DATA:", data);
+
+          if (!data || typeof data !== "object") return;
+
+          Object.keys(data).forEach(sym => {
+            if (data[sym] && data[sym].c) {
+              dataMap[sym] = data[sym];
+            }
           });
-        }
-
-        async function loadAll() {
-          const { data } = await supabase
-            .from("portfolio")
-            .select("*")
-            .eq("user_id", user.id);
-
-          portfolio = (data || []).map(r => ({
-            id: r.id,
-            symbol: r.symbol,
-            shares: +r.shares || 0,
-            dividend: +r.dividend || 0,
-            cost: +r.cost || 0,
-            last_price: +r.last_price || 0   // 🔥 ADD THIS
-          }));
-
-          symbols = portfolio.map(p => p.symbol);
-          portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-          render();
-          refresh();
-          fetchAllQuotes();
-        }
-
-        async function saveField(id, field, val) {
-          let row = portfolio.find(x => x.id === id);
-          if (!row) return;
-
-          row[field] = parseFloat(val.replace(/,/g, "")) || 0;
 
           refresh();
 
-          await supabase
-            .from("portfolio")
-            .update({
-              shares: row.shares,
-              dividend: row.dividend,
-              cost: row.cost
-            })
-            .eq("id", id);
+        } catch (err) {
+          console.error("Batch quote error", err);
         }
+      }
 
+      function createRow(p) {
+        let d = p;
+        let sym = p.symbol;
+        let row = document.createElement("div");
+        row.className = "row";
 
-
-        async function fetchAllQuotes() {
-          try {
-            if (!symbols.length) return;
-
-            const res = await fetch(
-              `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
-            );
-
-            const data = await res.json();
-
-            console.log("QUOTE DATA:", data);
-
-            if (!data || typeof data !== "object") return;
-
-            Object.keys(data).forEach(sym => {
-              if (data[sym] && data[sym].c) {
-                dataMap[sym] = data[sym];
-              }
-            });
-
-            refresh();
-
-          } catch (err) {
-            console.error("Batch quote error", err);
-          }
-        }
-
-        function createRow(p) {
-          let d = p;
-          let sym = p.symbol;
-          let row = document.createElement("div");
-          row.className = "row";
-
-          row.innerHTML = `
+        row.innerHTML = `
   <div class="sticky">${sym}</div>
   <div>N/A</div>
   <div>N/A</div>
@@ -807,9 +868,9 @@ todayEl.innerText =
   <div>0%</div>
   <div>$0</div>
 `;
-          const del = document.createElement("button");
-          del.innerText = "✕";
-          del.style.cssText = `
+        const del = document.createElement("button");
+        del.innerText = "✕";
+        del.style.cssText = `
   margin-left:6px;
   background:#ef4444;
   color:white;
@@ -818,255 +879,255 @@ todayEl.innerText =
   padding:2px 6px;
   cursor:pointer;
 `;
-          del.style.marginRight = "6px";
-          del.style.marginLeft = "0";
-          del.onclick = () => deleteRow(p.id);
-          row.children[0].prepend(del); // attach to SYMBOL column
-          row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
-          row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
-          row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
+        del.style.marginRight = "6px";
+        del.style.marginLeft = "0";
+        del.onclick = () => deleteRow(p.id);
+        row.children[0].prepend(del); // attach to SYMBOL column
+        row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
+        row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
+        row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
 
-          rows[p.id] = row;
-          return row;
+        rows[p.id] = row;
+        return row;
+      }
+
+      function render() {
+        list.innerHTML = "";
+        rows = {};
+        portfolio.forEach(p => list.appendChild(createRow(p)));
+      }
+
+      function updateProjection(current) {
+        if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
+
+        const rateEl = document.getElementById("rateSelect");
+        const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
+
+        function future(val, years) {
+          return val * Math.pow(1 + rate, years);
         }
 
-        function render() {
-          list.innerHTML = "";
-          rows = {};
-          portfolio.forEach(p => list.appendChild(createRow(p)));
-        }
+        const map = {
+          proj1y: 1,
+          proj5y: 5,
+          proj10y: 10,
+          proj20y: 20,
+          proj30y: 30,
+          proj40y: 40
+        };
 
-        function updateProjection(current) {
-          if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
+        Object.entries(map).forEach(([id, yrs]) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.innerText = fmtMoney0(future(current, yrs));
+          }
+        });
+      }
 
-          const rateEl = document.getElementById("rateSelect");
-          const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
+      function refresh() {
 
-          function future(val, years) {
-            return val * Math.pow(1 + rate, years);
+        let total = 0;
+        let incomeTotal = 0;
+        let gainTotal = 0;
+        let monthlyTotal = 0;
+        let dailyGainTotal = 0;
+
+        portfolio.forEach(p => {
+          let s = p.symbol;
+          let q = dataMap[s];
+          let row = rows[p.id];
+          if (!row) return;
+          // 🔥 reset all cell backgrounds first
+          for (let i = 0; i < 9; i++) {
+            row.children[i].style.background = "transparent";
           }
 
-          const map = {
-            proj1y: 1,
-            proj5y: 5,
-            proj10y: 10,
-            proj20y: 20,
-            proj30y: 30,
-            proj40y: 40
-          };
+          let price = q?.c || p.last_price || 0;
+          let shares = p.shares || 0;
+          let dividend = p.dividend || 0;
+          let cost = p.cost || 0;
 
-          Object.entries(map).forEach(([id, yrs]) => {
-            const el = document.getElementById(id);
-            if (el) {
-              el.innerText = fmtMoney0(future(current, yrs));
-            }
-          });
-        }
+          let val = price ? price * shares : cost * shares;
+          let invested = cost * shares;
+          let realGain = val - invested;
+          let income = dividend * shares;
 
-        function refresh() {
+          let change = (q && q.pc) ? (q.c - q.pc) : 0;
+          let yieldVal = price ? dividend / price : 0;
 
-          let total = 0;
-          let incomeTotal = 0;
-          let gainTotal = 0;
-          let monthlyTotal = 0;
-          let dailyGainTotal = 0;
+          total += val;
+          incomeTotal += income;
+          gainTotal += realGain;
+          monthlyTotal += income / 12;
+          dailyGainTotal += change * shares;
 
-          portfolio.forEach(p => {
-            let s = p.symbol;
-            let q = dataMap[s];
-            let row = rows[p.id];
-            if (!row) return;
-            // 🔥 reset all cell backgrounds first
-            for (let i = 0; i < 9; i++) {
-              row.children[i].style.background = "transparent";
-            }
+          // UI
+          const priceText = price ? fmtMoney(price) : "N/A";
+          if (row.children[1].innerText !== priceText) {
+            row.children[1].innerText = priceText;
+          }
+          const changeText = q ? fmtMoney(change) : "N/A";
+          if (row.children[2].innerText !== changeText) {
+            row.children[2].innerText = changeText;
+          }
+          row.children[2].style.color =
+            change > 0 ? "#16a34a" :
+              change < 0 ? "#dc2626" : "#999";
 
-            let price = q?.c || p.last_price || 0;
-            let shares = p.shares || 0;
-            let dividend = p.dividend || 0;
-            let cost = p.cost || 0;
-
-            let val = price ? price * shares : cost * shares;
-            let invested = cost * shares;
-            let realGain = val - invested;
-            let income = dividend * shares;
-
-            let change = (q && q.pc) ? (q.c - q.pc) : 0;
-            let yieldVal = price ? dividend / price : 0;
-
-            total += val;
-            incomeTotal += income;
-            gainTotal += realGain;
-            monthlyTotal += income / 12;
-            dailyGainTotal += change * shares;
-
-            // UI
-            const priceText = price ? fmtMoney(price) : "N/A";
-            if (row.children[1].innerText !== priceText) {
-              row.children[1].innerText = priceText;
-            }
-            const changeText = q ? fmtMoney(change) : "N/A";
-            if (row.children[2].innerText !== changeText) {
-              row.children[2].innerText = changeText;
-            }
-            row.children[2].style.color =
-              change > 0 ? "#16a34a" :
-                change < 0 ? "#dc2626" : "#999";
-
-            const valueText = fmtMoney(val);
-            if (row.children[5].innerText !== valueText) {
-              row.children[5].innerText = valueText;
-            }
-            if (realGain > 0) {
-              row.children[5].style.background = "#ecfdf5";
-            } else if (realGain < 0) {
-              row.children[5].style.background = "#fef2f2";
-            } else {
-              row.children[5].style.background = "transparent";
-            }
-
-            row.children[7].innerText = fmtPercent(yieldVal);
-            row.children[7].style.background = "transparent";
-
-            const incomeText = fmtMoney(income);
-            if (row.children[8].innerText !== incomeText) {
-              row.children[8].innerText = incomeText;
-            }
-            row.children[8].style.background =
-              income > 0 ? "#dbeafe" : "transparent";
-            row.children[8].style.color =
-              income > 0 ? "#1d4ed8" : "#111";
-            row.children[8].style.fontWeight =
-              income > 0 ? "600" : "400";
-          });
-
-          // TOP CARDS
-          pVal.innerText = fmtMoney0(total);
-          iVal.innerText = fmtMoney0(incomeTotal);
-
-          gVal.innerText = fmtMoney0(gainTotal);
-          gVal.style.color =
-            gainTotal > 0 ? "#16a34a" :
-              gainTotal < 0 ? "#dc2626" : "#333";
-
-          const todayVal = document.getElementById("todayVal");
-          if (todayVal) {
-            todayVal.innerText =
-              (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
-
-            todayVal.style.color =
-              dailyGainTotal > 0 ? "#16a34a" :
-                dailyGainTotal < 0 ? "#dc2626" : "#333";
+          const valueText = fmtMoney(val);
+          if (row.children[5].innerText !== valueText) {
+            row.children[5].innerText = valueText;
+          }
+          if (realGain > 0) {
+            row.children[5].style.background = "#ecfdf5";
+          } else if (realGain < 0) {
+            row.children[5].style.background = "#fef2f2";
+          } else {
+            row.children[5].style.background = "transparent";
           }
 
-          mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          });
+          row.children[7].innerText = fmtPercent(yieldVal);
+          row.children[7].style.background = "transparent";
 
-          updateProjection(total);
-          // updateHistorySafe();
+          const incomeText = fmtMoney(income);
+          if (row.children[8].innerText !== incomeText) {
+            row.children[8].innerText = incomeText;
+          }
+          row.children[8].style.background =
+            income > 0 ? "#dbeafe" : "transparent";
+          row.children[8].style.color =
+            income > 0 ? "#1d4ed8" : "#111";
+          row.children[8].style.fontWeight =
+            income > 0 ? "600" : "400";
+        });
+
+        // TOP CARDS
+        pVal.innerText = fmtMoney0(total);
+        iVal.innerText = fmtMoney0(incomeTotal);
+
+        gVal.innerText = fmtMoney0(gainTotal);
+        gVal.style.color =
+          gainTotal > 0 ? "#16a34a" :
+            gainTotal < 0 ? "#dc2626" : "#333";
+
+        const todayVal = document.getElementById("todayVal");
+        if (todayVal) {
+          todayVal.innerText =
+            (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
+
+          todayVal.style.color =
+            dailyGainTotal > 0 ? "#16a34a" :
+              dailyGainTotal < 0 ? "#dc2626" : "#333";
         }
 
-        async function addRow() {
-          const symbol = prompt("Enter symbol (e.g. AAPL)");
-          if (!symbol) return;
+        mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        });
 
-          const { data, error } = await supabase
-            .from("portfolio")
-            .insert({
-              user_id: user.id,
-              symbol: symbol.toUpperCase(),
-              shares: 0,
-              dividend: 0,
-              cost: 0
-            })
-            .select()
-            .single();
+        updateProjection(total);
+        // updateHistorySafe();
+      }
 
-          if (error) {
-            alert(error.message);
-            return;
-          }
+      async function addRow() {
+        const symbol = prompt("Enter symbol (e.g. AAPL)");
+        if (!symbol) return;
 
-          // add locally
-          portfolio.push({
-            id: data.id,
-            symbol: data.symbol,
+        const { data, error } = await supabase
+          .from("portfolio")
+          .insert({
+            user_id: user.id,
+            symbol: symbol.toUpperCase(),
             shares: 0,
             dividend: 0,
             cost: 0
-          });
+          })
+          .select()
+          .single();
 
-          symbols.push(data.symbol);
-
-          const newRow = createRow(portfolio[portfolio.length - 1]);
-          list.appendChild(newRow);
-
+        if (error) {
+          alert(error.message);
+          return;
         }
 
-        async function deleteRow(id) {
+        // add locally
+        portfolio.push({
+          id: data.id,
+          symbol: data.symbol,
+          shares: 0,
+          dividend: 0,
+          cost: 0
+        });
 
-          if (!confirm("Delete this row?")) return;
+        symbols.push(data.symbol);
 
+        const newRow = createRow(portfolio[portfolio.length - 1]);
+        list.appendChild(newRow);
+
+      }
+
+      async function deleteRow(id) {
+
+        if (!confirm("Delete this row?")) return;
+
+        await supabase
+          .from("portfolio")
+          .delete()
+          .eq("id", id);
+
+        // remove locally
+        portfolio = portfolio.filter(p => p.id !== id);
+
+        // remove DOM
+        if (rows[id]) {
+          rows[id].remove();
+          delete rows[id];
+        }
+
+        refresh();
+      }
+
+      async function resetOrder() {
+
+        if (!confirm("Sort alphabetically?")) return;
+
+        // fetch fresh data
+        const { data, error } = await supabase
+          .from("portfolio")
+          .select("id, symbol")
+          .eq("user_id", user.id);
+
+        if (error) {
+          alert(error.message);
+          return;
+        }
+
+        // sort alphabetically
+        data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+        // assign new positions
+        for (let i = 0; i < data.length; i++) {
           await supabase
             .from("portfolio")
-            .delete()
-            .eq("id", id);
-
-          // remove locally
-          portfolio = portfolio.filter(p => p.id !== id);
-
-          // remove DOM
-          if (rows[id]) {
-            rows[id].remove();
-            delete rows[id];
-          }
-
-          refresh();
+            .update({ position: i + 1 })
+            .eq("id", data[i].id);
         }
 
-        async function resetOrder() {
+        // reload app
+        loadAll();
+      }
+      function createToolbar() {
 
-          if (!confirm("Sort alphabetically?")) return;
+        const wrap = document.createElement("div");
 
-          // fetch fresh data
-          const { data, error } = await supabase
-            .from("portfolio")
-            .select("id, symbol")
-            .eq("user_id", user.id);
-
-          if (error) {
-            alert(error.message);
-            return;
-          }
-
-          // sort alphabetically
-          data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-          // assign new positions
-          for (let i = 0; i < data.length; i++) {
-            await supabase
-              .from("portfolio")
-              .update({ position: i + 1 })
-              .eq("id", data[i].id);
-          }
-
-          // reload app
-          loadAll();
-        }
-        function createToolbar() {
-
-          const wrap = document.createElement("div");
-
-          wrap.style.cssText = `
+        wrap.style.cssText = `
     display:flex;
     gap:8px;
     margin-bottom:12px;
     align-items:center;
   `;
 
-          wrap.innerHTML = `
+        wrap.innerHTML = `
     <button id="addRowBtn" class="toolBtn">
       ➕ <span>ADD SYMBOL</span>
     </button>
@@ -1076,56 +1137,85 @@ todayEl.innerText =
     </button>
   `;
 
-          // insert ABOVE table
-          const table = document.querySelector(".tableWrap");
-          table.parentNode.insertBefore(wrap, table);
+        // insert ABOVE table
+        const table = document.querySelector(".tableWrap");
+        table.parentNode.insertBefore(wrap, table);
 
-          // wire actions
-          document.getElementById("addRowBtn").onclick = addRow;
-          document.getElementById("resetOrderBtn").onclick = resetOrder;
+        // wire actions
+        document.getElementById("addRowBtn").onclick = addRow;
+        document.getElementById("resetOrderBtn").onclick = resetOrder;
+      }
+
+      async function initAuth() {
+        showLogin();
+        const { data } = await supabase.auth.getSession();
+        user = data.session?.user;
+
+        if (user) {
+          window.currentUser = user;   // 🔥 ADD THIS LINE
+          showApp();
         }
+      }
 
-        async function initAuth() {
-          showLogin();
-          const { data } = await supabase.auth.getSession();
-          user = data.session?.user;
+      initAuth();
 
-          if (user) {
-            window.currentUser = user;   // 🔥 ADD THIS LINE
-            showApp();
-          }
-        }
-
-        initAuth();
-
-      });
+    });
     let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
     let chart;
     let currentRange = "all";
 
     let netChart;
+    function updateMarketStatus() {
+      const el = document.getElementById("marketStatus");
+      if (!el) return;
 
-   async function fetchNetworthData() {
-  const supabase = window.supabaseClient;
+      const now = new Date();
 
-  const { data: authData } = await supabase.auth.getUser();
-  const user = authData.user;
+      // Convert to US Eastern Time
+      const est = new Date(
+        now.toLocaleString("en-US", { timeZone: "America/New_York" })
+      );
 
-  if (!user) return [];
+      const day = est.getDay(); // 0 = Sunday, 6 = Saturday
+      const hours = est.getHours();
+      const minutes = est.getMinutes();
 
-  const { data, error } = await supabase
-    .from("net_worth")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("date", { ascending: true });
+      const isWeekend = day === 0 || day === 6;
 
-  if (error) {
-    console.error(error);
-    return [];
-  }
+      const afterOpen = hours > 9 || (hours === 9 && minutes >= 30);
+      const beforeClose = hours < 16;
 
-  return data;
-}
+      const isOpen = !isWeekend && afterOpen && beforeClose;
+
+      if (isOpen) {
+        el.innerText = "🟢 Market Open";
+        el.className = "market-open";
+      } else {
+        el.innerText = "🔴 Market Closed";
+        el.className = "market-closed";
+      }
+    }
+    async function fetchNetworthData() {
+      const supabase = window.supabaseClient;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData.user;
+
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("net_worth")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        return [];
+      }
+
+      return data;
+    }
 
     async function initNetworthChart() {
 
