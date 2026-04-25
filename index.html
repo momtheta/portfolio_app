@@ -1,33 +1,42 @@
 <!-- ============================================================
      NET WORTH TRACKER  |  Author: Theresa P. De Leon
-     v2 Changes:
-       - ASSETS + TOTAL GAIN cards moved inside the Net Worth chart
-         header, showing live values from the net_worth graph data
-       - TODAY / MONTHLY / ANNUAL cards remain above the table
-       - Y-axis labels now show $1M, $2M, $3M format
-       - Net Worth chart is full width (no side-by-side projection)
-       - Projection card sits below the chart, same size as before
+     v5 Changes:
+       - Fully mobile-responsive (iPhone Safari tested)
+       - Table headers centered
+       - Input cells (SHARES/COST/DIV) font matches page font
+       - Renamed: "Today" topbar → "Date"
+       - Renamed cards: TODAY'S GAIN · MONTHLY DIV · ANNUAL DIV
+       - Renamed columns: SHARES (INPUT) · COST (INPUT) · DIV (INPUT)
+       - Full enhanced projection with sliders + dual chart + Monte Carlo
      ============================================================ -->
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- width=device-width makes the page scale correctly on iPhone -->
+  <!-- viewport-fit=cover fills the notch/safe-area on newer iPhones -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ── BASE ── */
+    /* ── RESET & BASE ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f5f7f9;
       margin: 0;
+      /* Respect iPhone notch / home bar */
+      padding-left:  env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      -webkit-text-size-adjust: 100%; /* prevent iOS auto font scaling */
     }
 
     .app {
-      padding: 16px;
+      padding: 12px 14px;
       max-width: 1400px;
       margin: 0 auto;
     }
@@ -50,18 +59,22 @@
       padding: 14px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 16px; /* 16px prevents iOS auto-zoom on focus */
+      font-family: inherit;
+      width: 100%;
     }
 
     .loginCard button {
-      padding: 12px;
+      padding: 14px;
       background: #16a34a;
       color: white;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* ── TOP HEADER BAR ── */
@@ -69,23 +82,23 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 14px;
-      margin-bottom: 16px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
       border-radius: 12px;
-      background: rgba(255,255,255,0.65);
+      background: rgba(255,255,255,0.8);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(229,231,235,0.6);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
     .topLeft { display: flex; flex-direction: column; gap: 2px; }
 
+    /* "Date:" label — renamed from "Today:" */
     #todayDate {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: #1f2937;
-      letter-spacing: 0.02em;
     }
 
     #marketStatus {
@@ -94,7 +107,7 @@
       letter-spacing: 0.04em;
     }
 
-    .market-open  { color: #16a34a; }
+    .market-open   { color: #16a34a; }
     .market-closed { color: #dc2626; }
 
     #logoutBtn {
@@ -105,105 +118,67 @@
       padding: 8px 16px;
       font-size: 12px;
       font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
-      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
     }
 
-    #logoutBtn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(34,197,94,0.25);
-    }
-
-    /* ── SUMMARY CARDS (TODAY / MONTHLY / ANNUAL — above table) ── */
+    /* ── SUMMARY CARDS (TODAY'S GAIN / MONTHLY DIV / ANNUAL DIV) ── */
     .cards {
       display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
     }
 
     .card {
-      flex: 0 0 auto;
-      min-width: 120px;
+      flex: 1 1 100px;   /* flex-grow so cards fill width on mobile */
+      min-width: 90px;
       padding: 10px 12px;
       background: #ecfdf5;
       border-radius: 10px;
       border: 1px solid #d1fae5;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
     }
 
-    .card div  { font-size: 11px; color: #555; }
-    .card h2   { font-size: 16px; margin: 2px 0 0 0; font-weight: 600; }
-
-    /* ── ASSETS / GAIN MINI-CARDS inside the chart header ──
-       These are slightly smaller and sit inline with the NET WORTH
-       title and the ADD/EDIT buttons                               */
-    .nwStatCards {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .nwStatCard {
-      padding: 6px 12px;
-      background: #f0fdf4;
-      border-radius: 8px;
-      border: 1px solid #bbf7d0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 100px;
-    }
-
-    .nwStatCard .label {
-      font-size: 10px;
-      color: #6b7280;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-
-    .nwStatCard .value {
-      font-size: 15px;
-      font-weight: 700;
-      color: #111;
-      font-variant-numeric: tabular-nums;
-      margin-top: 1px;
-    }
-
-    /* TOTAL GAIN card: value color is dynamic (green/red), set by JS */
-    #nwGainCard .value { color: #16a34a; }
+    .card div  { font-size: 10px; color: #555; font-weight: 600; letter-spacing: 0.04em; }
+    .card h2   { font-size: 15px; margin: 3px 0 0 0; font-weight: 700; }
 
     /* ── TOOLBAR BUTTONS ── */
     .toolBtn {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 6px 10px;
+      padding: 8px 12px;
       font-size: 12px;
+      font-family: inherit;
       border: none;
       border-radius: 6px;
       background: #111827;
       color: #e5e7eb;
       cursor: pointer;
-      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
     }
 
     .toolBtn span { font-weight: 500; }
-    .toolBtn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .toolBtn.blue   { background: #1d4ed8; }
+    .toolBtn.blue { background: #1d4ed8; }
 
     /* ── PORTFOLIO TABLE ── */
-    .tableWrap { width: 100%; overflow-x: auto; position: relative; }
+    .tableWrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
+      position: relative;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
 
     :root {
-      --c1: 140px; --c2: 140px; --c3: 140px;
-      --c4: 140px; --c5: 140px; --c6: 140px;
-      --c7: 140px; --c8: 140px; --c9: 140px;
+      --c1: 130px; --c2: 110px; --c3: 110px;
+      --c4: 110px; --c5: 110px; --c6: 110px;
+      --c7: 100px; --c8: 90px;  --c9: 110px;
     }
 
     .header, .row {
@@ -211,58 +186,96 @@
       grid-template-columns:
         var(--c1) var(--c2) var(--c3) var(--c4) var(--c5)
         var(--c6) var(--c7) var(--c8) var(--c9);
-      min-width: 900px;
+      min-width: 970px;
     }
 
+    /* ── TABLE HEADER: all cells centered ── */
     .header {
       position: sticky;
       top: 0;
       z-index: 20;
-      background: white;
+      background: #f9fafb;
       border-bottom: 2px solid #d1d5db;
     }
 
-    .header > div, .row > div {
-      padding: 10px;
+    .header > div {
+      padding: 9px 8px;
+      border-right: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;  /* centered */
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #374151;
+      background: #f9fafb;
+    }
+
+    .header > div:last-child { border-right: none; }
+
+    /* data rows */
+    .row > div {
+      padding: 9px 8px;
       border-right: 1px solid #e5e7eb;
       display: flex;
       align-items: center;
       justify-content: center;
       background: white;
+      font-size: 13px;
     }
 
-    .header .sticky, .row .sticky {
+    /* ── STICKY SYMBOL COLUMN ── */
+    .header .sticky {
       position: sticky;
       left: 0;
-      z-index: 50;
-      background: white;
-      isolation: isolate;
-      box-shadow: 0 0 0 1000px white inset, 2px 0 0 #e5e7eb;
+      z-index: 30;
+      background: #f9fafb;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
 
-    .row .sticky { justify-content: flex-start; text-align: left; }
+    .row .sticky {
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      background: white;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.04);
+      justify-content: flex-start;
+      font-weight: 600;
+      font-size: 13px;
+    }
 
+    /* ── INPUT CELLS (SHARES, COST, DIV) ──
+       font-family: inherit  → matches Inter, not browser default
+       font-size: 13px       → matches surrounding cells
+       16px min on mobile    → prevents iOS zoom                     */
     .row input {
       width: 100%;
       height: 100%;
-      padding: 0;
+      padding: 0 4px;
       margin: 0;
       border: none;
       outline: none;
       background: transparent;
-      border-right: 1px solid #d1d5db;
       text-align: center;
+      font-family: inherit;       /* KEY FIX: matches page font */
+      font-size: 13px;            /* KEY FIX: matches cell font */
       font-variant-numeric: tabular-nums;
-      box-sizing: border-box;
+      color: #111;
     }
 
-    .header > div:last-child,
+    /* On mobile, bump input font to 16px to prevent iOS auto-zoom */
+    @media (max-width: 768px) {
+      .row input { font-size: 16px; }
+    }
+
     .row > div:last-child,
-    .row input:last-child { border-right: none; }
+    .header > div:last-child { border-right: none; }
 
     .row { position: relative; z-index: 1; background: white; }
     .row:hover { background: #f9fafb; }
 
+    /* Drag-to-resize handle */
     .col { position: relative; }
     .resizer {
       position: absolute;
@@ -273,117 +286,303 @@
       cursor: col-resize;
     }
 
-    /* ── BOTTOM SECTION (full-width green wrapper) ── */
+    /* ── NET WORTH SECTION (green wrapper) ── */
     .bottomSection {
-      margin-top: 20px;
+      margin-top: 16px;
       background: #16a34a;
-      padding: 18px 14px 14px 14px;
+      padding: 14px 12px 12px;
       border-radius: 14px;
     }
 
-    /* ── NET WORTH CARD — full width ── */
     .networthCard {
       background: white;
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
       border: 1px solid #e5e7eb;
-      margin-top: 20px;   /* space from green top edge */
+      margin-top: 16px;
     }
 
-    /* Header bar inside the card:
-       [NET WORTH title]  [ASSETS card] [GAIN card]  [ADD btn] [EDIT btn] */
+    /* Chart header: title + stat cards */
     .netHeader {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 10px;
       flex-wrap: wrap;
     }
 
-    .netHeader h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #111;
-      margin: 0;
-      flex-shrink: 0;
+    .netHeader h3,
+.projCard h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 14px 0;
+  letter-spacing: 0.04em;
+}
+
+    /* ASSETS / TOTAL GAIN mini-cards */
+    .nwStatCards { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .nwStatCard {
+      padding: 5px 10px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      border: 1px solid #bbf7d0;
+      min-width: 90px;
     }
 
-    /* Chart canvas wrapper — full width of the card, taller */
-    .chartBox {
-      background: #f3f4f6;
-      border-radius: 10px;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      position: relative;
-      height: 320px;   /* taller because card is now full width */
-    }
-
-    /* ── PROJECTION CARD — sits below the chart, same width ── */
-    .projCard {
-      background: white;
-      border-radius: 14px;
-      padding: 16px;
-      border: 1px solid #e5e7eb;
-      margin-top: 12px;   /* gap between chart card and projection card */
-    }
-
-    .projHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .projCard h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #111;
-      margin: 0;
-    }
-
-    /* Projection values: laid out as a horizontal row */
-    .projGrid {
-      display: flex;
-      gap: 0;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Each cell = label + value stacked */
-    .projGrid .projCell {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 6px 4px;
-      border-right: 1px solid #f3f4f6;
-    }
-
-    .projGrid .projCell:last-child { border-right: none; }
-
-    .projGrid .projCell span {
-      font-size: 11px;
+    .nwStatCard .label {
+      font-size: 9px;
       color: #6b7280;
-      font-weight: 600;
-      margin-bottom: 2px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
-    .projGrid .projCell b {
-      font-size: 13px;
+    .nwStatCard .value {
+      font-size: 14px;
       font-weight: 700;
       color: #111;
       font-variant-numeric: tabular-nums;
     }
 
-    /* Rate dropdown pill */
-    .ratePill {
-      appearance: none;
-      border: none;
-      background: #111827;
-      color: #fff;
-      padding: 4px 10px;
-      border-radius: 999px;
+    /* Net worth chart canvas */
+    .chartBox {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 8px;
+      border: 1px solid #e5e7eb;
+      height: 280px;
+    }
+
+    /* ══════════════════════════════════════════
+       ENHANCED PROJECTION CARD
+       ══════════════════════════════════════════ */
+    .projCard {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      margin-top: 12px;
+    }
+
+    /* Milestone row */
+    .milestoneGrid {
+      display: flex;
+      gap: 0;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .milestoneCell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 7px 2px;
+      border-right: 1px solid #f3f4f6;
+      background: #f9fafb;
+    }
+
+    .milestoneCell:last-child { border-right: none; }
+    .milestoneCell .mLabel  { font-size: 9px;  font-weight: 700; color: #9ca3af; margin-bottom: 2px; }
+    .milestoneCell .mNominal{ font-size: 11px; font-weight: 700; color: #111; }
+    .milestoneCell .mReal   { font-size: 9px;  color: #9467bd;   font-weight: 600; margin-top: 1px; }
+
+    /* Two-column on desktop, single-column on mobile */
+    .projLayout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .projLayout {
+        grid-template-columns: 1fr;  /* stack on mobile */
+      }
+    }
+
+    .projControls { display: flex; flex-direction: column; gap: 12px; }
+
+    .projSection {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .projSectionTitle {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    /* Slider rows */
+    .sliderRow {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .sliderRow:last-child { margin-bottom: 0; }
+
+    .sliderLabel {
       font-size: 12px;
+      color: #374151;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sliderRow input[type=range] {
+      width: 110px;
+      flex-shrink: 0;
+      accent-color: #16a34a;
       cursor: pointer;
+      /* Larger touch target on mobile */
+      height: 20px;
+    }
+
+    .sliderVal {
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #111;
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* Toggle switch */
+    .toggleRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #374151;
+      gap: 8px;
+    }
+
+    .toggleRow:last-child { margin-bottom: 0; }
+
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggleSlider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #d1d5db;
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+
+    .toggleSlider::before {
+      content: "";
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .toggleSlider { background: #16a34a; }
+    .toggle input:checked + .toggleSlider::before { transform: translateX(16px); }
+
+    /* Snapshot grid (starting position) */
+    .snapGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    .snapItem {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    .snapItem .snapLabel { font-size: 9px;  color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .snapItem .snapVal   { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: #111; margin-top: 1px; }
+
+    /* Projection chart box */
+    .projChartBox {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      height: 340px;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      .projChartBox { height: 260px; }
+      .chartBox     { height: 220px; }
+    }
+
+    /* Advice buttons */
+    .adviceRow { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+    .adviceBtn {
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 600;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      color: #374151;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .adviceBtn:active { background: #f3f4f6; }
+
+    /* Monte Carlo label */
+    .mcLabel { font-size: 10px; color: #9ca3af; margin-top: 4px; display: none; }
+    .mcLabel.visible { display: block; }
+
+    /* AI advice panel */
+    .advicePanel {
+      margin-top: 12px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #111;
+      display: none;
+    }
+
+    .advicePanel.visible { display: block; }
+    .advicePanel .adviceTitle { font-weight: 700; font-size: 11px; color: #16a34a; margin-bottom: 6px; letter-spacing: 0.05em; }
+
+    /* ── MOBILE OVERRIDES ── */
+    @media (max-width: 600px) {
+      .app { padding: 8px 10px; }
+
+      /* Tighten top bar on small screens */
+      #todayDate { font-size: 11px; }
+
+      /* Cards: 3 across */
+      .cards { gap: 6px; }
+      .card  { padding: 8px 10px; }
+      .card h2 { font-size: 14px; }
+
+      /* Projection milestone: smaller text */
+      .milestoneCell .mNominal { font-size: 10px; }
+      .milestoneCell .mReal    { font-size: 9px; }
+
+      /* Sliders: full width label stacks above */
+      .sliderRow { flex-wrap: wrap; }
+      .sliderLabel { width: 100%; }
+      .sliderRow input[type=range] { width: 100%; }
     }
 
   </style>
@@ -420,8 +619,6 @@
       const fmtNumber  = n => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
       const fmtPercent = n => (n * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
 
-      // Format a raw number into $1M / $500K / $1.5B style
-      // Used for the Y-axis labels on the chart
       function fmtMillions(v) {
         const abs = Math.abs(v);
         if (abs >= 1_000_000_000) return "$" + (v / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
@@ -438,20 +635,26 @@
         app.innerHTML = `
           <div class="loginWrap">
             <div class="loginCard">
-              <h2>Login</h2>
-              <input id="emailInput" placeholder="Email">
-              <input id="passInput" type="password" placeholder="Password">
+              <h2 style="margin:0 0 4px;font-size:22px;">Login</h2>
+              <input id="emailInput" type="email" placeholder="Email" autocomplete="email">
+              <input id="passInput" type="password" placeholder="Password" autocomplete="current-password">
               <button id="loginBtn">LOGIN</button>
-              <p id="msg" style="color:#dc2626;font-size:13px;margin:0;"></p>
+              <p id="msg" style="color:#dc2626;font-size:13px;margin:0;min-height:18px;"></p>
             </div>
           </div>`;
         document.getElementById("loginBtn").addEventListener("click", login);
+
+        // Allow Enter key to submit
+        document.getElementById("passInput").addEventListener("keydown", e => {
+          if (e.key === "Enter") login();
+        });
       }
 
       async function login() {
-        const email = document.getElementById("emailInput").value;
+        const email = document.getElementById("emailInput").value.trim();
         const pass  = document.getElementById("passInput").value;
         const msg   = document.getElementById("msg");
+        msg.innerText = "";
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) { msg.innerText = error.message; return; }
         user = data.user;
@@ -463,6 +666,8 @@
         clearInterval(quoteInterval);
         clearInterval(marketInterval);
         quoteInterval = marketInterval = null;
+        if (projChart) { projChart.destroy(); projChart = null; }
+        if (netChart)  { netChart.destroy();  netChart  = null; }
         await supabase.auth.signOut();
         user = window.currentUser = null;
         showLogin();
@@ -485,7 +690,7 @@
               <button id="logoutBtn">LOGOUT</button>
             </div>
 
-            <!-- TODAY / MONTHLY / ANNUAL cards above the portfolio table -->
+            <!-- TODAY'S GAIN · MONTHLY DIV · ANNUAL DIV -->
             <div class="cards">
               <div class="card"><div>TODAY'S GAIN</div><h2 id="todayVal">$0</h2></div>
               <div class="card"><div>MONTHLY DIV</div><h2 id="mVal">$0</h2></div>
@@ -498,33 +703,25 @@
                 <div class="sticky col">SYMBOL<div class="resizer"></div></div>
                 <div class="col">PRICE<div class="resizer"></div></div>
                 <div class="col">CHANGE<div class="resizer"></div></div>
-                <div class="col">SHARES<div class="resizer"></div></div>
-                <div class="col">COST<div class="resizer"></div></div>
+                <div class="col">SHARES (INPUT)<div class="resizer"></div></div>
+                <div class="col">COST (INPUT)<div class="resizer"></div></div>
                 <div class="col">VALUE<div class="resizer"></div></div>
-                <div class="col">DIV<div class="resizer"></div></div>
+                <div class="col">DIV (INPUT)<div class="resizer"></div></div>
                 <div class="col">YIELD<div class="resizer"></div></div>
                 <div class="col">INCOME<div class="resizer"></div></div>
               </div>
               <div id="list"></div>
             </div>
 
-            <!-- BOTTOM SECTION: full-width green wrapper -->
+            <!-- BOTTOM SECTION: green wrapper -->
             <div class="bottomSection">
 
-              <!-- NET WORTH CARD — full width -->
+              <!-- NET WORTH CHART CARD -->
               <div class="networthCard">
-
-                <!--
-                  CHART HEADER ROW:
-                  [NET WORTH]  [ASSETS mini-card]  [TOTAL GAIN mini-card]
-                  Read-only — edit values directly in Supabase
-                -->
                 <div class="netHeader">
-                  <h3>NET WORTH</h3>
-
-                  <!-- Mini stat cards — values populated by updateNwStatCards() after chart loads -->
+                  <h3>🪎 NET WORTH HISTORY</h3>
                   <div class="nwStatCards">
-                    <div class="nwStatCard" id="nwAssetsCard">
+                    <div class="nwStatCard">
                       <div class="label">ASSETS (NET)</div>
                       <div class="value" id="nwAssetsVal">—</div>
                     </div>
@@ -534,49 +731,163 @@
                     </div>
                   </div>
                 </div>
-
-                <!-- Full-width chart canvas -->
                 <div class="chartBox">
                   <canvas id="networthChart"></canvas>
                 </div>
-
               </div>
 
-              <!-- PROJECTION CARD — below the chart, full width, horizontal layout -->
+              <!-- ENHANCED PROJECTION CARD -->
               <div class="projCard">
-                <div class="projHeader">
-                  <h3>PROJECTION</h3>
-                  <select id="rateSelect" class="ratePill">
-                    <option value="0.05">5%</option>
-                    <option value="0.08">8%</option>
-                    <option value="0.10" selected>10%</option>
-                    <option value="0.12">12%</option>
-                    <option value="0.15">15%</option>
-                  </select>
-                </div>
-                <!-- Horizontal 6-cell row: 1Y · 5Y · 10Y · 20Y · 30Y · 40Y -->
-                <div class="projGrid">
-                  <div class="projCell"><span>1Y</span><b id="proj1y">$0</b></div>
-                  <div class="projCell"><span>5Y</span><b id="proj5y">$0</b></div>
-                  <div class="projCell"><span>10Y</span><b id="proj10y">$0</b></div>
-                  <div class="projCell"><span>20Y</span><b id="proj20y">$0</b></div>
-                  <div class="projCell"><span>30Y</span><b id="proj30y">$0</b></div>
-                  <div class="projCell"><span>40Y</span><b id="proj40y">$0</b></div>
-                </div>
-              </div>
+                <h3>📈 NET WORTH PROJECTION</h3>
 
-            </div><!-- end .bottomSection -->
-          </div>`;
+                <!-- Milestone summary: 1Y–40Y, two rows (nominal + real) -->
+                <div class="milestoneGrid">
+                  <div class="milestoneCell"><div class="mLabel">1Y</div><div class="mNominal" id="proj1y">—</div><div class="mReal" id="proj1yr">—</div></div>
+                  <div class="milestoneCell"><div class="mLabel">5Y</div><div class="mNominal" id="proj5y">—</div><div class="mReal" id="proj5yr">—</div></div>
+                  <div class="milestoneCell"><div class="mLabel">10Y</div><div class="mNominal" id="proj10y">—</div><div class="mReal" id="proj10yr">—</div></div>
+                  <div class="milestoneCell"><div class="mLabel">20Y</div><div class="mNominal" id="proj20y">—</div><div class="mReal" id="proj20yr">—</div></div>
+                  <div class="milestoneCell"><div class="mLabel">30Y</div><div class="mNominal" id="proj30y">—</div><div class="mReal" id="proj30yr">—</div></div>
+                  <div class="milestoneCell"><div class="mLabel">40Y</div><div class="mNominal" id="proj40y">—</div><div class="mReal" id="proj40yr">—</div></div>
+                </div>
+                <div style="display:flex;gap:14px;font-size:10px;color:#9ca3af;margin-bottom:12px;flex-wrap:wrap;">
+                  <span>⬛ Nominal (top)</span>
+                  <span style="color:#9467bd;">■ Real / inflation-adjusted (bottom)</span>
+                </div>
 
-        // Fill date
+                <!-- Controls + chart two-column layout -->
+                <div class="projLayout">
+
+                  <!-- LEFT: Sliders -->
+                  <div class="projControls">
+
+                    <!-- Starting position (read from your net_worth data) -->
+                    <div class="projSection">
+                      <div class="projSectionTitle">📌 Starting Position</div>
+                      <div class="snapGrid">
+                        <div class="snapItem"><div class="snapLabel">Net Worth</div><div class="snapVal" id="snapNW">—</div></div>
+                        <div class="snapItem"><div class="snapLabel">Investment</div><div class="snapVal" id="snapPort">—</div></div>
+                        <div class="snapItem"><div class="snapLabel">Properties</div><div class="snapVal" id="snapProp">—</div></div>
+                        <div class="snapItem"><div class="snapLabel">Mortgage</div><div class="snapVal" id="snapMort">—</div></div>
+                      </div>
+                    </div>
+
+                    <!-- Annual Cash Flow -->
+                    <div class="projSection">
+                      <div class="projSectionTitle">💵 Annual Cash Flow</div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Annual contributions</span>
+                        <input type="range" id="slContrib" min="0" max="100000" step="1000" value="24000">
+                        <span class="sliderVal" id="svContrib">$24,000</span>
+                      </div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Annual expenses</span>
+                        <input type="range" id="slExpenses" min="0" max="200000" step="1000" value="60000">
+                        <span class="sliderVal" id="svExpenses">$60,000</span>
+                      </div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Social Security ($/yr)</span>
+                        <input type="range" id="slSS" min="0" max="60000" step="500" value="0">
+                        <span class="sliderVal" id="svSS">$0</span>
+                      </div>
+                      <div class="toggleRow">
+                        <span>Include Social Security</span>
+                        <label class="toggle"><input type="checkbox" id="toggleSS"><span class="toggleSlider"></span></label>
+                      </div>
+                      <div class="sliderRow" id="ssAgeRow" style="display:none;">
+                        <span class="sliderLabel">SS starts at age</span>
+                        <input type="range" id="slSSAge" min="62" max="70" step="1" value="67">
+                        <span class="sliderVal" id="svSSAge">67</span>
+                      </div>
+                      <div class="sliderRow" id="ssAgeRow2" style="display:none;">
+                        <span class="sliderLabel">Your current age</span>
+                        <input type="range" id="slAge" min="30" max="80" step="1" value="60">
+                        <span class="sliderVal" id="svAge">60</span>
+                      </div>
+                    </div>
+
+                    <!-- Growth Assumptions -->
+                    <div class="projSection">
+                      <div class="projSectionTitle">📊 Growth Assumptions</div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Investment return (%/yr)</span>
+                        <input type="range" id="slReturn" min="0" max="20" step="0.5" value="7">
+                        <span class="sliderVal" id="svReturn">7.0%</span>
+                      </div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Inflation rate (%/yr)</span>
+                        <input type="range" id="slInflation" min="0" max="10" step="0.25" value="3">
+                        <span class="sliderVal" id="svInflation">3.0%</span>
+                      </div>
+                      <div class="sliderRow">
+                        <span class="sliderLabel">Projection horizon</span>
+                        <input type="range" id="slHorizon" min="5" max="50" step="1" value="30">
+                        <span class="sliderVal" id="svHorizon">30 yrs</span>
+                      </div>
+                    </div>
+
+                    <!-- Advanced -->
+                    <div class="projSection">
+                      <div class="projSectionTitle">🎲 Advanced</div>
+                      <div class="toggleRow">
+                        <span>Monte Carlo (1,000 runs)</span>
+                        <label class="toggle"><input type="checkbox" id="toggleMC"><span class="toggleSlider"></span></label>
+                      </div>
+                      <div class="mcLabel" id="mcLabel">Showing 10th / 90th percentile band</div>
+                      <div class="sliderRow" id="mcVolRow" style="display:none;">
+                        <span class="sliderLabel">Return volatility (std dev)</span>
+                        <input type="range" id="slVol" min="1" max="25" step="0.5" value="12">
+                        <span class="sliderVal" id="svVol">12.0%</span>
+                      </div>
+                    </div>
+
+                    <!-- Advice buttons -->
+                    <div class="adviceRow">
+                      <button class="adviceBtn" id="advBtn1">💡 Growth levers</button>
+                      <button class="adviceBtn" id="advBtn2">🏖️ Safe withdrawal</button>
+                      <button class="adviceBtn" id="advBtn3">📋 SS strategy</button>
+                    </div>
+
+                  </div><!-- end projControls -->
+
+                  <!-- RIGHT: Chart -->
+                  <div>
+                    <div class="projChartBox">
+                      <canvas id="projChart"></canvas>
+                    </div>
+                    <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:#6b7280;flex-wrap:wrap;">
+                      <span style="display:flex;align-items:center;gap:4px;">
+                        <span style="width:20px;height:3px;background:#16a34a;display:inline-block;border-radius:2px;"></span> Nominal
+                      </span>
+                      <span style="display:flex;align-items:center;gap:4px;">
+                        <span style="width:20px;height:2px;background:#9467bd;display:inline-block;border-radius:2px;border-bottom:2px dashed #9467bd;"></span> Real
+                      </span>
+                      <span id="mcLegend" style="display:none;align-items:center;gap:4px;">
+                        <span style="width:20px;height:10px;background:rgba(22,163,74,0.15);display:inline-block;border-radius:2px;"></span> 10–90th pct.
+                      </span>
+                    </div>
+                  </div>
+
+                </div><!-- end projLayout -->
+
+                <!-- AI advice panel -->
+                <div class="advicePanel" id="advicePanel">
+                  <div class="adviceTitle" id="adviceTitle">ANALYSIS</div>
+                  <div id="adviceText">Loading...</div>
+                </div>
+
+              </div><!-- end projCard -->
+
+            </div><!-- end bottomSection -->
+          </div>`; // end app innerHTML
+
+        // ── Fill date label ("Date: Saturday, April 25, 2026") ──
         document.getElementById("todayDate").innerText =
           "Date: " + new Date().toLocaleDateString(undefined, {
             weekday: "long", year: "numeric", month: "long", day: "numeric"
           });
 
-        // Wire all buttons AFTER HTML is in the DOM
+        // ── Wire buttons after HTML exists ──
         document.getElementById("logoutBtn").addEventListener("click", logout);
-        document.getElementById("rateSelect").addEventListener("change", refresh);
 
         createToolbar();
         loadWidths();
@@ -584,39 +895,50 @@
         loadAll();
 
         quoteInterval  = setInterval(fetchAllQuotes, 30000);
-        marketInterval = setInterval(updateMarketStatus, 60000);
         updateMarketStatus();
+        marketInterval = setInterval(updateMarketStatus, 60000);
+
         initNetworthChart();
+        initProjection();
       }
 
       // ══════════════════════════════════════════
-      // NET WORTH STAT CARDS (ASSETS + TOTAL GAIN)
-      // Called after the chart data loads.
-      // Uses the net_worth table rows directly:
-      //   ASSETS = latest snapshot net worth (cash+retirement+stocks+properties−mortgage)
-      //   TOTAL GAIN = latest net worth − earliest net worth
+      // NET WORTH STAT CARDS
       // ══════════════════════════════════════════
 
       function updateNwStatCards(data) {
         if (!data || !data.length) return;
-
         const calcNet = d =>
           (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
           (d.properties || 0) - (d.mortgage || 0);
-
         const latest   = calcNet(data[data.length - 1]);
         const earliest = calcNet(data[0]);
         const gain     = latest - earliest;
 
-        const assetsEl = document.getElementById("nwAssetsVal");
-        const gainEl   = document.getElementById("nwGainVal");
-
-        if (assetsEl) assetsEl.innerText = fmtMoney0(latest);
-
-        if (gainEl) {
-          gainEl.innerText   = (gain >= 0 ? "+" : "") + fmtMoney0(gain);
-          gainEl.style.color = gain >= 0 ? "#16a34a" : "#dc2626";
+        const aEl = document.getElementById("nwAssetsVal");
+        const gEl = document.getElementById("nwGainVal");
+        if (aEl) aEl.innerText = fmtMoney0(latest);
+        if (gEl) {
+          gEl.innerText   = (gain >= 0 ? "+" : "") + fmtMoney0(gain);
+          gEl.style.color = gain >= 0 ? "#16a34a" : "#dc2626";
         }
+
+        // KEY FIX: seed projBase from your actual Supabase net_worth data.
+        // This replaces the portfolio-only total so the projection starts
+        // from cash + retirement + stocks + properties - mortgage (latest row).
+        projBase = latest;
+        nwDataLoaded = true;
+
+        // Seed the Starting Position snap cards in the projection panel
+        const last = data[data.length - 1];
+        const setSnap = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = fmtMoney0(v); };
+        setSnap("snapNW",   latest);
+        setSnap("snapPort", (last.stocks || 0) + (last.cash || 0) + (last.retirement || 0));
+        setSnap("snapProp", last.properties || 0);
+        setSnap("snapMort", last.mortgage   || 0);
+
+        // Re-run projection now that projBase has the correct starting value
+        runProjection();
       }
 
       // ══════════════════════════════════════════
@@ -630,33 +952,18 @@
           .eq("user_id", user.id)
           .order("date", { ascending: true });
         if (error) { console.error(error); return []; }
-
-        // Belt-and-suspenders: also sort client-side by date string.
-        // ISO date strings (YYYY-MM-DD) sort correctly with localeCompare,
-        // so April 2026 (2026-04-01) will always appear after March 2026 (2026-03-01)
-        // regardless of the order rows were inserted into the database.
-        const sorted = (data || []).slice().sort((a, b) =>
-          a.date.localeCompare(b.date)
-        );
-        return sorted;
+        return (data || []).slice().sort((a, b) => a.date.localeCompare(b.date));
       }
 
       async function initNetworthChart() {
         if (!user) return;
-
         const data = await fetchNetworthData();
-
-        const ctx = document.getElementById("networthChart");
+        const ctx  = document.getElementById("networthChart");
         if (!ctx) { setTimeout(initNetworthChart, 200); return; }
 
         if (netChart) { netChart.destroy(); netChart = null; }
-
-        // Update the ASSETS + TOTAL GAIN mini-cards from live data
         updateNwStatCards(data);
 
-        // Convert "YYYY-MM-DD" strings → display labels like "Apr 2026"
-        // We append T12:00:00 to avoid timezone-midnight shift bugs where
-        // "2026-04-01" parsed without time becomes Mar 31 in some timezones.
         const xLabels = data.map(d => {
           const dt = new Date(d.date + "T12:00:00");
           return dt.toLocaleDateString(undefined, { month: "short", year: "numeric" });
@@ -667,57 +974,18 @@
           data: {
             labels: xLabels,
             datasets: [
-              {
-                label: "Cash",
-                data: data.map(d => d.cash || 0),
-                borderColor: "#1f77b4",
-                tension: 0.35,
-                fill: false,
-                pointRadius: 3
-              },
-              {
-                label: "Retirement",
-                data: data.map(d => d.retirement || 0),
-                borderColor: "#ff7f0e",
-                tension: 0.35,
-                fill: false,
-                pointRadius: 3
-              },
-              {
-                label: "Stocks",
-                data: data.map(d => d.stocks || 0),
-                borderColor: "#2ca02c",
-                tension: 0.35,
-                fill: false,
-                pointRadius: 3
-              },
-              {
-                label: "Properties",
-                data: data.map(d => d.properties || 0),
-                borderColor: "#17becf",
-                tension: 0.35,
-                fill: false,
-                pointRadius: 3
-              },
-              {
-                label: "Mortgage",
-                data: data.map(d => d.mortgage || 0),
-                borderColor: "#d62728",
-                tension: 0.35,
-                fill: false,
-                pointRadius: 3
-              },
+              { label: "Cash",       data: data.map(d => d.cash       || 0), borderColor: "#1f77b4", tension: 0.35, fill: false, pointRadius: 3 },
+              { label: "Retirement", data: data.map(d => d.retirement || 0), borderColor: "#ff7f0e", tension: 0.35, fill: false, pointRadius: 3 },
+              { label: "Stocks",     data: data.map(d => d.stocks     || 0), borderColor: "#2ca02c", tension: 0.35, fill: false, pointRadius: 3 },
+              { label: "Properties", data: data.map(d => d.properties || 0), borderColor: "#17becf", tension: 0.35, fill: false, pointRadius: 3 },
+              { label: "Mortgage",   data: data.map(d => d.mortgage   || 0), borderColor: "#d62728", tension: 0.35, fill: false, pointRadius: 3 },
               {
                 label: "Net Worth",
                 data: data.map(d =>
                   (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
                   (d.properties || 0) - (d.mortgage || 0)
                 ),
-                borderColor: "#9467bd",
-                borderWidth: 3,
-                tension: 0.35,
-                fill: false,
-                pointRadius: 4
+                borderColor: "#9467bd", borderWidth: 3, tension: 0.35, fill: false, pointRadius: 4
               }
             ]
           },
@@ -726,27 +994,12 @@
             maintainAspectRatio: false,
             animation: false,
             plugins: {
-              legend: { position: "right" },
-              tooltip: {
-                callbacks: {
-                  label: ctx => " " + ctx.dataset.label + ": " + fmtMoney0(ctx.parsed.y)
-                }
-              }
+              legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + fmtMoney0(c.parsed.y) } }
             },
             scales: {
-              y: {
-                ticks: {
-                  // Y-axis: $1M, $500K, $1.5B format
-                  callback: v => fmtMillions(v)
-                }
-              },
-              x: {
-                ticks: {
-                  maxTicksLimit: 24,   // show up to 24 months before thinning
-                  maxRotation: 45,     // rotate labels if they overlap
-                  minRotation: 0
-                }
-              }
+              y: { ticks: { callback: v => fmtMillions(v), font: { size: 11 } } },
+              x: { ticks: { maxTicksLimit: 12, maxRotation: 45, minRotation: 0, font: { size: 10 } } }
             }
           }
         });
@@ -757,24 +1010,17 @@
       // ══════════════════════════════════════════
 
       async function loadAll() {
-        const { data } = await supabase
-          .from("portfolio")
-          .select("*")
-          .eq("user_id", user.id);
-
+        const { data } = await supabase.from("portfolio").select("*").eq("user_id", user.id);
         portfolio = (data || []).map(r => ({
-          id:         r.id,
-          symbol:     r.symbol,
+          id: r.id, symbol: r.symbol,
           shares:     +r.shares     || 0,
           dividend:   +r.dividend   || 0,
           cost:       +r.cost       || 0,
           last_price: +r.last_price || 0,
           position:   r.position    || 0
         }));
-
         portfolio.sort((a, b) => a.position - b.position);
         symbols = portfolio.map(p => p.symbol);
-
         render();
         refresh();
         fetchAllQuotes();
@@ -798,9 +1044,7 @@
           if (!data || typeof data !== "object") return;
           Object.keys(data).forEach(sym => { if (data[sym]?.c) dataMap[sym] = data[sym]; });
           refresh();
-        } catch (err) {
-          console.error("Quote fetch error:", err);
-        }
+        } catch (err) { console.error("Quote fetch error:", err); }
       }
 
       function createRow(p) {
@@ -810,18 +1054,16 @@
           <div class="sticky">${p.symbol}</div>
           <div>N/A</div>
           <div>N/A</div>
-          <input value="${p.shares   ? fmtNumber(p.shares)   : ""}">
-          <input value="${p.cost     ? fmtMoney(p.cost)      : ""}">
+          <input type="text" inputmode="decimal" value="${p.shares   ? fmtNumber(p.shares)   : ""}">
+          <input type="text" inputmode="decimal" value="${p.cost     ? fmtMoney(p.cost)      : ""}">
           <div>$0</div>
-          <input value="${p.dividend ? fmtNumber(p.dividend) : ""}">
+          <input type="text" inputmode="decimal" value="${p.dividend ? fmtNumber(p.dividend) : ""}">
           <div>0%</div>
           <div>$0</div>`;
 
         const del = document.createElement("button");
-        del.innerText  = "✕";
-        del.style.cssText =
-          "margin-right:6px;background:#ef4444;color:white;" +
-          "border:none;border-radius:6px;padding:2px 6px;cursor:pointer;";
+        del.innerText = "✕";
+        del.style.cssText = "margin-right:6px;background:#ef4444;color:white;border:none;border-radius:6px;padding:3px 7px;cursor:pointer;font-family:inherit;";
         del.addEventListener("click", () => deleteRow(p.id));
         row.children[0].prepend(del);
 
@@ -879,7 +1121,6 @@
           row.children[8].style.fontWeight = income > 0 ? "600" : "400";
         });
 
-        // Update the 3 cards above the table
         document.getElementById("iVal").innerText = fmtMoney0(incomeTotal);
         document.getElementById("mVal").innerText = fmtMoney0(monthlyTotal);
 
@@ -887,19 +1128,217 @@
         tEl.innerText   = (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
         tEl.style.color = dailyGainTotal > 0 ? "#16a34a" : dailyGainTotal < 0 ? "#dc2626" : "#333";
 
-        // Projection uses total portfolio value as the starting point
         updateProjection(total);
       }
 
-      function updateProjection(current) {
-        if (isNaN(current)) return;
-        const rate = parseFloat(document.getElementById("rateSelect")?.value || "0.10");
-        const map  = { proj1y: 1, proj5y: 5, proj10y: 10, proj20y: 20, proj30y: 30, proj40y: 40 };
-        Object.entries(map).forEach(([id, yrs]) => {
-          const el = document.getElementById(id);
-          if (el) el.innerText = fmtMoney0(current * Math.pow(1 + rate, yrs));
+      // ══════════════════════════════════════════
+      // ENHANCED PROJECTION ENGINE
+      // ══════════════════════════════════════════
+
+      let projChart = null;
+      let projBase  = 0;
+      // nwDataLoaded: once Supabase net_worth rows are loaded, portfolio
+      // refresh no longer overwrites projBase with the smaller portfolio total.
+      let nwDataLoaded = false;
+
+      function updateProjection(portfolioTotal) {
+        if (!nwDataLoaded && !isNaN(portfolioTotal)) projBase = portfolioTotal;
+        runProjection();
+      }
+
+      function initProjection() {
+        function wireSlider(sliderId, labelId, fmt) {
+          const sl  = document.getElementById(sliderId);
+          const lbl = document.getElementById(labelId);
+          if (!sl || !lbl) return;
+          lbl.innerText = fmt(sl.value);
+          sl.addEventListener("input", () => { lbl.innerText = fmt(sl.value); runProjection(); });
+        }
+
+        const dollar = v => "$" + Number(v).toLocaleString();
+        const pct    = v => parseFloat(v).toFixed(1) + "%";
+        const yrs    = v => v + " yrs";
+        const age    = v => v;
+
+        wireSlider("slContrib",   "svContrib",   dollar);
+        wireSlider("slExpenses",  "svExpenses",  dollar);
+        wireSlider("slSS",        "svSS",        dollar);
+        wireSlider("slSSAge",     "svSSAge",     age);
+        wireSlider("slAge",       "svAge",       age);
+        wireSlider("slReturn",    "svReturn",    pct);
+        wireSlider("slInflation", "svInflation", pct);
+        wireSlider("slHorizon",   "svHorizon",   yrs);
+        wireSlider("slVol",       "svVol",       pct);
+
+        document.getElementById("toggleSS").addEventListener("change", e => {
+          const on = e.target.checked;
+          document.getElementById("ssAgeRow").style.display  = on ? "flex" : "none";
+          document.getElementById("ssAgeRow2").style.display = on ? "flex" : "none";
+          runProjection();
+        });
+
+        document.getElementById("toggleMC").addEventListener("change", e => {
+          const on = e.target.checked;
+          document.getElementById("mcVolRow").style.display = on ? "flex" : "none";
+          document.getElementById("mcLabel").classList.toggle("visible", on);
+          document.getElementById("mcLegend").style.display = on ? "flex" : "none";
+          runProjection();
+        });
+
+        const adviceDefs = {
+          advBtn1: {
+            title: "💡 GROWTH LEVERS",
+            prompt: () => `I have a net worth of ${fmtMoney0(projBase)}, contributing $${document.getElementById("slContrib").value}/yr, spending $${document.getElementById("slExpenses").value}/yr, with ${document.getElementById("slReturn").value}% return and ${document.getElementById("slInflation").value}% inflation over ${document.getElementById("slHorizon").value} years. What are the 3 biggest levers to grow my net worth faster? Be specific and concise.`
+          },
+          advBtn2: {
+            title: "🏖️ SAFE WITHDRAWAL RATE",
+            prompt: () => {
+              const h = parseInt(document.getElementById("slHorizon").value);
+              const r = parseFloat(document.getElementById("slReturn").value);
+              const i = parseFloat(document.getElementById("slInflation").value);
+              const future = projBase * Math.pow(1 + r / 100, h);
+              return `My projected net worth in ${h} years is ${fmtMoney0(future)}. With ${i}% inflation, what is a safe annual withdrawal? Include the 4% rule, inflation impact, and sequence-of-returns risk. Be concise.`;
+            }
+          },
+          advBtn3: {
+            title: "📋 SOCIAL SECURITY STRATEGY",
+            prompt: () => `I am ${document.getElementById("slAge").value} years old, planning to claim SS at ${document.getElementById("slSSAge").value}, receiving $${document.getElementById("slSS").value}/yr. Net worth: ${fmtMoney0(projBase)}. What is the optimal SS claiming strategy? Consider break-even age, spousal benefits, withdrawal sequencing. Be concise.`
+          }
+        };
+
+        Object.entries(adviceDefs).forEach(([btnId, def]) => {
+          document.getElementById(btnId)?.addEventListener("click", () => fetchAdvice(def));
+        });
+
+        runProjection();
+      }
+
+      function runProjection() {
+        const returnRate = parseFloat(document.getElementById("slReturn")?.value    || 7)    / 100;
+        const inflRate   = parseFloat(document.getElementById("slInflation")?.value  || 3)    / 100;
+        const horizon    = parseInt(document.getElementById("slHorizon")?.value      || 30);
+        const contrib    = parseFloat(document.getElementById("slContrib")?.value    || 24000);
+        const expenses   = parseFloat(document.getElementById("slExpenses")?.value   || 60000);
+        const ssOn       = document.getElementById("toggleSS")?.checked;
+        const ssAmt      = ssOn ? parseFloat(document.getElementById("slSS")?.value  || 0) : 0;
+        const ssAge      = ssOn ? parseInt(document.getElementById("slSSAge")?.value  || 67) : 999;
+        const curAge     = ssOn ? parseInt(document.getElementById("slAge")?.value    || 60) : 60;
+        const mcOn       = document.getElementById("toggleMC")?.checked;
+        const vol        = parseFloat(document.getElementById("slVol")?.value        || 12)   / 100;
+
+        const netFlow    = yr => contrib - expenses + (ssOn && (curAge + yr) >= ssAge ? ssAmt : 0);
+        const realReturn = (1 + returnRate) / (1 + inflRate) - 1;
+
+        const labels = [], nominal = [], real = [];
+        let nVal = projBase, rVal = projBase;
+
+        for (let yr = 0; yr <= horizon; yr++) {
+          labels.push(new Date().getFullYear() + yr);
+          nominal.push(Math.round(nVal));
+          real.push(Math.round(rVal));
+          if (yr < horizon) {
+            const flow = netFlow(yr + 1);
+            nVal = nVal * (1 + returnRate) + flow;
+            rVal = rVal * (1 + realReturn) + flow / Math.pow(1 + inflRate, yr + 1);
+          }
+        }
+
+        let mc10 = [], mc90 = [];
+        if (mcOn) {
+          const RUNS = 1000;
+          const outcomes = Array.from({ length: horizon + 1 }, () => []);
+          for (let run = 0; run < RUNS; run++) {
+            let v = projBase;
+            outcomes[0].push(v);
+            for (let yr = 0; yr < horizon; yr++) {
+              const u1 = Math.random(), u2 = Math.random();
+              const z  = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+              v = v * (1 + returnRate + vol * z) + netFlow(yr + 1);
+              outcomes[yr + 1].push(v);
+            }
+          }
+          for (let yr = 0; yr <= horizon; yr++) {
+            const s = outcomes[yr].slice().sort((a, b) => a - b);
+            mc10.push(Math.round(s[Math.floor(RUNS * 0.10)]));
+            mc90.push(Math.round(s[Math.floor(RUNS * 0.90)]));
+          }
+        }
+
+        // Update milestone cells
+        const milestones = { proj1y: 1, proj5y: 5, proj10y: 10, proj20y: 20, proj30y: 30, proj40y: 40 };
+        Object.entries(milestones).forEach(([id, y]) => {
+          const nEl = document.getElementById(id);
+          const rEl = document.getElementById(id + "r");
+          if (nEl) nEl.innerText = y <= horizon ? fmtMillions(nominal[y] ?? nominal[nominal.length - 1]) : "—";
+          if (rEl) rEl.innerText = y <= horizon ? fmtMillions(real[y]    ?? real[real.length - 1])       : "—";
+        });
+
+        drawProjChart(labels, nominal, real, mcOn ? mc10 : null, mcOn ? mc90 : null);
+      }
+
+      function drawProjChart(labels, nominal, real, mc10, mc90) {
+        const ctx = document.getElementById("projChart");
+        if (!ctx) return;
+        if (projChart) { projChart.destroy(); projChart = null; }
+
+        const datasets = [];
+
+        if (mc10 && mc90) {
+          datasets.push({ label: "90th pct", data: mc90, borderColor: "transparent", backgroundColor: "rgba(22,163,74,0.10)", fill: "+1", tension: 0.35, pointRadius: 0 });
+          datasets.push({ label: "10th pct", data: mc10, borderColor: "transparent", backgroundColor: "rgba(22,163,74,0.10)", fill: false, tension: 0.35, pointRadius: 0 });
+        }
+
+        datasets.push({ label: "Real", data: real, borderColor: "#9467bd", borderWidth: 2, borderDash: [6, 4], tension: 0.35, fill: false, pointRadius: 0, pointHoverRadius: 4 });
+        datasets.push({ label: "Nominal", data: nominal, borderColor: "#16a34a", borderWidth: 2.5, tension: 0.35, fill: false, pointRadius: 0, pointHoverRadius: 4 });
+
+        projChart = new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 200 },
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + fmtMoney0(c.parsed.y) } }
+            },
+            scales: {
+              x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+              y: { ticks: { callback: v => fmtMillions(v), font: { size: 10 } } }
+            }
+          }
         });
       }
+
+      async function fetchAdvice(def) {
+        const panel   = document.getElementById("advicePanel");
+        const titleEl = document.getElementById("adviceTitle");
+        const textEl  = document.getElementById("adviceText");
+        panel.classList.add("visible");
+        titleEl.innerText = def.title;
+        textEl.innerText  = "Thinking...";
+        try {
+          const res  = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 400,
+              messages: [{ role: "user", content: def.prompt() }]
+            })
+          });
+          const data = await res.json();
+          textEl.innerText = data.content?.[0]?.text || "No response.";
+        } catch (err) {
+          textEl.innerText = "Could not connect to AI.";
+          console.error(err);
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // TOOLBAR + RESIZE
+      // ══════════════════════════════════════════
 
       async function addRow() {
         const symbol = prompt("Enter ticker symbol (e.g. AAPL)");
@@ -935,16 +1374,12 @@
         loadAll();
       }
 
-      // ══════════════════════════════════════════
-      // TOOLBAR + RESIZE
-      // ══════════════════════════════════════════
-
       function createToolbar() {
         const wrap = document.createElement("div");
-        wrap.style.cssText = "display:flex;gap:8px;margin-bottom:12px;align-items:center;";
+        wrap.style.cssText = "display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;";
         wrap.innerHTML = `
           <button id="addRowBtn" class="toolBtn">➕ <span>ADD SYMBOL</span></button>
-          <button id="resetOrderBtn" class="toolBtn blue">🔄 <span>SORT ALPHABETICALLY</span></button>`;
+          <button id="resetOrderBtn" class="toolBtn blue">🔄 <span>SORT A–Z</span></button>`;
         const table = document.querySelector(".tableWrap");
         table.parentNode.insertBefore(wrap, table);
         document.getElementById("addRowBtn").addEventListener("click", addRow);
@@ -959,6 +1394,8 @@
       }
 
       function enableResize() {
+        // Resize only on non-touch devices — on mobile, pinch/scroll is more natural
+        if ("ontouchstart" in window) return;
         document.querySelectorAll(".header .col").forEach((col, i) => {
           const resizer = col.querySelector(".resizer");
           let startX, startW;
@@ -969,7 +1406,7 @@
               document.removeEventListener("mousemove", onMove), { once: true });
           });
           function onMove(e) {
-            const w = Math.max(80, startW + (e.clientX - startX)) + "px";
+            const w = Math.max(70, startW + (e.clientX - startX)) + "px";
             document.documentElement.style.setProperty(`--c${i + 1}`, w);
             localStorage.setItem("col" + (i + 1), w);
           }
@@ -984,7 +1421,7 @@
         const el = document.getElementById("marketStatus");
         if (!el) return;
         const est    = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-        const day    = est.getDay(), h = est.getHours(), m = est.getMinutes();
+        const day = est.getDay(), h = est.getHours(), m = est.getMinutes();
         const isOpen = day > 0 && day < 6 && (h > 9 || (h === 9 && m >= 30)) && h < 16;
         el.innerText = isOpen ? "🟢 Market Open" : "🔴 Market Closed";
         el.className = isOpen ? "market-open"    : "market-closed";
@@ -1003,7 +1440,7 @@
 
       initAuth();
 
-    }); // end window load
+    }); // end window.addEventListener("load")
 
     // iframe height sync
     function sendHeight() {
