@@ -487,7 +487,7 @@
 
             <!-- TODAY / MONTHLY / ANNUAL cards above the portfolio table -->
             <div class="cards">
-              <div class="card"><div>TODAY GAIN</div><h2 id="todayVal">$0</h2></div>
+              <div class="card"><div>TODAY'S GAIN</div><h2 id="todayVal">$0</h2></div>
               <div class="card"><div>MONTHLY DIV</div><h2 id="mVal">$0</h2></div>
               <div class="card"><div>ANNUAL DIV</div><h2 id="iVal">$0</h2></div>
             </div>
@@ -570,7 +570,7 @@
 
         // Fill date
         document.getElementById("todayDate").innerText =
-          "Today: " + new Date().toLocaleDateString(undefined, {
+          "Date: " + new Date().toLocaleDateString(undefined, {
             weekday: "long", year: "numeric", month: "long", day: "numeric"
           });
 
