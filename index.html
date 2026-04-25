@@ -1,14 +1,25 @@
-<!-- Author: Theresa P. De Leon -->
+<!-- ============================================================
+     NET WORTH TRACKER  |  Author: Theresa P. De Leon
+     v2 Changes:
+       - ASSETS + TOTAL GAIN cards moved inside the Net Worth chart
+         header, showing live values from the net_worth graph data
+       - TODAY / MONTHLY / ANNUAL cards remain above the table
+       - Y-axis labels now show $1M, $2M, $3M format
+       - Net Worth chart is full width (no side-by-side projection)
+       - Projection card sits below the chart, same size as before
+     ============================================================ -->
+
 <!DOCTYPE html>
 <html>
-
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
+    /* ── BASE ── */
     body {
       font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f5f7f9;
@@ -21,12 +32,8 @@
       margin: 0 auto;
     }
 
-    /* LOGIN */
-    .loginWrap {
-      display: flex;
-      justify-content: center;
-      padding-top: 40px
-    }
+    /* ── LOGIN ── */
+    .loginWrap { display: flex; justify-content: center; padding-top: 40px; }
 
     .loginCard {
       max-width: 420px;
@@ -36,11 +43,14 @@
       border-radius: 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px
+      gap: 12px;
     }
 
     .loginCard input {
-      padding: 14px
+      padding: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
     }
 
     .loginCard button {
@@ -48,146 +58,171 @@
       background: #16a34a;
       color: white;
       border: none;
-      border-radius: 8px
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
     }
 
-    /* CARDS */
+    /* ── TOP HEADER BAR ── */
+    .topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(229,231,235,0.6);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+
+    .topLeft { display: flex; flex-direction: column; gap: 2px; }
+
+    #todayDate {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      letter-spacing: 0.02em;
+    }
+
+    #marketStatus {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .market-open  { color: #16a34a; }
+    .market-closed { color: #dc2626; }
+
+    #logoutBtn {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    #logoutBtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(34,197,94,0.25);
+    }
+
+    /* ── SUMMARY CARDS (TODAY / MONTHLY / ANNUAL — above table) ── */
     .cards {
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
       align-items: center;
       flex-wrap: wrap;
-      /* allows wrapping if needed */
     }
 
     .card {
       flex: 0 0 auto;
       min-width: 120px;
       padding: 10px 12px;
-
       background: #ecfdf5;
-      /* keep green */
       border-radius: 10px;
-
       border: 1px solid #d1fae5;
-      /* 🔥 subtle edge so it stands out */
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-      /* 🔥 depth */
-
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
 
-    #pVal {
-      color: #111;
+    .card div  { font-size: 11px; color: #555; }
+    .card h2   { font-size: 16px; margin: 2px 0 0 0; font-weight: 600; }
+
+    /* ── ASSETS / GAIN MINI-CARDS inside the chart header ──
+       These are slightly smaller and sit inline with the NET WORTH
+       title and the ADD/EDIT buttons                               */
+    .nwStatCards {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
-    #gVal {
+    .nwStatCard {
+      padding: 6px 12px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      border: 1px solid #bbf7d0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 100px;
+    }
+
+    .nwStatCard .label {
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nwStatCard .value {
+      font-size: 15px;
       font-weight: 700;
+      color: #111;
+      font-variant-numeric: tabular-nums;
+      margin-top: 1px;
     }
 
-    #todayVal {
-      font-weight: 600;
-    }
+    /* TOTAL GAIN card: value color is dynamic (green/red), set by JS */
+    #nwGainCard .value { color: #16a34a; }
 
-    /* tighter text */
-    .card div {
-      font-size: 11px;
-      color: #555;
-    }
-
-    .card h2 {
-      font-size: 16px;
-      margin: 2px 0 0 0;
-      font-weight: 600;
-    }
-
+    /* ── TOOLBAR BUTTONS ── */
     .toolBtn {
       display: flex;
       align-items: center;
       gap: 4px;
-
       padding: 6px 10px;
       font-size: 12px;
-
       border: none;
       border-radius: 6px;
-
       background: #111827;
       color: #e5e7eb;
-
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
-    .toolBtn span {
-      font-weight: 500;
-    }
+    .toolBtn span { font-weight: 500; }
+    .toolBtn:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .toolBtn.blue   { background: #1d4ed8; }
 
-    .toolBtn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+    /* ── PORTFOLIO TABLE ── */
+    .tableWrap { width: 100%; overflow-x: auto; position: relative; }
 
-    .toolBtn.blue {
-      background: #1d4ed8;
-    }
-
-    /* TABLE WRAPPER */
-    .tableWrap {
-      width: 100%;
-      overflow-x: auto;
-      position: relative;
-    }
-
-    /* column widths */
     :root {
-      --c1: 140px;
-      --c2: 140px;
-      --c3: 140px;
-      --c4: 140px;
-      --c5: 140px;
-      --c6: 140px;
-      --c7: 140px;
-      --c8: 140px;
-      --c9: 140px;
+      --c1: 140px; --c2: 140px; --c3: 140px;
+      --c4: 140px; --c5: 140px; --c6: 140px;
+      --c7: 140px; --c8: 140px; --c9: 140px;
     }
 
-    .header .sticky {
-      position: sticky;
-      top: 0;
-      left: 0;
-      z-index: 10;
-      background: white;
-    }
-
-    /* GRID */
-    .header,
-    .row {
+    .header, .row {
       display: grid;
       grid-template-columns:
-        var(--c1) var(--c2) var(--c3) var(--c4) var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
+        var(--c1) var(--c2) var(--c3) var(--c4) var(--c5)
+        var(--c6) var(--c7) var(--c8) var(--c9);
       min-width: 900px;
     }
 
-    /* HEADER */
     .header {
       position: sticky;
       top: 0;
       z-index: 20;
-      /* ABOVE everything */
       background: white;
-      border-bottom: 2px solid #d1d5db;
-
-      /* 🔥 NEW: horizontal divider */
       border-bottom: 2px solid #d1d5db;
     }
 
-    /* ALL CELLS */
-    .header>div,
-    .row>div {
+    .header > div, .row > div {
       padding: 10px;
       border-right: 1px solid #e5e7eb;
       display: flex;
@@ -196,35 +231,17 @@
       background: white;
     }
 
-    /* 🔥 CRITICAL: STICKY SYMBOL COLUMN */
-    /* sticky symbol column */
-    .header .sticky,
-    .row .sticky {
+    .header .sticky, .row .sticky {
       position: sticky;
       left: 0;
       z-index: 50;
       background: white;
-
       isolation: isolate;
-
-      box-shadow:
-        0 0 0 1000px white inset,
-        2px 0 0 #e5e7eb;
+      box-shadow: 0 0 0 1000px white inset, 2px 0 0 #e5e7eb;
     }
 
-    /* 🔥 Prevent weird stacking bugs */
-    .row>div:not(.sticky) {
-      position: relative;
-      z-index: 1;
-    }
+    .row .sticky { justify-content: flex-start; text-align: left; }
 
-    /* left-align SYMBOL column (data only) */
-    .row .sticky {
-      justify-content: flex-start;
-      text-align: left;
-    }
-
-    /* INPUT CELLS */
     .row input {
       width: 100%;
       height: 100%;
@@ -233,166 +250,83 @@
       border: none;
       outline: none;
       background: transparent;
-
       border-right: 1px solid #d1d5db;
-
       text-align: center;
       font-variant-numeric: tabular-nums;
       box-sizing: border-box;
     }
 
-    /* remove last column border */
-    .header>div:last-child,
-    .row>div:last-child,
-    .row input:last-child {
-      border-right: none;
-    }
+    .header > div:last-child,
+    .row > div:last-child,
+    .row input:last-child { border-right: none; }
 
-    /* sticky symbol */
-    .sticky {
-      box-shadow: 2px 0 0 #e5e7eb;
-      position: sticky;
-      left: 0;
-      background: white;
-      z-index: 15;
-      /* ← ADD THIS LINE ONLY */
-    }
+    .row { position: relative; z-index: 1; background: white; }
+    .row:hover { background: #f9fafb; }
 
-    /* ROW */
-    .row {
-      position: relative;
-      z-index: 1;
-      background: white;
-    }
-
-    /* hover */
-    .row:hover {
-      background: #f9fafb;
-    }
-
-    /* RESIZER */
-    .col {
-      position: relative
-    }
-
+    .col { position: relative; }
     .resizer {
       position: absolute;
       right: -3px;
-      /* shift to center on border */
       top: 0;
       width: 6px;
       height: 100%;
       cursor: col-resize;
     }
 
-    .bottomPanels {
-      display: flex;
-      gap: 16px;
+    /* ── BOTTOM SECTION (full-width green wrapper) ── */
+    .bottomSection {
       margin-top: 20px;
-      /* 🔥 give space for header */
       background: #16a34a;
-      color: white;
       padding: 18px 14px 14px 14px;
       border-radius: 14px;
-      position: relative;
-      align-items: stretch;
-      /* 🔥 important */
-      /* 🔥 required */
     }
 
-  .networthCard.large {
-  flex: 3;
-  display: flex;
-  flex-direction: column;
-}
-
-.projCard.large {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-    /* 👇 ADD THIS PART */
-    .networthCard.large {
-      flex: 3;
-    }
-
-    .projCard.large {
-      flex: 1;
-    }
-
-    .networthCard h3,
-    .projCard h3 {
-      font-size: 14px;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .networthCard>div:first-child {
-      margin-bottom: 10px;
-      z-index: 2;
-      position: relative;
-    }
-
-    .projCard.large {
-      flex: 1.2;
-    }
-
-    .historyCard {
-      flex: 0 0 50%;
-      max-width: 50%;
+    /* ── NET WORTH CARD — full width ── */
+    .networthCard {
       background: white;
-      border-radius: 12px;
-      padding: 16px;
-      color: #111;
-    }
-
-
-    /* projection card spacing */
-    #proj1y,
-    #proj5y,
-    #proj10y,
-    #proj20y,
-    #proj30y,
-    #proj40y {
-      margin-top: 6px;
-      font-weight: 500;
-    }
-
-    /* target COST input specifically */
-    .row input:nth-of-type(3) {
-      border-bottom: none !important;
-    }
-
-    .sectionHeader {
-      position: absolute;
-      top: -10px;
-      left: 14px;
-
-      background: #111827;
-      color: white;
-
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-
-      padding: 4px 10px;
-      border-radius: 6px;
-    }
-
-    /* PROJECTION CARD */
-    .projCard {
-      flex: 0 0 25%;
-      max-width: 25%;
-      background: #ffffff;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 16px;
       border: 1px solid #e5e7eb;
-      color: #111;
-
+      margin-top: 20px;   /* space from green top edge */
     }
 
-    /* header */
+    /* Header bar inside the card:
+       [NET WORTH title]  [ASSETS card] [GAIN card]  [ADD btn] [EDIT btn] */
+    .netHeader {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .netHeader h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    /* Chart canvas wrapper — full width of the card, taller */
+    .chartBox {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      position: relative;
+      height: 320px;   /* taller because card is now full width */
+    }
+
+    /* ── PROJECTION CARD — sits below the chart, same width ── */
+    .projCard {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      margin-top: 12px;   /* gap between chart card and projection card */
+    }
+
     .projHeader {
       display: flex;
       justify-content: space-between;
@@ -400,14 +334,47 @@
       margin-bottom: 10px;
     }
 
-    .projTitle {
-      font-size: 13px;
+    .projCard h3 {
+      font-size: 14px;
       font-weight: 600;
       color: #111;
-      letter-spacing: 0.02em;
+      margin: 0;
     }
 
-    /* rate selector (pill style) */
+    /* Projection values: laid out as a horizontal row */
+    .projGrid {
+      display: flex;
+      gap: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Each cell = label + value stacked */
+    .projGrid .projCell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 4px;
+      border-right: 1px solid #f3f4f6;
+    }
+
+    .projGrid .projCell:last-child { border-right: none; }
+
+    .projGrid .projCell span {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .projGrid .projCell b {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Rate dropdown pill */
     .ratePill {
       appearance: none;
       border: none;
@@ -419,159 +386,10 @@
       cursor: pointer;
     }
 
-    /* grid layout */
-    .projGrid {
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* each row */
-    .projGrid div {
-      display: grid;
-      grid-template-columns: 40px 1fr;
-      align-items: center;
-      padding: 2px 0;
-      /* 👈 ADD THIS LINE ONLY */
-    }
-
-    /* label (1Y, 5Y...) */
-    .projGrid span {
-      font-size: 11px;
-      color: #6b7280;
-    }
-
-    .projGrid b {
-      font-size: 14px;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      text-align: right;
-    }
-
-    .networthCard,
-    .projCard {
-      margin-top: 20px;
-      background: white;
-      border-radius: 14px;
-      padding: 16px;
-      border: 1px solid #e5e7eb;
-    }
-
-    .chartBox {
-      margin-top: 10px;
-      background: #f9fafb;
-      /* soft gray */
-      border-radius: 10px;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      /* fixed height */
-      position: relative;
-      background: #f3f4f6;
-      z-index: 1;
-    }
-
-    .netHeader {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      /* 👈 keeps it ABOVE chart */
-    }
-
-    /* 🔥 PREMIUM HEADER BAR */
-    .topBar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      padding: 12px 14px;
-      margin-bottom: 16px;
-
-      border-radius: 12px;
-
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-
-      border: 1px solid rgba(229, 231, 235, 0.6);
-
-      box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    }
-
-    /* 🔥 HEADER LEFT GROUP (date + market) */
-    .topLeft {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    /* 📊 MARKET STATUS */
-    #marketStatus {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    /* 🟢 OPEN */
-    .market-open {
-      color: #16a34a;
-    }
-
-    /* 🔴 CLOSED */
-    .market-closed {
-      color: #dc2626;
-    }
-
-    /* 📅 DATE (left side) */
-    #todayDate {
-      font-size: 14px;
-      font-weight: 500;
-      color: #1f2937;
-
-      letter-spacing: 0.02em;
-    }
-
-    /* 🔓 LOGOUT BUTTON */
-    #logoutBtn {
-      background: linear-gradient(135deg, #16a34a, #22c55e);
-      color: white;
-
-      border: none;
-      border-radius: 999px;
-
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 600;
-
-      cursor: pointer;
-
-      transition: all 0.2s ease;
-    }
-
-    /* hover */
-    #logoutBtn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);
-    }
-
-    /* click */
-    #logoutBtn:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    /* ✨ subtle glow on hover */
-    .topBar:hover {
-      box-shadow:
-        0 6px 18px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    }
   </style>
-
 </head>
 
 <body>
-
   <div id="app">Loading...</div>
 
   <script>
@@ -585,39 +403,56 @@
         { auth: { persistSession: true, storage: window.localStorage } }
       );
       window.supabaseClient = supabase;
-      const defaultSymbols = [
-        "AAPL", "AMZN", "MSFT", "NVDA", "QYLD", "VTSAX",
-        "NFLX", "DOMO", "RELX", "SMCY", "PGBAX"
-      ];
 
-      let user = null, symbols = [], portfolio = [], dataMap = {}, rows = {};
+      // ── App state ──
+      let user           = null;
+      let symbols        = [];
+      let portfolio      = [];
+      let dataMap        = {};
+      let rows           = {};
+      let netChart       = null;
+      let quoteInterval  = null;
+      let marketInterval = null;
 
-      const fmtMoney = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const fmtMoney0 = n => "$" + (n || 0).toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      });
-      const fmtNumber = n => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      // ── Formatters ──
+      const fmtMoney   = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fmtMoney0  = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const fmtNumber  = n => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
       const fmtPercent = n => (n * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+
+      // Format a raw number into $1M / $500K / $1.5B style
+      // Used for the Y-axis labels on the chart
+      function fmtMillions(v) {
+        const abs = Math.abs(v);
+        if (abs >= 1_000_000_000) return "$" + (v / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+        if (abs >= 1_000_000)     return "$" + (v / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+        if (abs >= 1_000)         return "$" + (v / 1_000).toFixed(0) + "K";
+        return "$" + v.toLocaleString();
+      }
+
+      // ══════════════════════════════════════════
+      // AUTH
+      // ══════════════════════════════════════════
 
       function showLogin() {
         app.innerHTML = `
-    <div class="loginWrap">
-      <div class="loginCard">
-        <h2>Login</h2>
-        <input id="email" placeholder="Email">
-        <input id="pass" type="password" placeholder="Password">
-        <button id="loginBtn">LOGIN</button>
-        <p id="msg"></p>
-      </div>
-    </div>`;
-        document.getElementById("loginBtn").onclick = login;
+          <div class="loginWrap">
+            <div class="loginCard">
+              <h2>Login</h2>
+              <input id="emailInput" placeholder="Email">
+              <input id="passInput" type="password" placeholder="Password">
+              <button id="loginBtn">LOGIN</button>
+              <p id="msg" style="color:#dc2626;font-size:13px;margin:0;"></p>
+            </div>
+          </div>`;
+        document.getElementById("loginBtn").addEventListener("click", login);
       }
 
       async function login() {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.value, password: pass.value
-        });
+        const email = document.getElementById("emailInput").value;
+        const pass  = document.getElementById("passInput").value;
+        const msg   = document.getElementById("msg");
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
         if (error) { msg.innerText = error.message; return; }
         user = data.user;
         window.currentUser = user;
@@ -625,162 +460,301 @@
       }
 
       async function logout() {
+        clearInterval(quoteInterval);
+        clearInterval(marketInterval);
+        quoteInterval = marketInterval = null;
         await supabase.auth.signOut();
-        user = null;
+        user = window.currentUser = null;
         showLogin();
       }
 
+      // ══════════════════════════════════════════
+      // MAIN APP SHELL
+      // ══════════════════════════════════════════
+
       function showApp() {
         app.innerHTML = `
-    <div class="app">
-  <!-- 🔥 HEADER BAR -->
-  <div class="topBar">
-    <div class="topLeft">
-  <div id="todayDate"></div>
-  <div id="marketStatus"></div>
-</div>
-    <button id="logoutBtn">LOGOUT</button>
-  </div>
-      <!-- TOP CARDS -->
-      <div class="cards">
-        <div class="card"><div>ASSETS</div><h2 id="pVal">$0</h2></div>
-        <div class="card"><div>TOTAL GAIN</div><h2 id="gVal">$0</h2></div>
-        <div class="card"><div>TODAY</div><h2 id="todayVal">$0</h2></div> 
-        <div class="card"><div>MONTHLY</div><h2 id="mVal">$0</h2></div>
-        <div class="card"><div>ANNUAL</div><h2 id="iVal">$0</h2></div>
-      </div>
+          <div class="app">
 
-      <!-- TABLE -->
-      <div class="tableWrap">
-        <div class="header">
-          <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-          <div class="col">PRICE<div class="resizer"></div></div>
-          <div class="col">CHANGE<div class="resizer"></div></div>
-          <div class="col">SHARES<div class="resizer"></div></div>
-          <div class="col">COST<div class="resizer"></div></div>
-          <div class="col">VALUE<div class="resizer"></div></div>
-          <div class="col">DIV<div class="resizer"></div></div>
-          <div class="col">YIELD<div class="resizer"></div></div>
-          <div class="col">INCOME<div class="resizer"></div></div>
-        </div>
-        <div id="list"></div>
-      </div>
+            <!-- HEADER BAR -->
+            <div class="topBar">
+              <div class="topLeft">
+                <div id="todayDate"></div>
+                <div id="marketStatus"></div>
+              </div>
+              <button id="logoutBtn">LOGOUT</button>
+            </div>
 
-<!-- PANELS -->
-<div class="bottomPanels">
+            <!-- TODAY / MONTHLY / ANNUAL cards above the portfolio table -->
+            <div class="cards">
+              <div class="card"><div>TODAY GAIN</div><h2 id="todayVal">$0</h2></div>
+              <div class="card"><div>MONTHLY DIV</div><h2 id="mVal">$0</h2></div>
+              <div class="card"><div>ANNUAL DIV</div><h2 id="iVal">$0</h2></div>
+            </div>
 
-  <!-- 🔥 NET WORTH (LEFT / BIG) -->
-  <div class="networthCard large">
+            <!-- PORTFOLIO TABLE -->
+            <div class="tableWrap">
+              <div class="header">
+                <div class="sticky col">SYMBOL<div class="resizer"></div></div>
+                <div class="col">PRICE<div class="resizer"></div></div>
+                <div class="col">CHANGE<div class="resizer"></div></div>
+                <div class="col">SHARES<div class="resizer"></div></div>
+                <div class="col">COST<div class="resizer"></div></div>
+                <div class="col">VALUE<div class="resizer"></div></div>
+                <div class="col">DIV<div class="resizer"></div></div>
+                <div class="col">YIELD<div class="resizer"></div></div>
+                <div class="col">INCOME<div class="resizer"></div></div>
+              </div>
+              <div id="list"></div>
+            </div>
 
-   <div class="netHeader">
-  <h3>NET WORTH</h3>
-  <button id="editNetBtn" class="toolBtn">✏️ EDIT</button>
-</div>
+            <!-- BOTTOM SECTION: full-width green wrapper -->
+            <div class="bottomSection">
 
-    <div class="chartBox">
-      <canvas id="networthChart"></canvas>
-    </div>
+              <!-- NET WORTH CARD — full width -->
+              <div class="networthCard">
 
-    <div id="networthEditor" style="display:none; margin-top:12px;"></div>
+                <!--
+                  CHART HEADER ROW:
+                  [NET WORTH]  [ASSETS mini-card]  [TOTAL GAIN mini-card]
+                  Read-only — edit values directly in Supabase
+                -->
+                <div class="netHeader">
+                  <h3>NET WORTH</h3>
 
-  </div>
+                  <!-- Mini stat cards — values populated by updateNwStatCards() after chart loads -->
+                  <div class="nwStatCards">
+                    <div class="nwStatCard" id="nwAssetsCard">
+                      <div class="label">ASSETS (NET)</div>
+                      <div class="value" id="nwAssetsVal">—</div>
+                    </div>
+                    <div class="nwStatCard" id="nwGainCard">
+                      <div class="label">TOTAL GAIN</div>
+                      <div class="value" id="nwGainVal">—</div>
+                    </div>
+                  </div>
+                </div>
 
-  <!-- 🔥 PROJECTION (RIGHT) -->
-  <div class="projCard large">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3>PROJECTION</h3>
-      <select id="rateSelect" class="ratePill">
-        <option value="0.05">5%</option>
-        <option value="0.08">8%</option>
-        <option value="0.10" selected>10%</option>
-        <option value="0.12">12%</option>
-        <option value="0.15">15%</option>
-      </select>
-    </div>
+                <!-- Full-width chart canvas -->
+                <div class="chartBox">
+                  <canvas id="networthChart"></canvas>
+                </div>
 
-    <div class="projGrid">
-      <div><span>1Y</span><b id="proj1y">$0</b></div>
-      <div><span>5Y</span><b id="proj5y">$0</b></div>
-      <div><span>10Y</span><b id="proj10y">$0</b></div>
-      <div><span>20Y</span><b id="proj20y">$0</b></div>
-      <div><span>30Y</span><b id="proj30y">$0</b></div>
-      <div><span>40Y</span><b id="proj40y">$0</b></div>
-    </div>
-  </div>
+              </div>
 
-</div>
-  `;
-        const todayEl = document.getElementById("todayDate");
+              <!-- PROJECTION CARD — below the chart, full width, horizontal layout -->
+              <div class="projCard">
+                <div class="projHeader">
+                  <h3>PROJECTION</h3>
+                  <select id="rateSelect" class="ratePill">
+                    <option value="0.05">5%</option>
+                    <option value="0.08">8%</option>
+                    <option value="0.10" selected>10%</option>
+                    <option value="0.12">12%</option>
+                    <option value="0.15">15%</option>
+                  </select>
+                </div>
+                <!-- Horizontal 6-cell row: 1Y · 5Y · 10Y · 20Y · 30Y · 40Y -->
+                <div class="projGrid">
+                  <div class="projCell"><span>1Y</span><b id="proj1y">$0</b></div>
+                  <div class="projCell"><span>5Y</span><b id="proj5y">$0</b></div>
+                  <div class="projCell"><span>10Y</span><b id="proj10y">$0</b></div>
+                  <div class="projCell"><span>20Y</span><b id="proj20y">$0</b></div>
+                  <div class="projCell"><span>30Y</span><b id="proj30y">$0</b></div>
+                  <div class="projCell"><span>40Y</span><b id="proj40y">$0</b></div>
+                </div>
+              </div>
 
-        const today = new Date();
-        const formatted = today.toLocaleDateString(undefined, {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        });
+            </div><!-- end .bottomSection -->
+          </div>`;
 
-        document.getElementById("todayDate").innerText = "Today: " + formatted;
-
-        todayEl.innerText =
-          "Today: " +
-          today.toLocaleDateString(undefined, {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric"
+        // Fill date
+        document.getElementById("todayDate").innerText =
+          "Today: " + new Date().toLocaleDateString(undefined, {
+            weekday: "long", year: "numeric", month: "long", day: "numeric"
           });
-        if (!window.quoteInterval) {
-          window.quoteInterval = setInterval(fetchAllQuotes, 30000);
-        }
 
-        // 🔐 actions
-        document.getElementById("logoutBtn")?.addEventListener("click", logout);
+        // Wire all buttons AFTER HTML is in the DOM
+        document.getElementById("logoutBtn").addEventListener("click", logout);
+        document.getElementById("rateSelect").addEventListener("change", refresh);
+
         createToolbar();
         loadWidths();
-        loadAll();
         enableResize();
+        loadAll();
 
-        const rateSelect = document.getElementById("rateSelect");
-        if (rateSelect) {
-          rateSelect.onchange = () => refresh();
-        }
-
-        // 📊 chart setup (correct timing)
-        initChart();
-        initNetworthChart();
+        quoteInterval  = setInterval(fetchAllQuotes, 30000);
+        marketInterval = setInterval(updateMarketStatus, 60000);
         updateMarketStatus();
-        setInterval(updateMarketStatus, 60000);
+        initNetworthChart();
       }
 
-      function loadWidths() {
-        for (let i = 1; i <= 9; i++) {
-          let w = localStorage.getItem("col" + i);
-          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+      // ══════════════════════════════════════════
+      // NET WORTH STAT CARDS (ASSETS + TOTAL GAIN)
+      // Called after the chart data loads.
+      // Uses the net_worth table rows directly:
+      //   ASSETS = latest snapshot net worth (cash+retirement+stocks+properties−mortgage)
+      //   TOTAL GAIN = latest net worth − earliest net worth
+      // ══════════════════════════════════════════
+
+      function updateNwStatCards(data) {
+        if (!data || !data.length) return;
+
+        const calcNet = d =>
+          (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
+          (d.properties || 0) - (d.mortgage || 0);
+
+        const latest   = calcNet(data[data.length - 1]);
+        const earliest = calcNet(data[0]);
+        const gain     = latest - earliest;
+
+        const assetsEl = document.getElementById("nwAssetsVal");
+        const gainEl   = document.getElementById("nwGainVal");
+
+        if (assetsEl) assetsEl.innerText = fmtMoney0(latest);
+
+        if (gainEl) {
+          gainEl.innerText   = (gain >= 0 ? "+" : "") + fmtMoney0(gain);
+          gainEl.style.color = gain >= 0 ? "#16a34a" : "#dc2626";
         }
       }
-      function saveWidth(i, w) {
-        localStorage.setItem("col" + i, w);
+
+      // ══════════════════════════════════════════
+      // NET WORTH CHART
+      // ══════════════════════════════════════════
+
+      async function fetchNetworthData() {
+        const { data, error } = await supabase
+          .from("net_worth")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: true });
+        if (error) { console.error(error); return []; }
+
+        // Belt-and-suspenders: also sort client-side by date string.
+        // ISO date strings (YYYY-MM-DD) sort correctly with localeCompare,
+        // so April 2026 (2026-04-01) will always appear after March 2026 (2026-03-01)
+        // regardless of the order rows were inserted into the database.
+        const sorted = (data || []).slice().sort((a, b) =>
+          a.date.localeCompare(b.date)
+        );
+        return sorted;
       }
 
-      function enableResize() {
-        document.querySelectorAll(".header .col").forEach((col, i) => {
-          let resizer = col.querySelector(".resizer");
-          let startX, startW;
+      async function initNetworthChart() {
+        if (!user) return;
 
-          resizer.onmousedown = e => {
-            startX = e.clientX;
-            startW = col.offsetWidth;
+        const data = await fetchNetworthData();
 
-            document.onmousemove = e => {
-              let w = Math.max(80, startW + (e.clientX - startX));
-              document.documentElement.style.setProperty(`--c${i + 1}`, w + "px");
-              saveWidth(i + 1, w + "px");
-            };
-            document.onmouseup = () => document.onmousemove = null;
-          };
+        const ctx = document.getElementById("networthChart");
+        if (!ctx) { setTimeout(initNetworthChart, 200); return; }
+
+        if (netChart) { netChart.destroy(); netChart = null; }
+
+        // Update the ASSETS + TOTAL GAIN mini-cards from live data
+        updateNwStatCards(data);
+
+        // Convert "YYYY-MM-DD" strings → display labels like "Apr 2026"
+        // We append T12:00:00 to avoid timezone-midnight shift bugs where
+        // "2026-04-01" parsed without time becomes Mar 31 in some timezones.
+        const xLabels = data.map(d => {
+          const dt = new Date(d.date + "T12:00:00");
+          return dt.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+        });
+
+        netChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: xLabels,
+            datasets: [
+              {
+                label: "Cash",
+                data: data.map(d => d.cash || 0),
+                borderColor: "#1f77b4",
+                tension: 0.35,
+                fill: false,
+                pointRadius: 3
+              },
+              {
+                label: "Retirement",
+                data: data.map(d => d.retirement || 0),
+                borderColor: "#ff7f0e",
+                tension: 0.35,
+                fill: false,
+                pointRadius: 3
+              },
+              {
+                label: "Stocks",
+                data: data.map(d => d.stocks || 0),
+                borderColor: "#2ca02c",
+                tension: 0.35,
+                fill: false,
+                pointRadius: 3
+              },
+              {
+                label: "Properties",
+                data: data.map(d => d.properties || 0),
+                borderColor: "#17becf",
+                tension: 0.35,
+                fill: false,
+                pointRadius: 3
+              },
+              {
+                label: "Mortgage",
+                data: data.map(d => d.mortgage || 0),
+                borderColor: "#d62728",
+                tension: 0.35,
+                fill: false,
+                pointRadius: 3
+              },
+              {
+                label: "Net Worth",
+                data: data.map(d =>
+                  (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
+                  (d.properties || 0) - (d.mortgage || 0)
+                ),
+                borderColor: "#9467bd",
+                borderWidth: 3,
+                tension: 0.35,
+                fill: false,
+                pointRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: { position: "right" },
+              tooltip: {
+                callbacks: {
+                  label: ctx => " " + ctx.dataset.label + ": " + fmtMoney0(ctx.parsed.y)
+                }
+              }
+            },
+            scales: {
+              y: {
+                ticks: {
+                  // Y-axis: $1M, $500K, $1.5B format
+                  callback: v => fmtMillions(v)
+                }
+              },
+              x: {
+                ticks: {
+                  maxTicksLimit: 24,   // show up to 24 months before thinning
+                  maxRotation: 45,     // rotate labels if they overlap
+                  minRotation: 0
+                }
+              }
+            }
+          }
         });
       }
+
+      // ══════════════════════════════════════════
+      // PORTFOLIO TABLE
+      // ══════════════════════════════════════════
 
       async function loadAll() {
         const { data } = await supabase
@@ -789,560 +763,255 @@
           .eq("user_id", user.id);
 
         portfolio = (data || []).map(r => ({
-          id: r.id,
-          symbol: r.symbol,
-          shares: +r.shares || 0,
-          dividend: +r.dividend || 0,
-          cost: +r.cost || 0,
-          last_price: +r.last_price || 0   // 🔥 ADD THIS
+          id:         r.id,
+          symbol:     r.symbol,
+          shares:     +r.shares     || 0,
+          dividend:   +r.dividend   || 0,
+          cost:       +r.cost       || 0,
+          last_price: +r.last_price || 0,
+          position:   r.position    || 0
         }));
 
+        portfolio.sort((a, b) => a.position - b.position);
         symbols = portfolio.map(p => p.symbol);
-        portfolio.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
         render();
         refresh();
         fetchAllQuotes();
       }
 
       async function saveField(id, field, val) {
-        let row = portfolio.find(x => x.id === id);
+        const row = portfolio.find(x => x.id === id);
         if (!row) return;
-
         row[field] = parseFloat(val.replace(/,/g, "")) || 0;
-
         refresh();
-
-        await supabase
-          .from("portfolio")
-          .update({
-            shares: row.shares,
-            dividend: row.dividend,
-            cost: row.cost
-          })
-          .eq("id", id);
+        await supabase.from("portfolio").update({
+          shares: row.shares, dividend: row.dividend, cost: row.cost
+        }).eq("id", id);
       }
-
-
 
       async function fetchAllQuotes() {
         try {
           if (!symbols.length) return;
-
-          const res = await fetch(
-            `https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`
-          );
-
+          const res  = await fetch(`https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`);
           const data = await res.json();
-
-          console.log("QUOTE DATA:", data);
-
           if (!data || typeof data !== "object") return;
-
-          Object.keys(data).forEach(sym => {
-            if (data[sym] && data[sym].c) {
-              dataMap[sym] = data[sym];
-            }
-          });
-
+          Object.keys(data).forEach(sym => { if (data[sym]?.c) dataMap[sym] = data[sym]; });
           refresh();
-
         } catch (err) {
-          console.error("Batch quote error", err);
+          console.error("Quote fetch error:", err);
         }
       }
 
       function createRow(p) {
-        let d = p;
-        let sym = p.symbol;
-        let row = document.createElement("div");
+        const row = document.createElement("div");
         row.className = "row";
-
         row.innerHTML = `
-  <div class="sticky">${sym}</div>
-  <div>N/A</div>
-  <div>N/A</div>
-  <input value="${d.shares ? fmtNumber(d.shares) : ""}">
-  <input value="${d.cost ? fmtMoney(d.cost) : ""}">
-  <div>$0</div>
-  <input value="${d.dividend ? fmtNumber(d.dividend) : ""}">
-  <div>0%</div>
-  <div>$0</div>
-`;
+          <div class="sticky">${p.symbol}</div>
+          <div>N/A</div>
+          <div>N/A</div>
+          <input value="${p.shares   ? fmtNumber(p.shares)   : ""}">
+          <input value="${p.cost     ? fmtMoney(p.cost)      : ""}">
+          <div>$0</div>
+          <input value="${p.dividend ? fmtNumber(p.dividend) : ""}">
+          <div>0%</div>
+          <div>$0</div>`;
+
         const del = document.createElement("button");
-        del.innerText = "✕";
-        del.style.cssText = `
-  margin-left:6px;
-  background:#ef4444;
-  color:white;
-  border:none;
-  border-radius:6px;
-  padding:2px 6px;
-  cursor:pointer;
-`;
-        del.style.marginRight = "6px";
-        del.style.marginLeft = "0";
-        del.onclick = () => deleteRow(p.id);
-        row.children[0].prepend(del); // attach to SYMBOL column
-        row.children[3].oninput = e => saveField(p.id, "shares", e.target.value);
-        row.children[6].oninput = e => saveField(p.id, "dividend", e.target.value);
-        row.children[4].oninput = e => saveField(p.id, "cost", e.target.value);
+        del.innerText  = "✕";
+        del.style.cssText =
+          "margin-right:6px;background:#ef4444;color:white;" +
+          "border:none;border-radius:6px;padding:2px 6px;cursor:pointer;";
+        del.addEventListener("click", () => deleteRow(p.id));
+        row.children[0].prepend(del);
+
+        row.children[3].addEventListener("input", e => saveField(p.id, "shares",   e.target.value));
+        row.children[4].addEventListener("input", e => saveField(p.id, "cost",     e.target.value));
+        row.children[6].addEventListener("input", e => saveField(p.id, "dividend", e.target.value));
 
         rows[p.id] = row;
         return row;
       }
 
       function render() {
+        const list = document.getElementById("list");
         list.innerHTML = "";
         rows = {};
         portfolio.forEach(p => list.appendChild(createRow(p)));
       }
 
-      function updateProjection(current) {
-        if (isNaN(current)) return;   // ✅ allow 0 but skip if not a number
-
-        const rateEl = document.getElementById("rateSelect");
-        const rate = rateEl ? parseFloat(rateEl.value) : 0.10;
-
-        function future(val, years) {
-          return val * Math.pow(1 + rate, years);
-        }
-
-        const map = {
-          proj1y: 1,
-          proj5y: 5,
-          proj10y: 10,
-          proj20y: 20,
-          proj30y: 30,
-          proj40y: 40
-        };
-
-        Object.entries(map).forEach(([id, yrs]) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.innerText = fmtMoney0(future(current, yrs));
-          }
-        });
-      }
-
       function refresh() {
-
-        let total = 0;
-        let incomeTotal = 0;
-        let gainTotal = 0;
-        let monthlyTotal = 0;
-        let dailyGainTotal = 0;
+        let total = 0, incomeTotal = 0, gainTotal = 0, monthlyTotal = 0, dailyGainTotal = 0;
 
         portfolio.forEach(p => {
-          let s = p.symbol;
-          let q = dataMap[s];
-          let row = rows[p.id];
+          const q   = dataMap[p.symbol];
+          const row = rows[p.id];
           if (!row) return;
-          // 🔥 reset all cell backgrounds first
-          for (let i = 0; i < 9; i++) {
-            row.children[i].style.background = "transparent";
-          }
 
-          let price = q?.c || p.last_price || 0;
-          let shares = p.shares || 0;
-          let dividend = p.dividend || 0;
-          let cost = p.cost || 0;
+          for (let i = 0; i < 9; i++) row.children[i].style.background = "transparent";
 
-          let val = price ? price * shares : cost * shares;
-          let invested = cost * shares;
-          let realGain = val - invested;
-          let income = dividend * shares;
+          const price    = q?.c || p.last_price || 0;
+          const shares   = p.shares   || 0;
+          const dividend = p.dividend || 0;
+          const cost     = p.cost     || 0;
+          const val      = price ? price * shares : cost * shares;
+          const realGain = val - cost * shares;
+          const income   = dividend * shares;
+          const change   = (q?.c && q?.pc) ? (q.c - q.pc) : 0;
+          const yieldVal = price ? dividend / price : 0;
 
-          let change = (q && q.pc) ? (q.c - q.pc) : 0;
-          let yieldVal = price ? dividend / price : 0;
-
-          total += val;
-          incomeTotal += income;
-          gainTotal += realGain;
-          monthlyTotal += income / 12;
+          total          += val;
+          incomeTotal    += income;
+          gainTotal      += realGain;
+          monthlyTotal   += income / 12;
           dailyGainTotal += change * shares;
 
-          // UI
-          const priceText = price ? fmtMoney(price) : "N/A";
-          if (row.children[1].innerText !== priceText) {
-            row.children[1].innerText = priceText;
-          }
-          const changeText = q ? fmtMoney(change) : "N/A";
-          if (row.children[2].innerText !== changeText) {
-            row.children[2].innerText = changeText;
-          }
-          row.children[2].style.color =
-            change > 0 ? "#16a34a" :
-              change < 0 ? "#dc2626" : "#999";
-
-          const valueText = fmtMoney(val);
-          if (row.children[5].innerText !== valueText) {
-            row.children[5].innerText = valueText;
-          }
-          if (realGain > 0) {
-            row.children[5].style.background = "#ecfdf5";
-          } else if (realGain < 0) {
-            row.children[5].style.background = "#fef2f2";
-          } else {
-            row.children[5].style.background = "transparent";
-          }
-
-          row.children[7].innerText = fmtPercent(yieldVal);
-          row.children[7].style.background = "transparent";
-
-          const incomeText = fmtMoney(income);
-          if (row.children[8].innerText !== incomeText) {
-            row.children[8].innerText = incomeText;
-          }
-          row.children[8].style.background =
-            income > 0 ? "#dbeafe" : "transparent";
-          row.children[8].style.color =
-            income > 0 ? "#1d4ed8" : "#111";
-          row.children[8].style.fontWeight =
-            income > 0 ? "600" : "400";
+          row.children[1].innerText   = price ? fmtMoney(price) : "N/A";
+          row.children[2].innerText   = q ? fmtMoney(change) : "N/A";
+          row.children[2].style.color = change > 0 ? "#16a34a" : change < 0 ? "#dc2626" : "#999";
+          row.children[5].innerText   = fmtMoney(val);
+          row.children[5].style.background =
+            realGain > 0 ? "#ecfdf5" : realGain < 0 ? "#fef2f2" : "transparent";
+          row.children[7].innerText        = fmtPercent(yieldVal);
+          row.children[8].innerText        = fmtMoney(income);
+          row.children[8].style.background = income > 0 ? "#dbeafe" : "transparent";
+          row.children[8].style.color      = income > 0 ? "#1d4ed8" : "#111";
+          row.children[8].style.fontWeight = income > 0 ? "600" : "400";
         });
 
-        // TOP CARDS
-        pVal.innerText = fmtMoney0(total);
-        iVal.innerText = fmtMoney0(incomeTotal);
+        // Update the 3 cards above the table
+        document.getElementById("iVal").innerText = fmtMoney0(incomeTotal);
+        document.getElementById("mVal").innerText = fmtMoney0(monthlyTotal);
 
-        gVal.innerText = fmtMoney0(gainTotal);
-        gVal.style.color =
-          gainTotal > 0 ? "#16a34a" :
-            gainTotal < 0 ? "#dc2626" : "#333";
+        const tEl = document.getElementById("todayVal");
+        tEl.innerText   = (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
+        tEl.style.color = dailyGainTotal > 0 ? "#16a34a" : dailyGainTotal < 0 ? "#dc2626" : "#333";
 
-        const todayVal = document.getElementById("todayVal");
-        if (todayVal) {
-          todayVal.innerText =
-            (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
-
-          todayVal.style.color =
-            dailyGainTotal > 0 ? "#16a34a" :
-              dailyGainTotal < 0 ? "#dc2626" : "#333";
-        }
-
-        mVal.innerText = "$" + monthlyTotal.toLocaleString(undefined, {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        });
-
+        // Projection uses total portfolio value as the starting point
         updateProjection(total);
-        // updateHistorySafe();
+      }
+
+      function updateProjection(current) {
+        if (isNaN(current)) return;
+        const rate = parseFloat(document.getElementById("rateSelect")?.value || "0.10");
+        const map  = { proj1y: 1, proj5y: 5, proj10y: 10, proj20y: 20, proj30y: 30, proj40y: 40 };
+        Object.entries(map).forEach(([id, yrs]) => {
+          const el = document.getElementById(id);
+          if (el) el.innerText = fmtMoney0(current * Math.pow(1 + rate, yrs));
+        });
       }
 
       async function addRow() {
-        const symbol = prompt("Enter symbol (e.g. AAPL)");
+        const symbol = prompt("Enter ticker symbol (e.g. AAPL)");
         if (!symbol) return;
-
         const { data, error } = await supabase
           .from("portfolio")
-          .insert({
-            user_id: user.id,
-            symbol: symbol.toUpperCase(),
-            shares: 0,
-            dividend: 0,
-            cost: 0
-          })
-          .select()
-          .single();
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        // add locally
-        portfolio.push({
-          id: data.id,
-          symbol: data.symbol,
-          shares: 0,
-          dividend: 0,
-          cost: 0
-        });
-
+          .insert({ user_id: user.id, symbol: symbol.toUpperCase(), shares: 0, dividend: 0, cost: 0 })
+          .select().single();
+        if (error) { alert(error.message); return; }
+        const entry = { id: data.id, symbol: data.symbol, shares: 0, dividend: 0, cost: 0, last_price: 0 };
+        portfolio.push(entry);
         symbols.push(data.symbol);
-
-        const newRow = createRow(portfolio[portfolio.length - 1]);
-        list.appendChild(newRow);
-
+        document.getElementById("list").appendChild(createRow(entry));
+        fetchAllQuotes();
       }
 
       async function deleteRow(id) {
-
         if (!confirm("Delete this row?")) return;
-
-        await supabase
-          .from("portfolio")
-          .delete()
-          .eq("id", id);
-
-        // remove locally
+        await supabase.from("portfolio").delete().eq("id", id);
         portfolio = portfolio.filter(p => p.id !== id);
-
-        // remove DOM
-        if (rows[id]) {
-          rows[id].remove();
-          delete rows[id];
-        }
-
+        if (rows[id]) { rows[id].remove(); delete rows[id]; }
         refresh();
       }
 
       async function resetOrder() {
-
         if (!confirm("Sort alphabetically?")) return;
-
-        // fetch fresh data
-        const { data, error } = await supabase
-          .from("portfolio")
-          .select("id, symbol")
-          .eq("user_id", user.id);
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        // sort alphabetically
+        const { data, error } = await supabase.from("portfolio").select("id, symbol").eq("user_id", user.id);
+        if (error) { alert(error.message); return; }
         data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-
-        // assign new positions
         for (let i = 0; i < data.length; i++) {
-          await supabase
-            .from("portfolio")
-            .update({ position: i + 1 })
-            .eq("id", data[i].id);
+          await supabase.from("portfolio").update({ position: i + 1 }).eq("id", data[i].id);
         }
-
-        // reload app
         loadAll();
       }
+
+      // ══════════════════════════════════════════
+      // TOOLBAR + RESIZE
+      // ══════════════════════════════════════════
+
       function createToolbar() {
-
         const wrap = document.createElement("div");
-
-        wrap.style.cssText = `
-    display:flex;
-    gap:8px;
-    margin-bottom:12px;
-    align-items:center;
-  `;
-
+        wrap.style.cssText = "display:flex;gap:8px;margin-bottom:12px;align-items:center;";
         wrap.innerHTML = `
-    <button id="addRowBtn" class="toolBtn">
-      ➕ <span>ADD SYMBOL</span>
-    </button>
-
-    <button id="resetOrderBtn" class="toolBtn blue">
-      🔄 <span>SORT ALPHABETICALLY</span>
-    </button>
-  `;
-
-        // insert ABOVE table
+          <button id="addRowBtn" class="toolBtn">➕ <span>ADD SYMBOL</span></button>
+          <button id="resetOrderBtn" class="toolBtn blue">🔄 <span>SORT ALPHABETICALLY</span></button>`;
         const table = document.querySelector(".tableWrap");
         table.parentNode.insertBefore(wrap, table);
-
-        // wire actions
-        document.getElementById("addRowBtn").onclick = addRow;
-        document.getElementById("resetOrderBtn").onclick = resetOrder;
+        document.getElementById("addRowBtn").addEventListener("click", addRow);
+        document.getElementById("resetOrderBtn").addEventListener("click", resetOrder);
       }
+
+      function loadWidths() {
+        for (let i = 1; i <= 9; i++) {
+          const w = localStorage.getItem("col" + i);
+          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+        }
+      }
+
+      function enableResize() {
+        document.querySelectorAll(".header .col").forEach((col, i) => {
+          const resizer = col.querySelector(".resizer");
+          let startX, startW;
+          resizer.addEventListener("mousedown", e => {
+            startX = e.clientX; startW = col.offsetWidth;
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", () =>
+              document.removeEventListener("mousemove", onMove), { once: true });
+          });
+          function onMove(e) {
+            const w = Math.max(80, startW + (e.clientX - startX)) + "px";
+            document.documentElement.style.setProperty(`--c${i + 1}`, w);
+            localStorage.setItem("col" + (i + 1), w);
+          }
+        });
+      }
+
+      // ══════════════════════════════════════════
+      // MARKET STATUS
+      // ══════════════════════════════════════════
+
+      function updateMarketStatus() {
+        const el = document.getElementById("marketStatus");
+        if (!el) return;
+        const est    = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+        const day    = est.getDay(), h = est.getHours(), m = est.getMinutes();
+        const isOpen = day > 0 && day < 6 && (h > 9 || (h === 9 && m >= 30)) && h < 16;
+        el.innerText = isOpen ? "🟢 Market Open" : "🔴 Market Closed";
+        el.className = isOpen ? "market-open"    : "market-closed";
+      }
+
+      // ══════════════════════════════════════════
+      // INIT
+      // ══════════════════════════════════════════
 
       async function initAuth() {
         showLogin();
         const { data } = await supabase.auth.getSession();
-        user = data.session?.user;
-
-        if (user) {
-          window.currentUser = user;   // 🔥 ADD THIS LINE
-          showApp();
-        }
+        user = data.session?.user || null;
+        if (user) { window.currentUser = user; showApp(); }
       }
 
       initAuth();
 
-    });
-    let historyData = JSON.parse(localStorage.getItem("portfolioHistory") || "[]");
-    let chart;
-    let currentRange = "all";
+    }); // end window load
 
-    let netChart;
-    function updateMarketStatus() {
-      const el = document.getElementById("marketStatus");
-      if (!el) return;
-
-      const now = new Date();
-
-      // Convert to US Eastern Time
-      const est = new Date(
-        now.toLocaleString("en-US", { timeZone: "America/New_York" })
-      );
-
-      const day = est.getDay(); // 0 = Sunday, 6 = Saturday
-      const hours = est.getHours();
-      const minutes = est.getMinutes();
-
-      const isWeekend = day === 0 || day === 6;
-
-      const afterOpen = hours > 9 || (hours === 9 && minutes >= 30);
-      const beforeClose = hours < 16;
-
-      const isOpen = !isWeekend && afterOpen && beforeClose;
-
-      if (isOpen) {
-        el.innerText = "🟢 Market Open";
-        el.className = "market-open";
-      } else {
-        el.innerText = "🔴 Market Closed";
-        el.className = "market-closed";
-      }
-    }
-    async function fetchNetworthData() {
-      const supabase = window.supabaseClient;
-
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData.user;
-
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from("net_worth")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: true });
-
-      if (error) {
-        console.error(error);
-        return [];
-      }
-
-      return data;
-    }
-
-    async function initNetworthChart() {
-
-      const data = await fetchNetworthData();
-      console.log("NET DATA:", data);
-      if (!window.currentUser) return;
-
-      const ctx = document.getElementById("networthChart");
-      if (!ctx) {
-        console.warn("Canvas not ready — retrying...");
-        setTimeout(initNetworthChart, 200);
-        return;
-      }
-
-      if (netChart) netChart.destroy(); // 🔥 prevent duplicates
-
-      netChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: data.map(d => d.date),
-          datasets: [
-            { label: "Cash", data: data.map(d => d.cash), borderColor: "#1f77b4", tension: 0.35 },
-            { label: "Retirement", data: data.map(d => d.retirement), borderColor: "#ff7f0e", tension: 0.35 },
-            { label: "Stocks", data: data.map(d => d.stocks), borderColor: "#2ca02c", tension: 0.35 },
-            { label: "Properties", data: data.map(d => d.properties), borderColor: "#17becf", tension: 0.35 },
-            { label: "Mortgage", data: data.map(d => d.mortgage), borderColor: "#d62728", tension: 0.35 },
-            {
-              label: "Net",
-              data: data.map(d =>
-                d.stocks + d.properties + d.retirement + d.cash - d.mortgage
-              ),
-              borderColor: "#9467bd",
-              borderWidth: 3,
-              tension: 0.35
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: false,
-          plugins: { legend: { position: "right" } },
-          scales: {
-            y: {
-              ticks: { callback: v => "$" + v.toLocaleString() }
-            }
-          }
-        }
-      });
-    }
-
-    function initChart() {
-      const ctx = document.getElementById("historyChart");
-      if (!ctx) return;
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: [],
-          datasets: [{
-            label: "Portfolio",
-            data: [],
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: {
-              ticks: {
-                callback: v => "$" + v.toLocaleString()
-              }
-            }
-          }
-        }
-      });
-    }
-
-    if (chart) {
-
-      let filtered = historyData;
-
-      if (currentRange !== "all") {
-        filtered = historyData.slice(-currentRange);
-      }
-
-      const newLabels = filtered.map(d => d.time);
-      const newData = filtered.map(d => d.value);
-
-      const oldData = chart.data.datasets[0].data;
-
-      // ✅ append instead of replace
-      if (newData.length > oldData.length) {
-        chart.data.labels.push(newLabels[newLabels.length - 1]);
-        oldData.push(newData[newData.length - 1]);
-
-        // 🔥 sliding window (fixed width)
-        const MAX_POINTS = 60;
-        if (oldData.length > MAX_POINTS) {
-          chart.data.labels.shift();
-          oldData.shift();
-        }
-
-      } else {
-        // fallback (range change etc)
-        chart.data.labels = newLabels;
-        chart.data.datasets[0].data = newData;
-      }
-
-      chart.update("none"); // 🔥 NO animation = no flicker
-    }
-
-  </script>
-
-  <script>
+    // iframe height sync
     function sendHeight() {
       parent.postMessage({ type: "resize", height: document.body.scrollHeight }, "*");
     }
     window.addEventListener("load", sendHeight);
     window.addEventListener("resize", sendHeight);
     setInterval(sendHeight, 800);
-
   </script>
-
 </body>
-
 </html>
