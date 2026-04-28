@@ -1,21 +1,10 @@
 <!-- ============================================================
      NET WORTH TRACKER  |  Author: Theresa P. De Leon
-     v7 Changes:
-       - MOBILE FIX: table columns visible left of SYMBOL fixed
-       - MOBILE FIX: bottom section no longer spills beyond green bg
-       - Spouse SS: separate SS amount, start age, current age
-       - SS max raised to $120K (covers combined husband + wife)
-       - Annual expenses max raised to $300K
-       - Tax Rate slider added to Growth Assumptions
-       - Taxes applied to investment returns in projection math
-       - Coming Soon placeholder buttons (AI advice)
-       - All previous renames preserved:
-           Date · TODAY'S GAIN · MONTHLY DIV · ANNUAL DIV
-           SHARES (INPUT) · COST (INPUT) · DIV (INPUT)
-           🪎 NET WORTH HISTORY · Investment snap card
-           Matching h3 font sizes
+     v9 — iPhone-style tabbed app
+       Tab 1: Home     → Top bar, summary cards, portfolio table
+       Tab 2: Portfolio → NW History, Projection, Withdrawal, Dividend
+       Tab 3: Retirement→ Roadmap, Roth, RMD, SS Comparison
      ============================================================ -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,205 +13,373 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
   <style>
-    /* ── RESET & BASE ── */
-    *, *::before, *::after { box-sizing: border-box; }
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
+    html, body {
+      height: 100%;
       font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #f5f7f9;
-      margin: 0;
-      padding-left:  env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
       -webkit-text-size-adjust: 100%;
-      /* KEY MOBILE FIX: prevent any child from creating horizontal overflow
-         on the body itself — this stops the green section from spilling */
-      overflow-x: hidden;
+      overflow: hidden; /* body itself never scrolls — tabs scroll */
     }
 
-    .app {
-      padding: 12px 14px;
-      max-width: 1400px;
-      margin: 0 auto;
-      /* Constrain width so nothing bleeds past the viewport */
-      width: 100%;
-    }
-
-    /* ── LOGIN ── */
-    .loginWrap { display: flex; justify-content: center; padding-top: 40px; }
-
-    .loginCard {
-      max-width: 420px;
-      width: 100%;
-      background: white;
-      padding: 24px;
-      border-radius: 16px;
+    /* ══════════════════════════════════════════
+       APP SHELL
+       Full-screen container; tab pages scroll inside it
+    ══════════════════════════════════════════ */
+    #app {
+      position: fixed;
+      inset: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+    }
+
+    /* LOGIN — centered card, shown before auth */
+    #loginView {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: #f5f7f9;
+    }
+
+    .loginCard {
+      width: 100%;
+      max-width: 380px;
+      background: white;
+      border-radius: 20px;
+      padding: 32px 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .loginLogo {
+      font-size: 36px;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .loginTitle {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .loginSub {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: -8px;
     }
 
     .loginCard input {
-      padding: 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      padding: 14px 16px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
       font-size: 16px;
       font-family: inherit;
       width: 100%;
+      color: #111;
+      transition: border-color 0.15s;
     }
 
-    .loginCard button {
-      padding: 14px;
-      background: #16a34a;
+    .loginCard input:focus {
+      outline: none;
+      border-color: #16a34a;
+    }
+
+    .loginBtn {
+      padding: 15px;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      border-radius: 12px;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       font-family: inherit;
-      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      box-shadow: 0 4px 12px rgba(22,163,74,0.3);
     }
 
-    /* ── TOP HEADER BAR ── */
-    .topBar {
+    #loginMsg {
+      text-align: center;
+      font-size: 13px;
+      color: #dc2626;
+      min-height: 18px;
+    }
+
+    /* ══════════════════════════════════════════
+       MAIN APP WRAPPER (shown after login)
+    ══════════════════════════════════════════ */
+    #mainApp {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #mainApp.visible { display: flex; }
+
+    /* ── TOP STATUS BAR ── */
+    .statusBar {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      margin-bottom: 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(229,231,235,0.6);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      padding: 10px 16px;
+      padding-top: calc(10px + env(safe-area-inset-top));
+      background: white;
+      border-bottom: 1px solid #f3f4f6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      z-index: 50;
     }
 
-    .topLeft { display: flex; flex-direction: column; gap: 2px; }
+    .statusLeft { display: flex; flex-direction: column; gap: 1px; }
 
-    #todayDate { font-size: 13px; font-weight: 500; color: #1f2937; }
+    #todayDate {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
 
-    #marketStatus { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
+    #marketStatus {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
     .market-open   { color: #16a34a; }
     .market-closed { color: #dc2626; }
 
     #logoutBtn {
-      background: linear-gradient(135deg, #16a34a, #22c55e);
-      color: white;
+      background: #f3f4f6;
+      color: #374151;
       border: none;
       border-radius: 999px;
-      padding: 8px 16px;
+      padding: 6px 14px;
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      white-space: nowrap;
     }
 
-    /* ── SUMMARY CARDS ── */
-    .cards {
+    /* ── TAB PAGES ── */
+    .tabPages {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tabPage {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 20px;
+      display: none;
+      background: #f5f7f9;
+    }
+
+    .tabPage.active { display: block; }
+
+    /* ── BOTTOM TAB BAR (iOS style) ── */
+    .tabBar {
+      flex-shrink: 0;
+      display: flex;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid #e5e7eb;
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 100;
+    }
+
+    .tabBtn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+
+    .tabBtn .tabIcon {
+      font-size: 22px;
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+
+    .tabBtn .tabLabel {
+      font-size: 10px;
+      font-weight: 600;
+      color: #9ca3af;
+      letter-spacing: 0.02em;
+    }
+
+    .tabBtn.active .tabLabel { color: #16a34a; }
+    .tabBtn.active .tabIcon  { transform: scale(1.12); }
+
+    /* Active indicator dot */
+    .tabBtn.active::after {
+      content: "";
+      position: absolute;
+      bottom: calc(6px + env(safe-area-inset-bottom));
+      width: 4px;
+      height: 4px;
+      background: #16a34a;
+      border-radius: 50%;
+    }
+
+    .tabBtn { position: relative; }
+
+    /* ══════════════════════════════════════════
+       SHARED CARD
+    ══════════════════════════════════════════ */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid #f3f4f6;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      margin-bottom: 12px;
+    }
+
+    .cardTitle {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+
+    /* ── SECTION HEADER (green pill) ── */
+    .sectionPill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #16a34a;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    /* ══════════════════════════════════════════
+       HOME TAB
+    ══════════════════════════════════════════ */
+
+    /* Summary mini-cards */
+    .summaryRow {
       display: flex;
       gap: 8px;
       margin-bottom: 12px;
+    }
+
+    .summaryCard {
+      flex: 1;
+      background: white;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border: 1px solid #f3f4f6;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .summaryCard .sLabel { font-size: 9px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+    .summaryCard .sVal   { font-size: 16px; font-weight: 700; color: #111; margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
       flex-wrap: wrap;
     }
 
-    .card {
-      flex: 1 1 90px;
-      min-width: 85px;
-      padding: 10px 12px;
-      background: #ecfdf5;
-      border-radius: 10px;
-      border: 1px solid #d1fae5;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .card div { font-size: 10px; color: #555; font-weight: 600; letter-spacing: 0.04em; }
-    .card h2  { font-size: 15px; margin: 3px 0 0 0; font-weight: 700; }
-
-    /* ── TOOLBAR BUTTONS ── */
     .toolBtn {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
+      gap: 5px;
+      padding: 8px 14px;
       font-size: 12px;
+      font-weight: 600;
       font-family: inherit;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       background: #111827;
       color: #e5e7eb;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      white-space: nowrap;
     }
 
-    .toolBtn span { font-weight: 500; }
     .toolBtn.blue { background: #1d4ed8; }
 
-    /* ── PORTFOLIO TABLE ──
-       KEY MOBILE FIX: the tableWrap itself scrolls horizontally.
-       We isolate it with overflow-x: auto so the scroll stays
-       inside the wrapper and doesn't bleed to the body.          */
+    /* ── PORTFOLIO TABLE ── */
     .tableWrap {
-      width: 100%;
-      max-width: 100%;          /* never wider than its container */
+      background: white;
+      border-radius: 14px;
+      border: 1px solid #f3f4f6;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      position: relative;
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      /* isolate the stacking context so sticky columns
-         don't leak outside the rounded border */
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
       isolation: isolate;
     }
 
     :root {
-      --c1: 130px; --c2: 110px; --c3: 110px;
-      --c4: 120px; --c5: 110px; --c6: 110px;
-      --c7: 100px; --c8: 90px;  --c9: 110px;
+      --c1:130px; --c2:110px; --c3:110px;
+      --c4:120px; --c5:110px; --c6:110px;
+      --c7:100px; --c8:90px;  --c9:110px;
     }
 
-    .header, .row {
+    .tableHeader, .tableRow {
       display: grid;
-      grid-template-columns:
-        var(--c1) var(--c2) var(--c3) var(--c4) var(--c5)
-        var(--c6) var(--c7) var(--c8) var(--c9);
+      grid-template-columns: var(--c1) var(--c2) var(--c3) var(--c4) var(--c5) var(--c6) var(--c7) var(--c8) var(--c9);
       min-width: 990px;
     }
 
-    /* TABLE HEADER */
-    .header {
+    .tableHeader {
+      background: #f9fafb;
+      border-bottom: 1.5px solid #e5e7eb;
       position: sticky;
       top: 0;
       z-index: 20;
-      background: #f9fafb;
-      border-bottom: 2px solid #d1d5db;
     }
 
-    .header > div {
-      padding: 9px 6px;
-      border-right: 1px solid #e5e7eb;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+    .tableHeader > div {
+      padding: 8px 6px;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.04em;
-      color: #374151;
+      color: #6b7280;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid #e5e7eb;
       background: #f9fafb;
     }
 
-    .header > div:last-child { border-right: none; }
+    .tableHeader > div:last-child { border-right: none; }
 
-    /* DATA ROWS */
-    .row > div {
+    .tableRow > div {
       padding: 9px 8px;
-      border-right: 1px solid #e5e7eb;
+      border-right: 1px solid #f3f4f6;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -230,38 +387,27 @@
       font-size: 13px;
     }
 
-    /* STICKY SYMBOL COLUMN
-       KEY FIX: use a solid background + box-shadow instead of
-       the "0 0 0 1000px white inset" trick which caused the
-       columns-visible-left-of-symbol bug on mobile.             */
-    .header .sticky {
+    .tableRow > div:last-child { border-right: none; }
+
+    .stickyCol {
       position: sticky;
       left: 0;
-      z-index: 30;
+      z-index: 15;
       background: #f9fafb;
-      box-shadow: 3px 0 6px -2px rgba(0,0,0,0.12);
+      box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
     }
 
-    .row .sticky {
-      position: sticky;
-      left: 0;
-      z-index: 10;
+    .tableRow .stickyCol {
       background: white;
-      box-shadow: 3px 0 6px -2px rgba(0,0,0,0.08);
       justify-content: flex-start;
       font-weight: 600;
       font-size: 13px;
     }
 
-    /* Ensure non-sticky cells never overlap the sticky column */
-    .row > div:not(.sticky) { position: relative; }
-
-    /* INPUT CELLS — font matches page */
-    .row input {
+    .tableRow input {
       width: 100%;
       height: 100%;
       padding: 0 4px;
-      margin: 0;
       border: none;
       outline: none;
       background: transparent;
@@ -272,113 +418,55 @@
       color: #111;
     }
 
-    @media (max-width: 768px) {
-      .row input { font-size: 16px; }
-    }
+    @media (max-width: 768px) { .tableRow input { font-size: 16px; } }
 
-    .row > div:last-child,
-    .header > div:last-child { border-right: none; }
-
-    .row { position: relative; z-index: 1; background: white; }
-    .row:hover { background: #f9fafb; }
+    .tableRow { background: white; position: relative; z-index: 1; }
+    .tableRow:hover { background: #fafafa; }
 
     .col { position: relative; }
     .resizer {
-      position: absolute;
-      right: -3px;
-      top: 0;
-      width: 6px;
-      height: 100%;
-      cursor: col-resize;
+      position: absolute; right: -3px; top: 0;
+      width: 6px; height: 100%; cursor: col-resize;
     }
 
-    /* ── BOTTOM GREEN SECTION ──
-       KEY MOBILE FIX: overflow-x: hidden prevents the white cards
-       inside from pushing the green background wider than the screen. */
-    .bottomSection {
-      margin-top: 16px;
-      background: #16a34a;
-      padding: 14px 12px 14px;
-      border-radius: 14px;
-      overflow-x: hidden;   /* KEY FIX */
-      width: 100%;
-    }
-
-    /* NET WORTH HISTORY CARD */
-    .networthCard {
-      background: white;
-      border-radius: 12px;
-      padding: 14px;
-      border: 1px solid #e5e7eb;
-      margin-top: 16px;
-      width: 100%;
-      min-width: 0;          /* prevent flex/grid blowout */
-    }
-
-    .netHeader {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    /* Both chart titles use the same font size */
-    .netHeader h3,
-    .projCard h3 {
-      font-size: 14px;
-      font-weight: 700;
-      color: #111;
-      margin: 0 0 0 0;
-      flex-shrink: 0;
-      letter-spacing: 0.04em;
-    }
-
-    .projCard h3 { margin: 0 0 14px 0; }
-
-    .nwStatCards { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .nwStatCard {
-      padding: 5px 10px;
-      background: #f0fdf4;
-      border-radius: 8px;
-      border: 1px solid #bbf7d0;
-      min-width: 88px;
-    }
-
-    .nwStatCard .label { font-size: 9px; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-    .nwStatCard .value { font-size: 14px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; }
+    /* ══════════════════════════════════════════
+       PORTFOLIO TAB
+    ══════════════════════════════════════════ */
 
     .chartBox {
-      background: #f3f4f6;
-      border-radius: 10px;
-      padding: 8px;
+      background: #f9fafb;
       border: 1px solid #e5e7eb;
-      height: 280px;
+      border-radius: 12px;
+      padding: 10px;
+      height: 240px;
     }
 
-    /* ── PROJECTION CARD ── */
-    .projCard {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid #e5e7eb;
-      margin-top: 12px;
-      width: 100%;
-      min-width: 0;          /* prevent flex/grid blowout */
+    @media (max-width: 600px) { .chartBox { height: 200px; } }
+
+    /* Stat mini-cards inside chart header */
+    .statRow { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+
+    .statPill {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 5px 10px;
+      min-width: 90px;
     }
+
+    .statPill .spLabel { font-size: 9px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .statPill .spVal   { font-size: 14px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; }
 
     /* Milestone row */
     .milestoneGrid {
       display: flex;
-      font-variant-numeric: tabular-nums;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 10px;
       overflow: hidden;
       margin-bottom: 10px;
     }
 
-    .milestoneCell {
+    .mCell {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -389,31 +477,18 @@
       min-width: 0;
     }
 
-    .milestoneCell:last-child { border-right: none; }
-    .milestoneCell .mLabel   { font-size: 9px;  font-weight: 700; color: #9ca3af; margin-bottom: 2px; }
-    .milestoneCell .mNominal { font-size: 11px; font-weight: 700; color: #111; }
-    .milestoneCell .mReal    { font-size: 9px;  color: #9467bd; font-weight: 600; margin-top: 1px; }
+    .mCell:last-child { border-right: none; }
+    .mCell .mLbl  { font-size: 9px;  font-weight: 700; color: #9ca3af; margin-bottom: 2px; }
+    .mCell .mNom  { font-size: 11px; font-weight: 700; color: #111; }
+    .mCell .mReal { font-size: 9px;  color: #9467bd; font-weight: 600; margin-top: 1px; }
 
-    /* Two-column on desktop, stacked on mobile */
-    .projLayout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-
-    @media (max-width: 768px) {
-      .projLayout { grid-template-columns: 1fr; }
-    }
-
-    .projControls { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-
+    /* Sliders */
     .projSection {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px;
-      min-width: 0;
+      margin-bottom: 10px;
     }
 
     .projSectionTitle {
@@ -433,13 +508,7 @@
     }
 
     .sliderRow:last-child { margin-bottom: 0; }
-
-    .sliderLabel {
-      font-size: 12px;
-      color: #374151;
-      flex: 1;
-      min-width: 0;
-    }
+    .sliderLabel { font-size: 12px; color: #374151; flex: 1; min-width: 0; }
 
     .sliderRow input[type=range] {
       width: 100px;
@@ -458,7 +527,7 @@
       text-align: right;
     }
 
-    /* Toggle switch */
+    /* Toggle */
     .toggleRow {
       display: flex;
       align-items: center;
@@ -468,8 +537,6 @@
       color: #374151;
       gap: 8px;
     }
-
-    .toggleRow:last-child { margin-bottom: 0; }
 
     .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
@@ -496,982 +563,1328 @@
     .toggle input:checked + .toggleSlider { background: #16a34a; }
     .toggle input:checked + .toggleSlider::before { transform: translateX(16px); }
 
-    /* Snapshot grid */
+    /* Snap grid */
     .snapGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
-    .snapItem { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 8px; }
+    .snapItem { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 8px; }
     .snapItem .snapLabel { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .snapItem .snapVal   { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: #111; margin-top: 1px; }
 
-    /* Tax info note */
-    .taxNote {
-      font-size: 10px;
-      color: #6b7280;
-      background: #fef9c3;
-      border: 1px solid #fde68a;
-      border-radius: 6px;
-      padding: 6px 8px;
-      margin-top: 6px;
-      line-height: 1.5;
-    }
-
-    /* Projection chart */
-    .projChartBox {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 10px;
-      height: 340px;
-      min-width: 0;
-    }
-
-    @media (max-width: 768px) {
-      .projChartBox { height: 260px; }
-      .chartBox     { height: 220px; }
-    }
-
-    /* Coming Soon buttons */
-    .adviceRow { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-
+    /* Coming soon buttons */
     .comingSoonBtn {
       padding: 7px 12px;
       font-size: 12px;
-      font-family: inherit;
       font-weight: 600;
       border: 1px dashed #d1d5db;
-      border-radius: 6px;
+      border-radius: 8px;
       background: #f9fafb;
       color: #9ca3af;
       cursor: not-allowed;
       user-select: none;
+      display: inline-block;
     }
 
-    /* Monte Carlo label */
     .mcLabel { font-size: 10px; color: #9ca3af; margin-top: 4px; display: none; }
     .mcLabel.visible { display: block; }
 
-    /* ── MOBILE OVERRIDES ── */
+    /* Tax note */
+    .taxNote {
+      font-size: 10px;
+      background: #fef9c3;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 8px;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    /* Withdrawal stats */
+    .wdStats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .wdStat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; }
+    .wdStat .wdLabel { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .wdStat .wdVal   { font-size: 14px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .wdStat .wdVal.danger  { color: #dc2626; }
+    .wdStat .wdVal.warning { color: #d97706; }
+    .wdStat .wdVal.good    { color: #16a34a; }
+
+    /* Progress bar */
+    .progressBar { height: 16px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin: 6px 0; }
+    .progressFill {
+      height: 100%;
+      background: linear-gradient(90deg, #16a34a, #22c55e);
+      border-radius: 999px;
+      transition: width 0.4s;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      font-size: 9px;
+      font-weight: 700;
+      color: white;
+      min-width: 28px;
+    }
+
+    /* ══════════════════════════════════════════
+       RETIREMENT TAB
+    ══════════════════════════════════════════ */
+
+    /* Timeline */
+    .timeline { display: flex; flex-direction: column; gap: 10px; }
+
+    @media (min-width: 600px) { .timeline { flex-direction: row; } }
+
+    .tlPhase {
+      flex: 1;
+      border-radius: 14px;
+      padding: 14px 12px;
+      border: 1px solid #e5e7eb;
+      min-width: 0;
+    }
+
+    .tlPhase.phase1 { background: #eff6ff; border-color: #bfdbfe; }
+    .tlPhase.phase2 { background: #f0fdf4; border-color: #bbf7d0; }
+    .tlPhase.phase3 { background: #fdf4ff; border-color: #e9d5ff; }
+
+    .tlBadge {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+      display: inline-block; margin-bottom: 5px;
+    }
+
+    .phase1 .tlBadge { background: #1d4ed8; color: white; }
+    .phase2 .tlBadge { background: #16a34a; color: white; }
+    .phase3 .tlBadge { background: #9333ea; color: white; }
+
+    .tlYears { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 1px; }
+    .tlAge   { font-size: 10px; color: #6b7280; margin-bottom: 8px; }
+
+    .tlItem {
+      font-size: 11px; color: #374151; line-height: 1.6;
+      padding-left: 12px; position: relative; margin-bottom: 2px;
+    }
+
+    .tlItem::before { content: "•"; position: absolute; left: 2px; color: #9ca3af; }
+
+    .tlMilestone {
+      margin-top: 10px;
+      background: white;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .tlMilestone .mlLabel { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tlMilestone .mlVal   { font-size: 14px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+    /* Roth stats */
+    .rothStats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .rothStat  { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; }
+    .rothStat .rLabel { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .rothStat .rVal   { font-size: 13px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+    .rothNote {
+      font-size: 11px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #1e40af;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    /* RMD table */
+    .rmdTable { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .rmdTable th {
+      background: #f9fafb; padding: 7px 8px; text-align: left;
+      font-size: 10px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .rmdTable td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; font-variant-numeric: tabular-nums; color: #111; }
+    .rmdTable tr:last-child td { border-bottom: none; }
+    .rmdTable tr:nth-child(even) td { background: #fafafa; }
+    .rmdTable td.warn { color: #d97706; font-weight: 600; }
+    .rmdTable td.high { color: #dc2626; font-weight: 700; }
+
+    /* SS Comparison */
+    .ssBreakBox {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: #111;
+      line-height: 1.7;
+      margin-top: 12px;
+    }
+
+    /* Div milestones */
+    .divMilestones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .divMil { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px; text-align: center; }
+    .divMil .dmLabel { font-size: 9px; color: #9ca3af; font-weight: 700; text-transform: uppercase; }
+    .divMil .dmVal   { font-size: 12px; font-weight: 700; color: #111; font-variant-numeric: tabular-nums; margin-top: 2px; }
+    .divMil .dmYear  { font-size: 10px; color: #16a34a; font-weight: 600; margin-top: 1px; }
+
+    /* Mobile slider override */
     @media (max-width: 600px) {
-      .app { padding: 8px 10px; }
-      #todayDate { font-size: 11px; }
-      .cards { gap: 6px; }
-      .card  { padding: 8px 8px; }
-      .card h2 { font-size: 13px; }
-      .milestoneCell .mNominal { font-size: 10px; }
-      .milestoneCell .mReal    { font-size: 9px; }
       .sliderRow { flex-wrap: wrap; }
       .sliderLabel { width: 100%; }
       .sliderRow input[type=range] { width: 100%; }
-      .sliderVal { min-width: 40px; }
     }
-
   </style>
 </head>
-
 <body>
-  <div id="app">Loading...</div>
+<div id="app">
 
-  <script>
-    window.addEventListener("load", () => {
+  <!-- ── LOGIN ── -->
+  <div id="loginView">
+    <div class="loginCard">
+      <div class="loginLogo">💰</div>
+      <div class="loginTitle">Net Worth Tracker</div>
+      <div class="loginSub">Your financial future, clearly</div>
+      <input id="emailInput" type="email" placeholder="Email" autocomplete="email">
+      <input id="passInput" type="password" placeholder="Password" autocomplete="current-password">
+      <button class="loginBtn" id="loginBtn">SIGN IN</button>
+      <div id="loginMsg"></div>
+    </div>
+  </div>
 
-      const app = document.getElementById("app");
+  <!-- ── MAIN APP ── -->
+  <div id="mainApp">
 
-      const supabase = window.supabase.createClient(
-        "https://yxvgevzvrvhtzmfxgitk.supabase.co",
-        "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
-        { auth: { persistSession: true, storage: window.localStorage } }
-      );
-      window.supabaseClient = supabase;
+    <!-- Status Bar -->
+    <div class="statusBar">
+      <div class="statusLeft">
+        <div id="todayDate">Date: —</div>
+        <div id="marketStatus"></div>
+      </div>
+      <button id="logoutBtn">LOGOUT</button>
+    </div>
 
-      let user = null, symbols = [], portfolio = [], dataMap = {}, rows = {};
-      let netChart = null, quoteInterval = null, marketInterval = null;
+    <!-- Tab Pages -->
+    <div class="tabPages">
 
-      const fmtMoney   = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const fmtMoney0  = n => "$" + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      const fmtNumber  = n => (n || 0).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-      const fmtPercent = n => (n * 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+      <!-- ══════════ TAB 1: HOME ══════════ -->
+      <div id="tabHome" class="tabPage active">
 
-      function fmtMillions(v) {
-        const abs = Math.abs(v);
-        if (abs >= 1_000_000_000) return "$" + (v / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
-        if (abs >= 1_000_000)     return "$" + (v / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-        if (abs >= 1_000)         return "$" + (v / 1_000).toFixed(0) + "K";
-        return "$" + v.toLocaleString();
-      }
+        <div class="sectionPill">📋 INVESTMENT SUMMARY</div>
 
-      // ══════════════════════════════════════════
-      // AUTH
-      // ══════════════════════════════════════════
+        <!-- Summary cards -->
+        <div class="summaryRow">
+          <div class="summaryCard">
+            <div class="sLabel">TODAY'S GAIN</div>
+            <div class="sVal" id="todayVal">$0</div>
+          </div>
+          <div class="summaryCard">
+            <div class="sLabel">MONTHLY DIV</div>
+            <div class="sVal" id="mVal">$0</div>
+          </div>
+          <div class="summaryCard">
+            <div class="sLabel">ANNUAL DIV</div>
+            <div class="sVal" id="iVal">$0</div>
+          </div>
+        </div>
 
-      function showLogin() {
-        app.innerHTML = `
-          <div class="loginWrap">
-            <div class="loginCard">
-              <h2 style="margin:0 0 4px;font-size:22px;">Login</h2>
-              <input id="emailInput" type="email" placeholder="Email" autocomplete="email">
-              <input id="passInput" type="password" placeholder="Password" autocomplete="current-password">
-              <button id="loginBtn">LOGIN</button>
-              <p id="msg" style="color:#dc2626;font-size:13px;margin:0;min-height:18px;"></p>
+        <!-- Toolbar -->
+        <div class="toolbar" id="tableToolbar"></div>
+
+        <!-- Table -->
+        <div class="tableWrap">
+          <div class="tableHeader">
+            <div class="stickyCol col">SYMBOL<div class="resizer"></div></div>
+            <div class="col">PRICE<div class="resizer"></div></div>
+            <div class="col">CHANGE<div class="resizer"></div></div>
+            <div class="col">SHARES (INPUT)<div class="resizer"></div></div>
+            <div class="col">COST (INPUT)<div class="resizer"></div></div>
+            <div class="col">VALUE<div class="resizer"></div></div>
+            <div class="col">DIV (INPUT)<div class="resizer"></div></div>
+            <div class="col">YIELD<div class="resizer"></div></div>
+            <div class="col">INCOME<div class="resizer"></div></div>
+          </div>
+          <div id="list"></div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB 2: PORTFOLIO ══════════ -->
+      <div id="tabPortfolio" class="tabPage">
+
+        <!-- NET WORTH HISTORY -->
+        <div class="sectionPill">🪎 NET WORTH HISTORY</div>
+        <div class="card">
+          <div class="statRow">
+            <div class="statPill">
+              <div class="spLabel">ASSETS (NET)</div>
+              <div class="spVal" id="nwAssetsVal">—</div>
             </div>
-          </div>`;
-        document.getElementById("loginBtn").addEventListener("click", login);
-        document.getElementById("passInput").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
-      }
+            <div class="statPill">
+              <div class="spLabel">TOTAL GAIN</div>
+              <div class="spVal" id="nwGainVal">—</div>
+            </div>
+          </div>
+          <div class="chartBox"><canvas id="networthChart"></canvas></div>
+        </div>
 
-      async function login() {
-        const email = document.getElementById("emailInput").value.trim();
-        const pass  = document.getElementById("passInput").value;
-        const msg   = document.getElementById("msg");
-        msg.innerText = "";
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) { msg.innerText = error.message; return; }
-        user = data.user; window.currentUser = user;
-        showApp();
-      }
+        <!-- NET WORTH PROJECTION -->
+        <div class="sectionPill">📈 NET WORTH PROJECTION</div>
+        <div class="card">
+          <!-- Milestone row -->
+          <div class="milestoneGrid" style="margin-bottom:8px;">
+            <div class="mCell"><div class="mLbl">1Y</div><div class="mNom" id="proj1y">—</div><div class="mReal" id="proj1yr">—</div></div>
+            <div class="mCell"><div class="mLbl">5Y</div><div class="mNom" id="proj5y">—</div><div class="mReal" id="proj5yr">—</div></div>
+            <div class="mCell"><div class="mLbl">10Y</div><div class="mNom" id="proj10y">—</div><div class="mReal" id="proj10yr">—</div></div>
+            <div class="mCell"><div class="mLbl">20Y</div><div class="mNom" id="proj20y">—</div><div class="mReal" id="proj20yr">—</div></div>
+            <div class="mCell"><div class="mLbl">30Y</div><div class="mNom" id="proj30y">—</div><div class="mReal" id="proj30yr">—</div></div>
+            <div class="mCell"><div class="mLbl">40Y</div><div class="mNom" id="proj40y">—</div><div class="mReal" id="proj40yr">—</div></div>
+          </div>
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:10px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span>⬛ Nominal</span><span style="color:#9467bd;">■ Real (inflation-adj.)</span>
+          </div>
 
-      async function logout() {
-        clearInterval(quoteInterval); clearInterval(marketInterval);
-        quoteInterval = marketInterval = null;
-        if (projChart) { projChart.destroy(); projChart = null; }
-        if (netChart)  { netChart.destroy();  netChart  = null; }
-        await supabase.auth.signOut();
-        user = window.currentUser = null;
-        showLogin();
-      }
+          <!-- Starting position -->
+          <div class="projSection">
+            <div class="projSectionTitle">📌 Starting Position</div>
+            <div class="snapGrid">
+              <div class="snapItem"><div class="snapLabel">Net Worth</div><div class="snapVal" id="snapNW">—</div></div>
+              <div class="snapItem"><div class="snapLabel">Investment</div><div class="snapVal" id="snapPort">—</div></div>
+              <div class="snapItem"><div class="snapLabel">Properties</div><div class="snapVal" id="snapProp">—</div></div>
+              <div class="snapItem"><div class="snapLabel">Mortgage</div><div class="snapVal" id="snapMort">—</div></div>
+            </div>
+          </div>
 
-      // ══════════════════════════════════════════
-      // MAIN APP SHELL
-      // ══════════════════════════════════════════
-
-      function showApp() {
-        app.innerHTML = `
-          <div class="app">
-
-            <div class="topBar">
-              <div class="topLeft">
-                <div id="todayDate"></div>
-                <div id="marketStatus"></div>
+          <!-- Cash flow -->
+          <div class="projSection">
+            <div class="projSectionTitle">💵 Annual Cash Flow</div>
+            <div class="sliderRow"><span class="sliderLabel">Annual contributions</span><input type="range" id="slContrib" min="0" max="100000" step="1000" value="24000"><span class="sliderVal" id="svContrib">$24,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Annual expenses</span><input type="range" id="slExpenses" min="0" max="300000" step="1000" value="60000"><span class="sliderVal" id="svExpenses">$60,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Social Security ($/yr)</span><input type="range" id="slSS" min="0" max="60000" step="500" value="0"><span class="sliderVal" id="svSS">$0</span></div>
+            <div class="toggleRow"><span>Include Social Security</span><label class="toggle"><input type="checkbox" id="toggleSS"><span class="toggleSlider"></span></label></div>
+            <div class="sliderRow" id="ssAgeRow" style="display:none;"><span class="sliderLabel">SS starts at age</span><input type="range" id="slSSAge" min="62" max="70" step="1" value="67"><span class="sliderVal" id="svSSAge">67</span></div>
+            <div class="sliderRow" id="ssAgeRow2" style="display:none;"><span class="sliderLabel">Your current age</span><input type="range" id="slAge" min="30" max="80" step="1" value="55"><span class="sliderVal" id="svAge">55</span></div>
+            <div id="spouseSsBlock">
+              <div class="toggleRow" style="margin-top:6px;"><span>Include Spouse SS</span><label class="toggle"><input type="checkbox" id="toggleSpouseSS"><span class="toggleSlider"></span></label></div>
+              <div id="spouseSsSliders" style="display:none;">
+                <div class="sliderRow"><span class="sliderLabel">Spouse SS ($/yr)</span><input type="range" id="slSpouseSS" min="0" max="60000" step="500" value="0"><span class="sliderVal" id="svSpouseSS">$0</span></div>
+                <div class="sliderRow"><span class="sliderLabel">Spouse current age</span><input type="range" id="slSpouseAge" min="30" max="80" step="1" value="55"><span class="sliderVal" id="svSpouseAge">55</span></div>
+                <div class="sliderRow"><span class="sliderLabel">Spouse SS starts at age</span><input type="range" id="slSpouseSSAge" min="62" max="70" step="1" value="67"><span class="sliderVal" id="svSpouseSSAge">67</span></div>
               </div>
-              <button id="logoutBtn">LOGOUT</button>
             </div>
+          </div>
 
-            <!-- TODAY'S GAIN · MONTHLY DIV · ANNUAL DIV -->
-            <div class="cards">
-              <div class="card"><div>TODAY'S GAIN</div><h2 id="todayVal">$0</h2></div>
-              <div class="card"><div>MONTHLY DIV</div><h2 id="mVal">$0</h2></div>
-              <div class="card"><div>ANNUAL DIV</div><h2 id="iVal">$0</h2></div>
-            </div>
+          <!-- Growth assumptions -->
+          <div class="projSection">
+            <div class="projSectionTitle">📊 Growth Assumptions</div>
+            <div class="sliderRow"><span class="sliderLabel">Investment return (%/yr)</span><input type="range" id="slReturn" min="0" max="20" step="0.5" value="7"><span class="sliderVal" id="svReturn">7.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Inflation rate (%/yr)</span><input type="range" id="slInflation" min="0" max="10" step="0.25" value="3"><span class="sliderVal" id="svInflation">3.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Projection horizon</span><input type="range" id="slHorizon" min="5" max="50" step="1" value="30"><span class="sliderVal" id="svHorizon">30 yrs</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Effective tax rate (%)</span><input type="range" id="slTax" min="0" max="45" step="1" value="22"><span class="sliderVal" id="svTax">22%</span></div>
+            <div class="taxNote">⚠️ Tax rate reduces effective investment return (after-tax = return × (1−tax)). Roth, capital gains, and deductions not modeled. Consult a tax advisor.</div>
+          </div>
 
-            <!-- PORTFOLIO TABLE -->
-            <div class="tableWrap">
-              <div class="header">
-                <div class="sticky col">SYMBOL<div class="resizer"></div></div>
-                <div class="col">PRICE<div class="resizer"></div></div>
-                <div class="col">CHANGE<div class="resizer"></div></div>
-                <div class="col">SHARES (INPUT)<div class="resizer"></div></div>
-                <div class="col">COST (INPUT)<div class="resizer"></div></div>
-                <div class="col">VALUE<div class="resizer"></div></div>
-                <div class="col">DIV (INPUT)<div class="resizer"></div></div>
-                <div class="col">YIELD<div class="resizer"></div></div>
-                <div class="col">INCOME<div class="resizer"></div></div>
+          <!-- Advanced -->
+          <div class="projSection">
+            <div class="projSectionTitle">🎲 Advanced</div>
+            <div class="toggleRow"><span>Monte Carlo (1,000 runs)</span><label class="toggle"><input type="checkbox" id="toggleMC"><span class="toggleSlider"></span></label></div>
+            <div class="mcLabel" id="mcLabel">Showing 10th / 90th percentile band</div>
+            <div class="sliderRow" id="mcVolRow" style="display:none;"><span class="sliderLabel">Return volatility (std dev)</span><input type="range" id="slVol" min="1" max="25" step="0.5" value="12"><span class="sliderVal" id="svVol">12.0%</span></div>
+          </div>
+
+          <!-- Projection chart -->
+          <div class="chartBox" style="height:260px;margin-bottom:8px;"><canvas id="projChart"></canvas></div>
+          <div style="display:flex;gap:12px;font-size:10px;color:#6b7280;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:16px;height:3px;background:#16a34a;display:inline-block;border-radius:2px;"></span>Nominal</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:16px;height:2px;background:#9467bd;display:inline-block;"></span>Real</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:16px;height:2px;background:#f59e0b;display:inline-block;"></span>After-tax</span>
+          </div>
+
+          <!-- Coming soon -->
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="comingSoonBtn">💡 Growth levers</div>
+            <div class="comingSoonBtn">🏖️ Safe withdrawal</div>
+            <div class="comingSoonBtn">📋 SS strategy</div>
+          </div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:5px;">🔒 AI analysis — requires Anthropic API setup</div>
+        </div>
+
+        <!-- WITHDRAWAL SIMULATOR -->
+        <div class="sectionPill">🏖️ WITHDRAWAL SIMULATOR</div>
+        <div class="card">
+          <div class="projSection">
+            <div class="projSectionTitle">⚙️ Settings</div>
+            <div class="sliderRow"><span class="sliderLabel">Retire at age</span><input type="range" id="wdRetireAge" min="55" max="70" step="1" value="62"><span class="sliderVal" id="wdRetireAgeV">62</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Annual withdrawal ($)</span><input type="range" id="wdSpend" min="40000" max="300000" step="5000" value="100000"><span class="sliderVal" id="wdSpendV">$100,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Portfolio return (%)</span><input type="range" id="wdReturn" min="0" max="12" step="0.5" value="5"><span class="sliderVal" id="wdReturnV">5.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Inflation (%)</span><input type="range" id="wdInflation" min="0" max="8" step="0.25" value="3"><span class="sliderVal" id="wdInflationV">3.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">SS income both ($/yr)</span><input type="range" id="wdSS" min="0" max="120000" step="1000" value="60000"><span class="sliderVal" id="wdSSV">$60,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">SS starts at age</span><input type="range" id="wdSSAge" min="62" max="70" step="1" value="70"><span class="sliderVal" id="wdSSAgeV">70</span></div>
+          </div>
+          <div class="wdStats">
+            <div class="wdStat"><div class="wdLabel">Portfolio at Retire</div><div class="wdVal" id="wdPortVal">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Safe 4% Withdrawal</div><div class="wdVal" id="wdSafe4">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Net Annual Need</div><div class="wdVal" id="wdNetNeed">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Money Lasts Until</div><div class="wdVal" id="wdLasts">—</div></div>
+          </div>
+          <div class="chartBox"><canvas id="wdChart"></canvas></div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:6px;">Green = with SS offset · Red = without SS · Dashed red = depletion zone</div>
+        </div>
+
+        <!-- DIVIDEND TRACKER -->
+        <div class="sectionPill">💰 DIVIDEND INCOME TRACKER</div>
+        <div class="card">
+          <div class="projSection">
+            <div class="projSectionTitle">🎯 Income Target</div>
+            <div class="sliderRow"><span class="sliderLabel">Monthly income target ($)</span><input type="range" id="divTarget" min="1000" max="25000" step="500" value="8333"><span class="sliderVal" id="divTargetV">$8,333</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Dividend growth (%/yr)</span><input type="range" id="divGrowth" min="0" max="15" step="0.5" value="5"><span class="sliderVal" id="divGrowthV">5.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Additional investment ($/yr)</span><input type="range" id="divAddInv" min="0" max="100000" step="1000" value="24000"><span class="sliderVal" id="divAddInvV">$24,000</span></div>
+          </div>
+          <div style="margin:10px 0 4px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#374151;">
+            <span>Progress to Target</span><span id="divPct">0%</span>
+          </div>
+          <div class="progressBar"><div class="progressFill" id="divBar" style="width:0%">0%</div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:10px;">
+            <span id="divCurrent">$0/mo</span><span id="divTargetShow">Target: $8,333/mo</span>
+          </div>
+          <div class="wdStats" style="margin-bottom:10px;">
+            <div class="wdStat"><div class="wdLabel">Monthly Gap</div><div class="wdVal" id="divGap">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Annual Gap</div><div class="wdVal" id="divGapAnnual">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Annual Div Income</div><div class="wdVal" id="divAnnual">—</div></div>
+            <div class="wdStat"><div class="wdLabel">Avg Yield</div><div class="wdVal" id="divYield">—</div></div>
+          </div>
+          <div class="divMilestones">
+            <div class="divMil"><div class="dmLabel">50% Target</div><div class="dmVal" id="div50Val">—</div><div class="dmYear" id="div50Yr">—</div></div>
+            <div class="divMil"><div class="dmLabel">75% Target</div><div class="dmVal" id="div75Val">—</div><div class="dmYear" id="div75Yr">—</div></div>
+            <div class="divMil"><div class="dmLabel">100% Target</div><div class="dmVal" id="div100Val">—</div><div class="dmYear" id="div100Yr">—</div></div>
+          </div>
+          <div class="chartBox" style="margin-top:12px;"><canvas id="divChart"></canvas></div>
+        </div>
+
+      </div><!-- end tabPortfolio -->
+
+      <!-- ══════════ TAB 3: RETIREMENT ══════════ -->
+      <div id="tabRetirement" class="tabPage">
+
+        <!-- ROADMAP -->
+        <div class="sectionPill">🗓️ RETIREMENT ROADMAP</div>
+        <div class="card">
+          <div class="timeline">
+            <div class="tlPhase phase1">
+              <div class="tlBadge">Phase 1</div>
+              <div class="tlYears">2026 – 2032</div>
+              <div class="tlAge">Ages 55–61 · High Income</div>
+              <div class="tlItem">Max 401k + IRA ($23,500 + $7,500 catch-up)</div>
+              <div class="tlItem">Roth conversions to top of 22–24% bracket</div>
+              <div class="tlItem">Pay down mortgage aggressively</div>
+              <div class="tlItem">Build taxable brokerage for bridge income</div>
+              <div class="tlItem">HSA max ($8,300/couple) — triple tax shield</div>
+              <div class="tlMilestone">
+                <div class="mlLabel">Projected Net Worth at 62</div>
+                <div class="mlVal" id="tlNW62">—</div>
               </div>
-              <div id="list"></div>
             </div>
-
-            <!-- GREEN WRAPPER -->
-            <div class="bottomSection">
-
-              <!-- 🪎 NET WORTH HISTORY CHART -->
-              <div class="networthCard">
-                <div class="netHeader">
-                  <h3>🪎 NET WORTH HISTORY</h3>
-                  <div class="nwStatCards">
-                    <div class="nwStatCard">
-                      <div class="label">ASSETS (NET)</div>
-                      <div class="value" id="nwAssetsVal">—</div>
-                    </div>
-                    <div class="nwStatCard">
-                      <div class="label">TOTAL GAIN</div>
-                      <div class="value" id="nwGainVal">—</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="chartBox">
-                  <canvas id="networthChart"></canvas>
-                </div>
+            <div class="tlPhase phase2">
+              <div class="tlBadge">Phase 2</div>
+              <div class="tlYears">2033 – 2040</div>
+              <div class="tlAge">Ages 62–69 · Golden Window</div>
+              <div class="tlItem">Delay SS to 70 (+24% vs claiming at 62)</div>
+              <div class="tlItem">Live on taxable + Roth — stay in low bracket</div>
+              <div class="tlItem">Continue Roth conversions aggressively</div>
+              <div class="tlItem">ACA subsidies if income &lt; 400% FPL</div>
+              <div class="tlItem">Rebalance toward 60/40 allocation</div>
+              <div class="tlMilestone">
+                <div class="mlLabel">Projected Net Worth at 70</div>
+                <div class="mlVal" id="tlNW70">—</div>
               </div>
-
-              <!-- 📈 NET WORTH PROJECTION -->
-              <div class="projCard">
-                <h3>📈 NET WORTH PROJECTION</h3>
-
-                <!-- Milestone summary 1Y–40Y -->
-                <div class="milestoneGrid">
-                  <div class="milestoneCell"><div class="mLabel">1Y</div><div class="mNominal" id="proj1y">—</div><div class="mReal" id="proj1yr">—</div></div>
-                  <div class="milestoneCell"><div class="mLabel">5Y</div><div class="mNominal" id="proj5y">—</div><div class="mReal" id="proj5yr">—</div></div>
-                  <div class="milestoneCell"><div class="mLabel">10Y</div><div class="mNominal" id="proj10y">—</div><div class="mReal" id="proj10yr">—</div></div>
-                  <div class="milestoneCell"><div class="mLabel">20Y</div><div class="mNominal" id="proj20y">—</div><div class="mReal" id="proj20yr">—</div></div>
-                  <div class="milestoneCell"><div class="mLabel">30Y</div><div class="mNominal" id="proj30y">—</div><div class="mReal" id="proj30yr">—</div></div>
-                  <div class="milestoneCell"><div class="mLabel">40Y</div><div class="mNominal" id="proj40y">—</div><div class="mReal" id="proj40yr">—</div></div>
-                </div>
-                <div style="display:flex;gap:14px;font-size:10px;color:#9ca3af;margin-bottom:12px;flex-wrap:wrap;">
-                  <span>⬛ Nominal (top)</span>
-                  <span style="color:#9467bd;">■ Real / inflation-adjusted (bottom)</span>
-                </div>
-
-                <div class="projLayout">
-
-                  <!-- LEFT: Controls -->
-                  <div class="projControls">
-
-                    <!-- Starting Position -->
-                    <div class="projSection">
-                      <div class="projSectionTitle">📌 Starting Position</div>
-                      <div class="snapGrid">
-                        <div class="snapItem"><div class="snapLabel">Net Worth</div><div class="snapVal" id="snapNW">—</div></div>
-                        <div class="snapItem"><div class="snapLabel">Investment</div><div class="snapVal" id="snapPort">—</div></div>
-                        <div class="snapItem"><div class="snapLabel">Properties</div><div class="snapVal" id="snapProp">—</div></div>
-                        <div class="snapItem"><div class="snapLabel">Mortgage</div><div class="snapVal" id="snapMort">—</div></div>
-                      </div>
-                    </div>
-
-                    <!-- Annual Cash Flow -->
-                    <div class="projSection">
-                      <div class="projSectionTitle">💵 Annual Cash Flow</div>
-                      <div class="sliderRow">
-                        <span class="sliderLabel">Annual contributions</span>
-                        <input type="range" id="slContrib" min="0" max="100000" step="1000" value="24000">
-                        <span class="sliderVal" id="svContrib">$24,000</span>
-                      </div>
-                      <div class="sliderRow">
-                        <!-- Raised max to $300,000 -->
-                        <span class="sliderLabel">Annual expenses</span>
-                        <input type="range" id="slExpenses" min="0" max="300000" step="1000" value="60000">
-                        <span class="sliderVal" id="svExpenses">$60,000</span>
-                      </div>
-
-                      <!-- SOCIAL SECURITY TOGGLE -->
-                      <div class="toggleRow" style="margin-top:4px;">
-                        <span style="font-weight:600;">Include Social Security</span>
-                        <label class="toggle"><input type="checkbox" id="toggleSS"><span class="toggleSlider"></span></label>
-                      </div>
-
-                      <!-- SS PERSON 1 (hidden until toggle on) -->
-                      <div id="ssBlock" style="display:none;">
-                        <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px;">Your SS</div>
-                        <div class="sliderRow">
-                          <!-- Raised max to $60K for individual -->
-                          <span class="sliderLabel">SS benefit ($/yr)</span>
-                          <input type="range" id="slSS" min="0" max="60000" step="500" value="0">
-                          <span class="sliderVal" id="svSS">$0</span>
-                        </div>
-                        <div class="sliderRow">
-                          <span class="sliderLabel">Your current age</span>
-                          <input type="range" id="slAge" min="30" max="80" step="1" value="60">
-                          <span class="sliderVal" id="svAge">60</span>
-                        </div>
-                        <div class="sliderRow">
-                          <span class="sliderLabel">SS starts at age</span>
-                          <input type="range" id="slSSAge" min="62" max="70" step="1" value="67">
-                          <span class="sliderVal" id="svSSAge">67</span>
-                        </div>
-
-                        <!-- SPOUSE SS TOGGLE -->
-                        <div class="toggleRow" style="margin-top:6px;">
-                          <span>Include Spouse SS</span>
-                          <label class="toggle"><input type="checkbox" id="toggleSpouseSS"><span class="toggleSlider"></span></label>
-                        </div>
-
-                        <!-- SPOUSE SS BLOCK -->
-                        <div id="spouseSsBlock" style="display:none;">
-                          <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px;">Spouse SS</div>
-                          <div class="sliderRow">
-                            <span class="sliderLabel">Spouse SS benefit ($/yr)</span>
-                            <input type="range" id="slSpouseSS" min="0" max="60000" step="500" value="0">
-                            <span class="sliderVal" id="svSpouseSS">$0</span>
-                          </div>
-                          <div class="sliderRow">
-                            <span class="sliderLabel">Spouse current age</span>
-                            <input type="range" id="slSpouseAge" min="30" max="80" step="1" value="60">
-                            <span class="sliderVal" id="svSpouseAge">60</span>
-                          </div>
-                          <div class="sliderRow">
-                            <span class="sliderLabel">Spouse SS starts at age</span>
-                            <input type="range" id="slSpouseSSAge" min="62" max="70" step="1" value="67">
-                            <span class="sliderVal" id="svSpouseSSAge">67</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Growth Assumptions -->
-                    <div class="projSection">
-                      <div class="projSectionTitle">📊 Growth Assumptions</div>
-                      <div class="sliderRow">
-                        <span class="sliderLabel">Investment return (%/yr)</span>
-                        <input type="range" id="slReturn" min="0" max="20" step="0.5" value="7">
-                        <span class="sliderVal" id="svReturn">7.0%</span>
-                      </div>
-                      <div class="sliderRow">
-                        <span class="sliderLabel">Inflation rate (%/yr)</span>
-                        <input type="range" id="slInflation" min="0" max="10" step="0.25" value="3">
-                        <span class="sliderVal" id="svInflation">3.0%</span>
-                      </div>
-                      <div class="sliderRow">
-                        <span class="sliderLabel">Projection horizon</span>
-                        <input type="range" id="slHorizon" min="5" max="50" step="1" value="30">
-                        <span class="sliderVal" id="svHorizon">30 yrs</span>
-                      </div>
-
-                      <!-- TAX RATE SLIDER (new) -->
-                      <div class="sliderRow">
-                        <span class="sliderLabel">Effective tax rate (%)</span>
-                        <input type="range" id="slTax" min="0" max="45" step="1" value="22">
-                        <span class="sliderVal" id="svTax">22%</span>
-                      </div>
-                      <!-- Brief explanation of how taxes are applied -->
-                      <div class="taxNote">
-                        ⚠️ Tax rate reduces your effective investment return each year
-                        (after-tax return = return × (1 − tax rate)). It also reduces
-                        SS income and contributions in the projection. This is a
-                        simplification — consult a tax advisor for your specific situation.
-                        Roth accounts, capital gains rates, and deductions are not modeled.
-                      </div>
-                    </div>
-
-                    <!-- Advanced -->
-                    <div class="projSection">
-                      <div class="projSectionTitle">🎲 Advanced</div>
-                      <div class="toggleRow">
-                        <span>Monte Carlo (1,000 runs)</span>
-                        <label class="toggle"><input type="checkbox" id="toggleMC"><span class="toggleSlider"></span></label>
-                      </div>
-                      <div class="mcLabel" id="mcLabel">Showing 10th / 90th percentile band</div>
-                      <div class="sliderRow" id="mcVolRow" style="display:none;">
-                        <span class="sliderLabel">Return volatility (std dev)</span>
-                        <input type="range" id="slVol" min="1" max="25" step="0.5" value="12">
-                        <span class="sliderVal" id="svVol">12.0%</span>
-                      </div>
-                    </div>
-
-                    <!-- Coming Soon AI Buttons -->
-                    <div class="adviceRow">
-                      <div class="comingSoonBtn">💡 Growth levers</div>
-                      <div class="comingSoonBtn">🏖️ Safe withdrawal</div>
-                      <div class="comingSoonBtn">📋 SS strategy</div>
-                    </div>
-                    <div style="font-size:10px;color:#9ca3af;margin-top:6px;">
-                      🔒 AI analysis coming soon — requires Anthropic API setup
-                    </div>
-
-                  </div><!-- end projControls -->
-
-                  <!-- RIGHT: Chart -->
-                  <div style="min-width:0;">
-                    <div class="projChartBox">
-                      <canvas id="projChart"></canvas>
-                    </div>
-                    <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:#6b7280;flex-wrap:wrap;">
-                      <span style="display:flex;align-items:center;gap:4px;">
-                        <span style="width:20px;height:3px;background:#16a34a;display:inline-block;border-radius:2px;"></span> Nominal
-                      </span>
-                      <span style="display:flex;align-items:center;gap:4px;">
-                        <span style="width:20px;height:2px;background:#9467bd;display:inline-block;border-radius:2px;"></span> Real (after inflation)
-                      </span>
-                      <span style="display:flex;align-items:center;gap:4px;">
-                        <span style="width:20px;height:2px;background:#f59e0b;display:inline-block;border-radius:2px;border-bottom:2px dashed #f59e0b;"></span> After-tax nominal
-                      </span>
-                      <span id="mcLegend" style="display:none;align-items:center;gap:4px;">
-                        <span style="width:20px;height:10px;background:rgba(22,163,74,0.15);display:inline-block;border-radius:2px;"></span> 10–90th pct.
-                      </span>
-                    </div>
-                  </div>
-
-                </div><!-- end projLayout -->
-              </div><!-- end projCard -->
-
-            </div><!-- end bottomSection -->
-          </div>`; // end app innerHTML
-
-        document.getElementById("todayDate").innerText =
-          "Date: " + new Date().toLocaleDateString(undefined, {
-            weekday: "long", year: "numeric", month: "long", day: "numeric"
-          });
-
-        document.getElementById("logoutBtn").addEventListener("click", logout);
-
-        createToolbar();
-        loadWidths();
-        enableResize();
-        loadAll();
-
-        quoteInterval  = setInterval(fetchAllQuotes, 30000);
-        updateMarketStatus();
-        marketInterval = setInterval(updateMarketStatus, 60000);
-
-        initNetworthChart();
-        initProjection();
-      }
-
-      // ══════════════════════════════════════════
-      // NET WORTH STAT CARDS
-      // ══════════════════════════════════════════
-
-      function updateNwStatCards(data) {
-        if (!data || !data.length) return;
-        const calcNet = d =>
-          (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
-          (d.properties || 0) - (d.mortgage || 0);
-        const latest   = calcNet(data[data.length - 1]);
-        const earliest = calcNet(data[0]);
-        const gain     = latest - earliest;
-
-        const aEl = document.getElementById("nwAssetsVal");
-        const gEl = document.getElementById("nwGainVal");
-        if (aEl) aEl.innerText = fmtMoney0(latest);
-        if (gEl) {
-          gEl.innerText   = (gain >= 0 ? "+" : "") + fmtMoney0(gain);
-          gEl.style.color = gain >= 0 ? "#16a34a" : "#dc2626";
-        }
-
-        // Seed projection from real Supabase net_worth data
-        projBase     = latest;
-        nwDataLoaded = true;
-
-        const last = data[data.length - 1];
-        const setSnap = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = fmtMoney0(v); };
-        setSnap("snapNW",   latest);
-        setSnap("snapPort", (last.stocks || 0) + (last.cash || 0) + (last.retirement || 0));
-        setSnap("snapProp", last.properties || 0);
-        setSnap("snapMort", last.mortgage   || 0);
-
-        runProjection();
-      }
-
-      // ══════════════════════════════════════════
-      // NET WORTH CHART
-      // ══════════════════════════════════════════
-
-      async function fetchNetworthData() {
-        const { data, error } = await supabase
-          .from("net_worth").select("*").eq("user_id", user.id)
-          .order("date", { ascending: true });
-        if (error) { console.error(error); return []; }
-        return (data || []).slice().sort((a, b) => a.date.localeCompare(b.date));
-      }
-
-      async function initNetworthChart() {
-        if (!user) return;
-        const data = await fetchNetworthData();
-        const ctx  = document.getElementById("networthChart");
-        if (!ctx) { setTimeout(initNetworthChart, 200); return; }
-        if (netChart) { netChart.destroy(); netChart = null; }
-        updateNwStatCards(data);
-
-        const xLabels = data.map(d => {
-          const dt = new Date(d.date + "T12:00:00");
-          return dt.toLocaleDateString(undefined, { month: "short", year: "numeric" });
-        });
-
-        netChart = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels: xLabels,
-            datasets: [
-              { label: "Cash",       data: data.map(d => d.cash       || 0), borderColor: "#1f77b4", tension: 0.35, fill: false, pointRadius: 3 },
-              { label: "Retirement", data: data.map(d => d.retirement || 0), borderColor: "#ff7f0e", tension: 0.35, fill: false, pointRadius: 3 },
-              { label: "Stocks",     data: data.map(d => d.stocks     || 0), borderColor: "#2ca02c", tension: 0.35, fill: false, pointRadius: 3 },
-              { label: "Properties", data: data.map(d => d.properties || 0), borderColor: "#17becf", tension: 0.35, fill: false, pointRadius: 3 },
-              { label: "Mortgage",   data: data.map(d => d.mortgage   || 0), borderColor: "#d62728", tension: 0.35, fill: false, pointRadius: 3 },
-              {
-                label: "Net Worth",
-                data: data.map(d =>
-                  (d.cash || 0) + (d.retirement || 0) + (d.stocks || 0) +
-                  (d.properties || 0) - (d.mortgage || 0)
-                ),
-                borderColor: "#9467bd", borderWidth: 3, tension: 0.35, fill: false, pointRadius: 4
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            plugins: {
-              legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
-              tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + fmtMoney0(c.parsed.y) } }
-            },
-            scales: {
-              y: { ticks: { callback: v => fmtMillions(v), font: { size: 11 } } },
-              x: { ticks: { maxTicksLimit: 12, maxRotation: 45, minRotation: 0, font: { size: 10 } } }
-            }
-          }
-        });
-      }
-
-      // ══════════════════════════════════════════
-      // PORTFOLIO TABLE
-      // ══════════════════════════════════════════
-
-      async function loadAll() {
-        const { data } = await supabase.from("portfolio").select("*").eq("user_id", user.id);
-        portfolio = (data || []).map(r => ({
-          id: r.id, symbol: r.symbol,
-          shares: +r.shares || 0, dividend: +r.dividend || 0,
-          cost: +r.cost || 0, last_price: +r.last_price || 0, position: r.position || 0
-        }));
-        portfolio.sort((a, b) => a.position - b.position);
-        symbols = portfolio.map(p => p.symbol);
-        render(); refresh(); fetchAllQuotes();
-      }
-
-      async function saveField(id, field, val) {
-        const row = portfolio.find(x => x.id === id);
-        if (!row) return;
-        row[field] = parseFloat(val.replace(/,/g, "")) || 0;
-        refresh();
-        await supabase.from("portfolio").update({
-          shares: row.shares, dividend: row.dividend, cost: row.cost
-        }).eq("id", id);
-      }
-
-      async function fetchAllQuotes() {
-        try {
-          if (!symbols.length) return;
-          const res  = await fetch(`https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`);
-          const data = await res.json();
-          if (!data || typeof data !== "object") return;
-          Object.keys(data).forEach(sym => { if (data[sym]?.c) dataMap[sym] = data[sym]; });
-          refresh();
-        } catch (err) { console.error("Quote fetch error:", err); }
-      }
-
-      function createRow(p) {
-        const row = document.createElement("div");
-        row.className = "row";
-        row.innerHTML = `
-          <div class="sticky">${p.symbol}</div>
-          <div>N/A</div><div>N/A</div>
-          <input type="text" inputmode="decimal" value="${p.shares   ? fmtNumber(p.shares)   : ""}">
-          <input type="text" inputmode="decimal" value="${p.cost     ? fmtMoney(p.cost)      : ""}">
-          <div>$0</div>
-          <input type="text" inputmode="decimal" value="${p.dividend ? fmtNumber(p.dividend) : ""}">
-          <div>0%</div><div>$0</div>`;
-
-        const del = document.createElement("button");
-        del.innerText = "✕";
-        del.style.cssText = "margin-right:6px;background:#ef4444;color:white;border:none;border-radius:6px;padding:3px 7px;cursor:pointer;font-family:inherit;";
-        del.addEventListener("click", () => deleteRow(p.id));
-        row.children[0].prepend(del);
-
-        row.children[3].addEventListener("input", e => saveField(p.id, "shares",   e.target.value));
-        row.children[4].addEventListener("input", e => saveField(p.id, "cost",     e.target.value));
-        row.children[6].addEventListener("input", e => saveField(p.id, "dividend", e.target.value));
-
-        rows[p.id] = row;
-        return row;
-      }
-
-      function render() {
-        const list = document.getElementById("list");
-        list.innerHTML = ""; rows = {};
-        portfolio.forEach(p => list.appendChild(createRow(p)));
-      }
-
-      function refresh() {
-        let total = 0, incomeTotal = 0, monthlyTotal = 0, dailyGainTotal = 0;
-
-        portfolio.forEach(p => {
-          const q   = dataMap[p.symbol];
-          const row = rows[p.id];
-          if (!row) return;
-
-          for (let i = 0; i < 9; i++) row.children[i].style.background = "transparent";
-
-          const price    = q?.c || p.last_price || 0;
-          const shares   = p.shares || 0;
-          const dividend = p.dividend || 0;
-          const cost     = p.cost || 0;
-          const val      = price ? price * shares : cost * shares;
-          const realGain = val - cost * shares;
-          const income   = dividend * shares;
-          const change   = (q?.c && q?.pc) ? (q.c - q.pc) : 0;
-          const yieldVal = price ? dividend / price : 0;
-
-          total          += val;
-          incomeTotal    += income;
-          monthlyTotal   += income / 12;
-          dailyGainTotal += change * shares;
-
-          row.children[1].innerText   = price ? fmtMoney(price) : "N/A";
-          row.children[2].innerText   = q ? fmtMoney(change) : "N/A";
-          row.children[2].style.color = change > 0 ? "#16a34a" : change < 0 ? "#dc2626" : "#999";
-          row.children[5].innerText   = fmtMoney(val);
-          row.children[5].style.background = realGain > 0 ? "#ecfdf5" : realGain < 0 ? "#fef2f2" : "transparent";
-          row.children[7].innerText   = fmtPercent(yieldVal);
-          row.children[8].innerText   = fmtMoney(income);
-          row.children[8].style.background = income > 0 ? "#dbeafe" : "transparent";
-          row.children[8].style.color      = income > 0 ? "#1d4ed8" : "#111";
-          row.children[8].style.fontWeight = income > 0 ? "600" : "400";
-        });
-
-        document.getElementById("iVal").innerText = fmtMoney0(incomeTotal);
-        document.getElementById("mVal").innerText = fmtMoney0(monthlyTotal);
-
-        const tEl = document.getElementById("todayVal");
-        tEl.innerText   = (dailyGainTotal > 0 ? "+" : "") + fmtMoney0(dailyGainTotal);
-        tEl.style.color = dailyGainTotal > 0 ? "#16a34a" : dailyGainTotal < 0 ? "#dc2626" : "#333";
-
-        updateProjection(total);
-      }
-
-      // ══════════════════════════════════════════
-      // ENHANCED PROJECTION ENGINE
-      // ══════════════════════════════════════════
-
-      let projChart    = null;
-      let projBase     = 0;
-      let nwDataLoaded = false;
-
-      function updateProjection(portfolioTotal) {
-        if (!nwDataLoaded && !isNaN(portfolioTotal)) projBase = portfolioTotal;
-        runProjection();
-      }
-
-      function initProjection() {
-        function wire(id, lblId, fmt) {
-          const sl  = document.getElementById(id);
-          const lbl = document.getElementById(lblId);
-          if (!sl || !lbl) return;
-          lbl.innerText = fmt(sl.value);
-          sl.addEventListener("input", () => { lbl.innerText = fmt(sl.value); runProjection(); });
-        }
-
-        const dollar = v => "$" + Number(v).toLocaleString();
-        const pct    = v => parseFloat(v).toFixed(1) + "%";
-        const pctInt = v => v + "%";
-        const yrs    = v => v + " yrs";
-        const age    = v => v;
-
-        wire("slContrib",     "svContrib",     dollar);
-        wire("slExpenses",    "svExpenses",    dollar);
-        wire("slSS",          "svSS",          dollar);
-        wire("slAge",         "svAge",         age);
-        wire("slSSAge",       "svSSAge",       age);
-        wire("slSpouseSS",    "svSpouseSS",    dollar);
-        wire("slSpouseAge",   "svSpouseAge",   age);
-        wire("slSpouseSSAge", "svSpouseSSAge", age);
-        wire("slReturn",      "svReturn",      pct);
-        wire("slInflation",   "svInflation",   pct);
-        wire("slHorizon",     "svHorizon",     yrs);
-        wire("slTax",         "svTax",         pctInt);
-        wire("slVol",         "svVol",         pct);
-
-        // SS toggle
-        document.getElementById("toggleSS").addEventListener("change", e => {
-          document.getElementById("ssBlock").style.display = e.target.checked ? "block" : "none";
-          if (!e.target.checked) {
-            document.getElementById("toggleSpouseSS").checked = false;
-            document.getElementById("spouseSsBlock").style.display = "none";
-          }
-          runProjection();
-        });
-
-        // Spouse SS toggle
-        document.getElementById("toggleSpouseSS").addEventListener("change", e => {
-          document.getElementById("spouseSsBlock").style.display = e.target.checked ? "block" : "none";
-          runProjection();
-        });
-
-        // Monte Carlo toggle
-        document.getElementById("toggleMC").addEventListener("change", e => {
-          const on = e.target.checked;
-          document.getElementById("mcVolRow").style.display = on ? "flex" : "none";
-          document.getElementById("mcLabel").classList.toggle("visible", on);
-          document.getElementById("mcLegend").style.display = on ? "flex" : "none";
-          runProjection();
-        });
-
-        runProjection();
-      }
-
-      function runProjection() {
-        // Read all slider values
-        const grossReturn = parseFloat(document.getElementById("slReturn")?.value    || 7)    / 100;
-        const inflRate    = parseFloat(document.getElementById("slInflation")?.value  || 3)    / 100;
-        const horizon     = parseInt(document.getElementById("slHorizon")?.value      || 30);
-        const taxRate     = parseFloat(document.getElementById("slTax")?.value        || 22)   / 100;
-        const contrib     = parseFloat(document.getElementById("slContrib")?.value    || 24000);
-        const expenses    = parseFloat(document.getElementById("slExpenses")?.value   || 60000);
-        const mcOn        = document.getElementById("toggleMC")?.checked;
-        const vol         = parseFloat(document.getElementById("slVol")?.value        || 12)   / 100;
-
-        // After-tax return: taxes reduce the annual investment gain
-        // e.g. 7% gross × (1 - 22% tax) = 5.46% after-tax
-        const afterTaxReturn = grossReturn * (1 - taxRate);
-
-        // SS — person 1
-        const ssOn    = document.getElementById("toggleSS")?.checked;
-        const ssAmt   = ssOn ? parseFloat(document.getElementById("slSS")?.value    || 0) * (1 - taxRate) : 0;
-        const ssAge   = ssOn ? parseInt(document.getElementById("slSSAge")?.value   || 67) : 999;
-        const curAge  = ssOn ? parseInt(document.getElementById("slAge")?.value     || 60) : 60;
-
-        // SS — spouse
-        const spouseOn      = ssOn && document.getElementById("toggleSpouseSS")?.checked;
-        const spouseSSAmt   = spouseOn ? parseFloat(document.getElementById("slSpouseSS")?.value    || 0) * (1 - taxRate) : 0;
-        const spouseSSAge   = spouseOn ? parseInt(document.getElementById("slSpouseSSAge")?.value   || 67) : 999;
-        const spouseAge     = spouseOn ? parseInt(document.getElementById("slSpouseAge")?.value     || 60) : 60;
-
-        // After-tax contributions and expenses
-        const afterTaxContrib   = contrib * (1 - taxRate);
-        const netFlow = yr => {
-          const mySSIncome     = (ssOn    && (curAge    + yr) >= ssAge)     ? ssAmt     : 0;
-          const spouseSSIncome = (spouseOn && (spouseAge + yr) >= spouseSSAge) ? spouseSSAmt : 0;
-          return afterTaxContrib - expenses + mySSIncome + spouseSSIncome;
-        };
-
-        // Real after-tax return strips out inflation
-        const realReturn = (1 + afterTaxReturn) / (1 + inflRate) - 1;
-
-        const labels = [], nominal = [], real = [], afterTax = [];
-        let nVal = projBase, rVal = projBase, atVal = projBase;
-
-        for (let yr = 0; yr <= horizon; yr++) {
-          labels.push(new Date().getFullYear() + yr);
-          nominal.push(Math.round(nVal));
-          real.push(Math.round(rVal));
-          afterTax.push(Math.round(atVal));
-
-          if (yr < horizon) {
-            const flow       = netFlow(yr + 1);
-            const grossFlow  = contrib - expenses +
-              (ssOn    && (curAge    + yr + 1) >= ssAge      ? parseFloat(document.getElementById("slSS")?.value    || 0) : 0) +
-              (spouseOn && (spouseAge + yr + 1) >= spouseSSAge ? parseFloat(document.getElementById("slSpouseSS")?.value || 0) : 0);
-
-            // Nominal (gross return, pre-tax — optimistic ceiling)
-            nVal = nVal * (1 + grossReturn) + grossFlow;
-            // Real (after-tax return, inflation-adjusted)
-            rVal = rVal * (1 + realReturn) + flow / Math.pow(1 + inflRate, yr + 1);
-            // After-tax nominal (after-tax return, nominal dollars)
-            atVal = atVal * (1 + afterTaxReturn) + flow;
-          }
-        }
-
-        // Monte Carlo on the after-tax nominal line
-        let mc10 = [], mc90 = [];
-        if (mcOn) {
-          const RUNS = 1000;
-          const outcomes = Array.from({ length: horizon + 1 }, () => []);
-          for (let run = 0; run < RUNS; run++) {
-            let v = projBase;
-            outcomes[0].push(v);
-            for (let yr = 0; yr < horizon; yr++) {
-              const u1 = Math.random(), u2 = Math.random();
-              const z  = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-              v = v * (1 + afterTaxReturn + vol * z) + netFlow(yr + 1);
-              outcomes[yr + 1].push(v);
-            }
-          }
-          for (let yr = 0; yr <= horizon; yr++) {
-            const s = outcomes[yr].slice().sort((a, b) => a - b);
-            mc10.push(Math.round(s[Math.floor(RUNS * 0.10)]));
-            mc90.push(Math.round(s[Math.floor(RUNS * 0.90)]));
-          }
-        }
-
-        // Update milestone cells (nominal top, real bottom)
-        const milestones = { proj1y: 1, proj5y: 5, proj10y: 10, proj20y: 20, proj30y: 30, proj40y: 40 };
-        Object.entries(milestones).forEach(([id, y]) => {
-          const nEl = document.getElementById(id);
-          const rEl = document.getElementById(id + "r");
-          if (nEl) nEl.innerText = y <= horizon ? fmtMillions(nominal[y]  ?? nominal[nominal.length - 1])  : "—";
-          if (rEl) rEl.innerText = y <= horizon ? fmtMillions(real[y]     ?? real[real.length - 1])        : "—";
-        });
-
-        drawProjChart(labels, nominal, real, afterTax, mcOn ? mc10 : null, mcOn ? mc90 : null);
-      }
-
-      function drawProjChart(labels, nominal, real, afterTax, mc10, mc90) {
-        const ctx = document.getElementById("projChart");
-        if (!ctx) return;
-        if (projChart) { projChart.destroy(); projChart = null; }
-
-        const datasets = [];
-
-        if (mc10 && mc90) {
-          datasets.push({ label: "90th pct", data: mc90, borderColor: "transparent", backgroundColor: "rgba(22,163,74,0.10)", fill: "+1", tension: 0.35, pointRadius: 0 });
-          datasets.push({ label: "10th pct", data: mc10, borderColor: "transparent", backgroundColor: "rgba(22,163,74,0.10)", fill: false, tension: 0.35, pointRadius: 0 });
-        }
-
-        // After-tax nominal — amber dashed
-        datasets.push({
-          label: "After-tax nominal",
-          data: afterTax,
-          borderColor: "#f59e0b",
-          borderWidth: 2,
-          borderDash: [5, 4],
-          tension: 0.35,
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        });
-
-        // Real (after-tax, inflation-adjusted) — purple dashed
-        datasets.push({
-          label: "Real (after-tax + inflation)",
-          data: real,
-          borderColor: "#9467bd",
-          borderWidth: 2,
-          borderDash: [6, 4],
-          tension: 0.35,
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        });
-
-        // Nominal (gross, pre-tax) — solid green ceiling
-        datasets.push({
-          label: "Nominal (pre-tax)",
-          data: nominal,
-          borderColor: "#16a34a",
-          borderWidth: 2.5,
-          tension: 0.35,
-          fill: false,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        });
-
-        projChart = new Chart(ctx, {
-          type: "line",
-          data: { labels, datasets },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 200 },
-            interaction: { mode: "index", intersect: false },
-            plugins: {
-              legend: { display: false },
-              tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + fmtMoney0(c.parsed.y) } }
-            },
-            scales: {
-              x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
-              y: { ticks: { callback: v => fmtMillions(v), font: { size: 10 } } }
-            }
-          }
-        });
-      }
-
-      // ══════════════════════════════════════════
-      // TOOLBAR + PORTFOLIO ACTIONS
-      // ══════════════════════════════════════════
-
-      async function addRow() {
-        const symbol = prompt("Enter ticker symbol (e.g. AAPL)");
-        if (!symbol) return;
-        const { data, error } = await supabase
-          .from("portfolio")
-          .insert({ user_id: user.id, symbol: symbol.toUpperCase(), shares: 0, dividend: 0, cost: 0 })
-          .select().single();
-        if (error) { alert(error.message); return; }
-        const entry = { id: data.id, symbol: data.symbol, shares: 0, dividend: 0, cost: 0, last_price: 0 };
-        portfolio.push(entry);
-        symbols.push(data.symbol);
-        document.getElementById("list").appendChild(createRow(entry));
-        fetchAllQuotes();
-      }
-
-      async function deleteRow(id) {
-        if (!confirm("Delete this row?")) return;
-        await supabase.from("portfolio").delete().eq("id", id);
-        portfolio = portfolio.filter(p => p.id !== id);
-        if (rows[id]) { rows[id].remove(); delete rows[id]; }
-        refresh();
-      }
-
-      async function resetOrder() {
-        if (!confirm("Sort alphabetically?")) return;
-        const { data, error } = await supabase.from("portfolio").select("id, symbol").eq("user_id", user.id);
-        if (error) { alert(error.message); return; }
-        data.sort((a, b) => a.symbol.localeCompare(b.symbol));
-        for (let i = 0; i < data.length; i++) {
-          await supabase.from("portfolio").update({ position: i + 1 }).eq("id", data[i].id);
-        }
-        loadAll();
-      }
-
-      function createToolbar() {
-        const wrap = document.createElement("div");
-        wrap.style.cssText = "display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;";
-        wrap.innerHTML = `
-          <button id="addRowBtn" class="toolBtn">➕ <span>ADD SYMBOL</span></button>
-          <button id="resetOrderBtn" class="toolBtn blue">🔄 <span>SORT A–Z</span></button>`;
-        const table = document.querySelector(".tableWrap");
-        table.parentNode.insertBefore(wrap, table);
-        document.getElementById("addRowBtn").addEventListener("click", addRow);
-        document.getElementById("resetOrderBtn").addEventListener("click", resetOrder);
-      }
-
-      function loadWidths() {
-        for (let i = 1; i <= 9; i++) {
-          const w = localStorage.getItem("col" + i);
-          if (w) document.documentElement.style.setProperty(`--c${i}`, w);
+            </div>
+            <div class="tlPhase phase3">
+              <div class="tlBadge">Phase 3</div>
+              <div class="tlYears">2041 – 2046</div>
+              <div class="tlAge">Ages 70–75 · SS + RMD Era</div>
+              <div class="tlItem">SS maximized for both spouses</div>
+              <div class="tlItem">RMDs begin at 73 — manage bracket carefully</div>
+              <div class="tlItem">QCDs to reduce RMD tax burden</div>
+              <div class="tlItem">Legacy planning + step-up in basis</div>
+              <div class="tlItem">Long-term care insurance review</div>
+              <div class="tlMilestone">
+                <div class="mlLabel">Projected Net Worth at 75</div>
+                <div class="mlVal" id="tlNW75">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROTH CONVERSION -->
+        <div class="sectionPill">🔄 ROTH CONVERSION MODELER</div>
+        <div class="card">
+          <div class="projSection">
+            <div class="projSectionTitle">⚙️ Conversion Settings</div>
+            <div class="sliderRow"><span class="sliderLabel">Traditional IRA balance ($)</span><input type="range" id="rcTrad" min="0" max="3000000" step="25000" value="1500000"><span class="sliderVal" id="rcTradV">$1,500,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Roth balance ($)</span><input type="range" id="rcRoth" min="0" max="2000000" step="25000" value="500000"><span class="sliderVal" id="rcRothV">$500,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Convert per year ($)</span><input type="range" id="rcConvert" min="0" max="200000" step="5000" value="50000"><span class="sliderVal" id="rcConvertV">$50,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Tax rate on conversion (%)</span><input type="range" id="rcTax" min="10" max="40" step="1" value="22"><span class="sliderVal" id="rcTaxV">22%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Years to convert</span><input type="range" id="rcYears" min="1" max="15" step="1" value="7"><span class="sliderVal" id="rcYearsV">7 yrs</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Growth rate (%)</span><input type="range" id="rcReturn" min="0" max="15" step="0.5" value="7"><span class="sliderVal" id="rcReturnV">7.0%</span></div>
+          </div>
+          <div class="rothStats">
+            <div class="rothStat"><div class="rLabel">Tax Cost (today)</div><div class="rVal" id="rcTaxCost">—</div></div>
+            <div class="rothStat"><div class="rLabel">Break-Even Age</div><div class="rVal" id="rcBreakEven">—</div></div>
+            <div class="rothStat"><div class="rLabel">Roth at 73 (no conv.)</div><div class="rVal" id="rcRothNo">—</div></div>
+            <div class="rothStat"><div class="rLabel">Roth at 73 (w/ conv.)</div><div class="rVal" id="rcRothYes">—</div></div>
+          </div>
+          <div class="rothNote" id="rcAdvice">Adjust sliders to see analysis.</div>
+          <div class="chartBox" style="margin-top:12px;"><canvas id="rcChart"></canvas></div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:10px;color:#6b7280;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:14px;height:3px;background:#16a34a;display:inline-block;"></span>Roth w/ conv.</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:14px;height:2px;background:#9467bd;display:inline-block;"></span>Roth no conv.</span>
+            <span style="display:flex;align-items:center;gap:3px;"><span style="width:14px;height:2px;background:#d62728;display:inline-block;"></span>Trad after-tax</span>
+          </div>
+        </div>
+
+        <!-- RMD ESTIMATOR -->
+        <div class="sectionPill">📋 RMD ESTIMATOR · Starts Age 73 (2044)</div>
+        <div class="card">
+          <div class="projSection">
+            <div class="projSectionTitle">⚙️ Settings</div>
+            <div class="sliderRow"><span class="sliderLabel">Trad IRA at age 73 ($)</span><input type="range" id="rmdBal" min="0" max="5000000" step="50000" value="1500000"><span class="sliderVal" id="rmdBalV">$1,500,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Growth rate in account (%)</span><input type="range" id="rmdReturn" min="0" max="12" step="0.5" value="6"><span class="sliderVal" id="rmdReturnV">6.0%</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Tax rate at 73 (%)</span><input type="range" id="rmdTax" min="10" max="40" step="1" value="22"><span class="sliderVal" id="rmdTaxV">22%</span></div>
+          </div>
+          <div style="font-size:10px;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:8px;color:#6b7280;line-height:1.5;margin-bottom:10px;">
+            📌 RMD = Balance ÷ IRS Life Expectancy Factor. Roth IRAs have <b>no RMDs</b>. Missing an RMD = 25% excise tax.
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="rmdTable">
+              <thead><tr><th>Age</th><th>Year</th><th>Balance</th><th>Factor</th><th>RMD</th><th>After-Tax</th><th>Tax Bill</th></tr></thead>
+              <tbody id="rmdBody"><tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:12px;">Adjust sliders</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SS COMPARISON -->
+        <div class="sectionPill">📊 SOCIAL SECURITY COMPARISON</div>
+        <div class="card">
+          <p style="font-size:12px;color:#6b7280;margin-bottom:14px;line-height:1.5;">Compare claiming at 62, 67, and 70 for both spouses. See lifetime income, break-even ages, and portfolio impact.</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div class="projSection">
+              <div class="projSectionTitle">👤 Your SS</div>
+              <div class="sliderRow"><span class="sliderLabel">Full benefit at 67 ($/mo)</span><input type="range" id="ss1Full" min="500" max="4000" step="50" value="3000"><span class="sliderVal" id="ss1FullV">$3,000</span></div>
+              <div class="sliderRow"><span class="sliderLabel">Life expectancy</span><input type="range" id="ss1Life" min="70" max="100" step="1" value="87"><span class="sliderVal" id="ss1LifeV">87</span></div>
+            </div>
+            <div class="projSection">
+              <div class="projSectionTitle">👤 Spouse SS</div>
+              <div class="sliderRow"><span class="sliderLabel">Full benefit at 67 ($/mo)</span><input type="range" id="ss2Full" min="500" max="4000" step="50" value="3000"><span class="sliderVal" id="ss2FullV">$3,000</span></div>
+              <div class="sliderRow"><span class="sliderLabel">Life expectancy</span><input type="range" id="ss2Life" min="70" max="100" step="1" value="87"><span class="sliderVal" id="ss2LifeV">87</span></div>
+            </div>
+          </div>
+
+          <div class="projSection" style="margin-bottom:12px;">
+            <div class="projSectionTitle">💼 Portfolio Settings</div>
+            <div class="sliderRow"><span class="sliderLabel">Portfolio at 62 ($)</span><input type="range" id="ssPort" min="500000" max="10000000" step="100000" value="3000000"><span class="sliderVal" id="ssPortV">$3,000,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Annual expenses ($)</span><input type="range" id="ssExpense" min="40000" max="300000" step="5000" value="100000"><span class="sliderVal" id="ssExpenseV">$100,000</span></div>
+            <div class="sliderRow"><span class="sliderLabel">Portfolio return (%)</span><input type="range" id="ssReturn" min="0" max="12" step="0.5" value="5"><span class="sliderVal" id="ssReturnV">5.0%</span></div>
+          </div>
+
+          <!-- Comparison table -->
+          <div style="overflow-x:auto;margin-bottom:12px;">
+            <table class="rmdTable">
+              <thead><tr><th>Strategy</th><th>Monthly</th><th>Annual</th><th>Lifetime</th><th>Port. at 87</th><th>vs Claim-70</th></tr></thead>
+              <tbody id="ssCompBody"><tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:12px;">Adjust sliders</td></tr></tbody>
+            </table>
+          </div>
+
+          <!-- Side-by-side charts -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px;">💵 Cumulative SS Income</div>
+              <div class="chartBox" style="height:200px;"><canvas id="ssCumChart"></canvas></div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px;">📈 Portfolio Value</div>
+              <div class="chartBox" style="height:200px;"><canvas id="ssPortChart"></canvas></div>
+            </div>
+          </div>
+
+          <div class="ssBreakBox" id="ssBreakEvenBox" style="margin-top:12px;"></div>
+        </div>
+
+      </div><!-- end tabRetirement -->
+
+    </div><!-- end tabPages -->
+
+    <!-- ── BOTTOM TAB BAR ── -->
+    <nav class="tabBar">
+      <button class="tabBtn active" data-tab="tabHome">
+        <span class="tabIcon">🏠</span>
+        <span class="tabLabel">Home</span>
+      </button>
+      <button class="tabBtn" data-tab="tabPortfolio">
+        <span class="tabIcon">📊</span>
+        <span class="tabLabel">Portfolio</span>
+      </button>
+      <button class="tabBtn" data-tab="tabRetirement">
+        <span class="tabIcon">🏦</span>
+        <span class="tabLabel">Retirement</span>
+      </button>
+    </nav>
+
+  </div><!-- end mainApp -->
+</div><!-- end app -->
+
+<script>
+window.addEventListener("load", () => {
+
+  // ── Supabase ──
+  const supabase = window.supabase.createClient(
+    "https://yxvgevzvrvhtzmfxgitk.supabase.co",
+    "sb_publishable_d2n-HOcVv50_yjKAro-eLg_WCt2kelh",
+    { auth: { persistSession: true, storage: window.localStorage } }
+  );
+  window.supabaseClient = supabase;
+
+  // ── State ──
+  let user = null, symbols = [], portfolio = [], dataMap = {}, rows = {};
+  let netChart = null, projChart = null, wdChart = null, rcChart = null;
+  let divChart = null, ssCumChart = null, ssPortChart = null;
+  let quoteInterval = null, marketInterval = null;
+  let projBase = 0, nwDataLoaded = false;
+
+  // ── Personal constants ──
+  const BIRTH_YEAR    = 1971;
+  const CURRENT_YEAR  = new Date().getFullYear();
+  const CURRENT_AGE   = CURRENT_YEAR - BIRTH_YEAR;
+  const RMD_TABLE     = {73:26.5,74:25.5,75:24.6,76:23.7,77:22.9,78:22.0,79:21.1,80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16.0,86:15.2,87:14.4};
+  const SS_MULTIPLIERS= {62:0.70,63:0.75,64:0.80,65:0.867,66:0.933,67:1.00,68:1.08,69:1.16,70:1.24};
+
+  // ── Formatters ──
+  const fmtMoney   = n => "$" + (n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtMoney0  = n => "$" + (n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmtNumber  = n => (n||0).toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});
+  const fmtPercent = n => (n*100).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
+
+  function fmtMillions(v) {
+    const a = Math.abs(v);
+    if (a>=1e9) return "$"+(v/1e9).toFixed(1).replace(/\.0$/,"")+"B";
+    if (a>=1e6) return "$"+(v/1e6).toFixed(1).replace(/\.0$/,"")+"M";
+    if (a>=1e3) return "$"+(v/1e3).toFixed(0)+"K";
+    return "$"+v.toLocaleString();
+  }
+
+  // ── Slider wire helper ──
+  function wire(id, lblId, fmt) {
+    const sl = document.getElementById(id);
+    const lb = document.getElementById(lblId);
+    if (!sl||!lb) return;
+    lb.innerText = fmt(sl.value);
+    sl.addEventListener("input", ()=>{ lb.innerText = fmt(sl.value); onSliderChange(id); });
+  }
+
+  function onSliderChange(id) {
+    // Route to the right update function based on slider prefix
+    if (id.startsWith("sl") && !id.startsWith("slSS") && !id.startsWith("slAge") && !id.startsWith("slSpouse")) runProjection();
+    if (id.startsWith("wd")) updateWithdrawal();
+    if (id.startsWith("rc")) updateRoth();
+    if (id.startsWith("rmd")) updateRMD();
+    if (id.startsWith("div")) updateDividend();
+    if (id.startsWith("ss")) updateSSComparison();
+    // projection sliders always rerun
+    if (["slContrib","slExpenses","slSS","slSSAge","slAge","slSpouseSS","slSpouseAge","slSpouseSSAge","slReturn","slInflation","slHorizon","slTax","slVol"].includes(id)) runProjection();
+  }
+
+  // ══════════════════════════════════════════
+  // TAB NAVIGATION
+  // ══════════════════════════════════════════
+  document.querySelectorAll(".tabBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tabPage").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ══════════════════════════════════════════
+  // AUTH
+  // ══════════════════════════════════════════
+  document.getElementById("loginBtn").addEventListener("click", login);
+  document.getElementById("passInput").addEventListener("keydown", e => { if(e.key==="Enter") login(); });
+
+  async function login() {
+    const email = document.getElementById("emailInput").value.trim();
+    const pass  = document.getElementById("passInput").value;
+    const msg   = document.getElementById("loginMsg");
+    msg.innerText = "";
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) { msg.innerText = error.message; return; }
+    user = data.user; window.currentUser = user;
+    showApp();
+  }
+
+  async function logout() {
+    clearInterval(quoteInterval); clearInterval(marketInterval);
+    [netChart,projChart,wdChart,rcChart,divChart,ssCumChart,ssPortChart].forEach(c => { if(c){c.destroy();} });
+    await supabase.auth.signOut();
+    user = window.currentUser = null;
+    document.getElementById("mainApp").classList.remove("visible");
+    document.getElementById("loginView").style.display = "flex";
+  }
+
+  document.getElementById("logoutBtn").addEventListener("click", logout);
+
+  // ══════════════════════════════════════════
+  // SHOW APP
+  // ══════════════════════════════════════════
+  function showApp() {
+    document.getElementById("loginView").style.display = "none";
+    document.getElementById("mainApp").classList.add("visible");
+
+    document.getElementById("todayDate").innerText =
+      "Date: " + new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+    createToolbar();
+    loadWidths();
+    enableResize();
+    loadAll();
+
+    quoteInterval  = setInterval(fetchAllQuotes, 30000);
+    updateMarketStatus();
+    marketInterval = setInterval(updateMarketStatus, 60000);
+
+    initNetworthChart();
+    initProjection();
+    initWithdrawal();
+    initRothConversion();
+    initRMD();
+    initDividendTarget();
+    initSSComparison();
+  }
+
+  // ══════════════════════════════════════════
+  // MARKET STATUS
+  // ══════════════════════════════════════════
+  function updateMarketStatus() {
+    const el = document.getElementById("marketStatus");
+    if (!el) return;
+    const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+    const d=est.getDay(),h=est.getHours(),m=est.getMinutes();
+    const open = d>0&&d<6&&(h>9||(h===9&&m>=30))&&h<16;
+    el.innerText = open?"🟢 Market Open":"🔴 Market Closed";
+    el.className = open?"market-open":"market-closed";
+  }
+
+  // ══════════════════════════════════════════
+  // NET WORTH HISTORY CHART
+  // ══════════════════════════════════════════
+  async function fetchNetworthData() {
+    const {data,error} = await supabase.from("net_worth").select("*").eq("user_id",user.id).order("date",{ascending:true});
+    if (error){console.error(error);return[];}
+    return (data||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  }
+
+  async function initNetworthChart() {
+    if (!user) return;
+    const data = await fetchNetworthData();
+    const ctx  = document.getElementById("networthChart");
+    if (!ctx){setTimeout(initNetworthChart,200);return;}
+    if (netChart){netChart.destroy();netChart=null;}
+    updateNwStatCards(data);
+
+    const xLabels = data.map(d=>new Date(d.date+"T12:00:00").toLocaleDateString(undefined,{month:"short",year:"numeric"}));
+
+    netChart = new Chart(ctx,{
+      type:"line",
+      data:{
+        labels:xLabels,
+        datasets:[
+          {label:"Cash",       data:data.map(d=>d.cash||0),       borderColor:"#1f77b4",tension:0.35,fill:false,pointRadius:3},
+          {label:"Retirement", data:data.map(d=>d.retirement||0), borderColor:"#ff7f0e",tension:0.35,fill:false,pointRadius:3},
+          {label:"Stocks",     data:data.map(d=>d.stocks||0),     borderColor:"#2ca02c",tension:0.35,fill:false,pointRadius:3},
+          {label:"Properties", data:data.map(d=>d.properties||0), borderColor:"#17becf",tension:0.35,fill:false,pointRadius:3},
+          {label:"Mortgage",   data:data.map(d=>d.mortgage||0),   borderColor:"#d62728",tension:0.35,fill:false,pointRadius:3},
+          {label:"Net Worth",  data:data.map(d=>(d.cash||0)+(d.retirement||0)+(d.stocks||0)+(d.properties||0)-(d.mortgage||0)),
+           borderColor:"#9467bd",borderWidth:3,tension:0.35,fill:false,pointRadius:4}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:false,
+        plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}},
+          tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmtMoney0(c.parsed.y)}}},
+        scales:{
+          y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}},
+          x:{ticks:{maxTicksLimit:8,maxRotation:45,font:{size:10}}}
         }
       }
+    });
+  }
 
-      function enableResize() {
-        if ("ontouchstart" in window) return;
-        document.querySelectorAll(".header .col").forEach((col, i) => {
-          const resizer = col.querySelector(".resizer");
-          let startX, startW;
-          resizer.addEventListener("mousedown", e => {
-            startX = e.clientX; startW = col.offsetWidth;
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", () =>
-              document.removeEventListener("mousemove", onMove), { once: true });
-          });
-          function onMove(e) {
-            const w = Math.max(70, startW + (e.clientX - startX)) + "px";
-            document.documentElement.style.setProperty(`--c${i + 1}`, w);
-            localStorage.setItem("col" + (i + 1), w);
-          }
-        });
+  function updateNwStatCards(data) {
+    if (!data||!data.length) return;
+    const calc = d=>(d.cash||0)+(d.retirement||0)+(d.stocks||0)+(d.properties||0)-(d.mortgage||0);
+    const latest=calc(data[data.length-1]), earliest=calc(data[0]), gain=latest-earliest;
+
+    const aEl=document.getElementById("nwAssetsVal"),gEl=document.getElementById("nwGainVal");
+    if(aEl) aEl.innerText=fmtMoney0(latest);
+    if(gEl){ gEl.innerText=(gain>=0?"+":"")+fmtMoney0(gain); gEl.style.color=gain>=0?"#16a34a":"#dc2626"; }
+
+    projBase=latest; nwDataLoaded=true;
+
+    const last=data[data.length-1];
+    const ss=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=fmtMoney0(v);};
+    ss("snapNW",latest);
+    ss("snapPort",(last.stocks||0)+(last.cash||0)+(last.retirement||0));
+    ss("snapProp",last.properties||0);
+    ss("snapMort",last.mortgage||0);
+
+    runProjection();
+    updateTimeline();
+    updateWithdrawal();
+    updateDividend();
+  }
+
+  // ══════════════════════════════════════════
+  // PORTFOLIO TABLE
+  // ══════════════════════════════════════════
+  async function loadAll() {
+    const {data} = await supabase.from("portfolio").select("*").eq("user_id",user.id);
+    portfolio = (data||[]).map(r=>({id:r.id,symbol:r.symbol,shares:+r.shares||0,dividend:+r.dividend||0,cost:+r.cost||0,last_price:+r.last_price||0,position:r.position||0}));
+    portfolio.sort((a,b)=>a.position-b.position);
+    symbols = portfolio.map(p=>p.symbol);
+    render(); refresh(); fetchAllQuotes();
+  }
+
+  async function saveField(id,field,val) {
+    const row=portfolio.find(x=>x.id===id); if(!row)return;
+    row[field]=parseFloat(val.replace(/,/g,""))||0;
+    refresh();
+    await supabase.from("portfolio").update({shares:row.shares,dividend:row.dividend,cost:row.cost}).eq("id",id);
+  }
+
+  async function fetchAllQuotes() {
+    try {
+      if(!symbols.length)return;
+      const res=await fetch(`https://yxvgevzvrvhtzmfxgitk.functions.supabase.co/quote?symbols=${symbols.join(",")}`);
+      const data=await res.json();
+      if(!data||typeof data!=="object")return;
+      Object.keys(data).forEach(s=>{if(data[s]?.c)dataMap[s]=data[s];});
+      refresh();
+    } catch(e){console.error(e);}
+  }
+
+  function createRow(p) {
+    const row=document.createElement("div"); row.className="tableRow";
+    row.innerHTML=`
+      <div class="stickyCol">${p.symbol}</div>
+      <div>N/A</div><div>N/A</div>
+      <input type="text" inputmode="decimal" value="${p.shares?fmtNumber(p.shares):""}">
+      <input type="text" inputmode="decimal" value="${p.cost?fmtMoney(p.cost):""}">
+      <div>$0</div>
+      <input type="text" inputmode="decimal" value="${p.dividend?fmtNumber(p.dividend):""}">
+      <div>0%</div><div>$0</div>`;
+
+    const del=document.createElement("button");
+    del.innerText="✕";
+    del.style.cssText="margin-right:6px;background:#ef4444;color:white;border:none;border-radius:6px;padding:3px 7px;cursor:pointer;font-family:inherit;";
+    del.addEventListener("click",()=>deleteRow(p.id));
+    row.children[0].prepend(del);
+
+    row.children[3].addEventListener("input",e=>saveField(p.id,"shares",e.target.value));
+    row.children[4].addEventListener("input",e=>saveField(p.id,"cost",e.target.value));
+    row.children[6].addEventListener("input",e=>saveField(p.id,"dividend",e.target.value));
+
+    rows[p.id]=row; return row;
+  }
+
+  function render() {
+    const list=document.getElementById("list"); list.innerHTML=""; rows={};
+    portfolio.forEach(p=>list.appendChild(createRow(p)));
+  }
+
+  function refresh() {
+    let total=0,incomeTotal=0,monthlyTotal=0,dailyGainTotal=0;
+    portfolio.forEach(p=>{
+      const q=dataMap[p.symbol],row=rows[p.id]; if(!row)return;
+      for(let i=0;i<9;i++)row.children[i].style.background="transparent";
+      const price=q?.c||p.last_price||0,shares=p.shares||0,dividend=p.dividend||0,cost=p.cost||0;
+      const val=price?price*shares:cost*shares,realGain=val-cost*shares,income=dividend*shares;
+      const change=(q?.c&&q?.pc)?(q.c-q.pc):0,yieldVal=price?dividend/price:0;
+      total+=val; incomeTotal+=income; monthlyTotal+=income/12; dailyGainTotal+=change*shares;
+
+      row.children[1].innerText=price?fmtMoney(price):"N/A";
+      row.children[2].innerText=q?fmtMoney(change):"N/A";
+      row.children[2].style.color=change>0?"#16a34a":change<0?"#dc2626":"#999";
+      row.children[5].innerText=fmtMoney(val);
+      row.children[5].style.background=realGain>0?"#ecfdf5":realGain<0?"#fef2f2":"transparent";
+      row.children[7].innerText=fmtPercent(yieldVal);
+      row.children[8].innerText=fmtMoney(income);
+      row.children[8].style.background=income>0?"#dbeafe":"transparent";
+      row.children[8].style.color=income>0?"#1d4ed8":"#111";
+      row.children[8].style.fontWeight=income>0?"600":"400";
+    });
+
+    document.getElementById("iVal").innerText=fmtMoney0(incomeTotal);
+    document.getElementById("mVal").innerText=fmtMoney0(monthlyTotal);
+    const tEl=document.getElementById("todayVal");
+    tEl.innerText=(dailyGainTotal>0?"+":"")+fmtMoney0(dailyGainTotal);
+    tEl.style.color=dailyGainTotal>0?"#16a34a":dailyGainTotal<0?"#dc2626":"#333";
+
+    if(!nwDataLoaded&&!isNaN(total))projBase=total;
+    runProjection();
+    updateDividend();
+  }
+
+  async function addRow() {
+    const symbol=prompt("Enter ticker symbol (e.g. AAPL)"); if(!symbol)return;
+    const {data,error}=await supabase.from("portfolio").insert({user_id:user.id,symbol:symbol.toUpperCase(),shares:0,dividend:0,cost:0}).select().single();
+    if(error){alert(error.message);return;}
+    const entry={id:data.id,symbol:data.symbol,shares:0,dividend:0,cost:0,last_price:0};
+    portfolio.push(entry); symbols.push(data.symbol);
+    document.getElementById("list").appendChild(createRow(entry));
+    fetchAllQuotes();
+  }
+
+  async function deleteRow(id) {
+    if(!confirm("Delete this row?"))return;
+    await supabase.from("portfolio").delete().eq("id",id);
+    portfolio=portfolio.filter(p=>p.id!==id);
+    if(rows[id]){rows[id].remove();delete rows[id];}
+    refresh();
+  }
+
+  async function resetOrder() {
+    if(!confirm("Sort alphabetically?"))return;
+    const {data,error}=await supabase.from("portfolio").select("id,symbol").eq("user_id",user.id);
+    if(error){alert(error.message);return;}
+    data.sort((a,b)=>a.symbol.localeCompare(b.symbol));
+    for(let i=0;i<data.length;i++)await supabase.from("portfolio").update({position:i+1}).eq("id",data[i].id);
+    loadAll();
+  }
+
+  function createToolbar() {
+    const wrap=document.getElementById("tableToolbar"); if(!wrap)return;
+    wrap.innerHTML=`<button id="addRowBtn" class="toolBtn">➕ ADD SYMBOL</button><button id="resetOrderBtn" class="toolBtn blue">🔄 SORT A–Z</button>`;
+    document.getElementById("addRowBtn").addEventListener("click",addRow);
+    document.getElementById("resetOrderBtn").addEventListener("click",resetOrder);
+  }
+
+  function loadWidths() {
+    for(let i=1;i<=9;i++){const w=localStorage.getItem("col"+i);if(w)document.documentElement.style.setProperty(`--c${i}`,w);}
+  }
+
+  function enableResize() {
+    if("ontouchstart"in window)return;
+    document.querySelectorAll(".tableHeader .col").forEach((col,i)=>{
+      const resizer=col.querySelector(".resizer"); let startX,startW;
+      resizer.addEventListener("mousedown",e=>{
+        startX=e.clientX;startW=col.offsetWidth;
+        document.addEventListener("mousemove",onMove);
+        document.addEventListener("mouseup",()=>document.removeEventListener("mousemove",onMove),{once:true});
+      });
+      function onMove(e){const w=Math.max(70,startW+(e.clientX-startX))+"px";document.documentElement.style.setProperty(`--c${i+1}`,w);localStorage.setItem("col"+(i+1),w);}
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // NET WORTH PROJECTION
+  // ══════════════════════════════════════════
+  function initProjection() {
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct   =v=>parseFloat(v).toFixed(1)+"%";
+    const pctInt=v=>v+"%";
+    const yrs   =v=>v+" yrs";
+    const age   =v=>v;
+
+    wire("slContrib","svContrib",dollar); wire("slExpenses","svExpenses",dollar);
+    wire("slSS","svSS",dollar); wire("slSSAge","svSSAge",age); wire("slAge","svAge",age);
+    wire("slSpouseSS","svSpouseSS",dollar); wire("slSpouseAge","svSpouseAge",age); wire("slSpouseSSAge","svSpouseSSAge",age);
+    wire("slReturn","svReturn",pct); wire("slInflation","svInflation",pct);
+    wire("slHorizon","svHorizon",yrs); wire("slTax","svTax",pctInt); wire("slVol","svVol",pct);
+
+    document.getElementById("toggleSS").addEventListener("change",e=>{
+      const on=e.target.checked;
+      document.getElementById("ssAgeRow").style.display=on?"flex":"none";
+      document.getElementById("ssAgeRow2").style.display=on?"flex":"none";
+      if(!on){document.getElementById("toggleSpouseSS").checked=false;document.getElementById("spouseSsSliders").style.display="none";}
+      runProjection();
+    });
+
+    document.getElementById("toggleSpouseSS").addEventListener("change",e=>{
+      document.getElementById("spouseSsSliders").style.display=e.target.checked?"block":"none";
+      runProjection();
+    });
+
+    document.getElementById("toggleMC").addEventListener("change",e=>{
+      const on=e.target.checked;
+      document.getElementById("mcVolRow").style.display=on?"flex":"none";
+      document.getElementById("mcLabel").classList.toggle("visible",on);
+      runProjection();
+    });
+
+    runProjection();
+  }
+
+  function runProjection() {
+    const grossReturn = parseFloat(document.getElementById("slReturn")?.value||7)/100;
+    const inflRate    = parseFloat(document.getElementById("slInflation")?.value||3)/100;
+    const horizon     = parseInt(document.getElementById("slHorizon")?.value||30);
+    const taxRate     = parseFloat(document.getElementById("slTax")?.value||22)/100;
+    const contrib     = parseFloat(document.getElementById("slContrib")?.value||24000);
+    const expenses    = parseFloat(document.getElementById("slExpenses")?.value||60000);
+    const mcOn        = document.getElementById("toggleMC")?.checked;
+    const vol         = parseFloat(document.getElementById("slVol")?.value||12)/100;
+    const afterTaxRet = grossReturn*(1-taxRate);
+    const realReturn  = (1+afterTaxRet)/(1+inflRate)-1;
+
+    const ssOn      = document.getElementById("toggleSS")?.checked;
+    const ssAmt     = ssOn?parseFloat(document.getElementById("slSS")?.value||0)*(1-taxRate):0;
+    const ssAge     = ssOn?parseInt(document.getElementById("slSSAge")?.value||67):999;
+    const curAge    = ssOn?parseInt(document.getElementById("slAge")?.value||55):55;
+    const spouseOn  = ssOn&&document.getElementById("toggleSpouseSS")?.checked;
+    const spSSAmt   = spouseOn?parseFloat(document.getElementById("slSpouseSS")?.value||0)*(1-taxRate):0;
+    const spSSAge   = spouseOn?parseInt(document.getElementById("slSpouseSSAge")?.value||67):999;
+    const spAge     = spouseOn?parseInt(document.getElementById("slSpouseAge")?.value||55):55;
+
+    const netFlow=yr=>{
+      const mySS=(ssOn&&(curAge+yr)>=ssAge)?ssAmt:0;
+      const spSS=(spouseOn&&(spAge+yr)>=spSSAge)?spSSAmt:0;
+      return contrib*(1-taxRate)-expenses+mySS+spSS;
+    };
+
+    const grossFlow=yr=>{
+      const mySS=(ssOn&&(curAge+yr)>=ssAge)?parseFloat(document.getElementById("slSS")?.value||0):0;
+      const spSS=(spouseOn&&(spAge+yr)>=spSSAge)?parseFloat(document.getElementById("slSpouseSS")?.value||0):0;
+      return contrib-expenses+mySS+spSS;
+    };
+
+    const labels=[],nominal=[],real=[],afterTax=[];
+    let nVal=projBase,rVal=projBase,atVal=projBase;
+
+    for(let yr=0;yr<=horizon;yr++){
+      labels.push(CURRENT_YEAR+yr);
+      nominal.push(Math.round(nVal)); real.push(Math.round(rVal)); afterTax.push(Math.round(atVal));
+      if(yr<horizon){
+        const gf=grossFlow(yr+1),af=netFlow(yr+1);
+        nVal=nVal*(1+grossReturn)+gf;
+        rVal=rVal*(1+realReturn)+af/Math.pow(1+inflRate,yr+1);
+        atVal=atVal*(1+afterTaxRet)+af;
       }
-
-      // ══════════════════════════════════════════
-      // MARKET STATUS
-      // ══════════════════════════════════════════
-
-      function updateMarketStatus() {
-        const el = document.getElementById("marketStatus");
-        if (!el) return;
-        const est    = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-        const day = est.getDay(), h = est.getHours(), m = est.getMinutes();
-        const isOpen = day > 0 && day < 6 && (h > 9 || (h === 9 && m >= 30)) && h < 16;
-        el.innerText = isOpen ? "🟢 Market Open" : "🔴 Market Closed";
-        el.className = isOpen ? "market-open"    : "market-closed";
-      }
-
-      // ══════════════════════════════════════════
-      // INIT
-      // ══════════════════════════════════════════
-
-      async function initAuth() {
-        showLogin();
-        const { data } = await supabase.auth.getSession();
-        user = data.session?.user || null;
-        if (user) { window.currentUser = user; showApp(); }
-      }
-
-      initAuth();
-
-    }); // end window load
-
-    function sendHeight() {
-      parent.postMessage({ type: "resize", height: document.body.scrollHeight }, "*");
     }
-    window.addEventListener("load", sendHeight);
-    window.addEventListener("resize", sendHeight);
-    setInterval(sendHeight, 800);
-  </script>
+
+    let mc10=[],mc90=[];
+    if(mcOn){
+      const RUNS=1000,outcomes=Array.from({length:horizon+1},()=>[]);
+      for(let run=0;run<RUNS;run++){
+        let v=projBase; outcomes[0].push(v);
+        for(let yr=0;yr<horizon;yr++){
+          const z=Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*Math.PI*Math.random());
+          v=v*(1+afterTaxRet+vol*z)+netFlow(yr+1);
+          outcomes[yr+1].push(v);
+        }
+      }
+      for(let yr=0;yr<=horizon;yr++){
+        const s=outcomes[yr].slice().sort((a,b)=>a-b);
+        mc10.push(Math.round(s[Math.floor(RUNS*0.10)]));
+        mc90.push(Math.round(s[Math.floor(RUNS*0.90)]));
+      }
+    }
+
+    const ms={proj1y:1,proj5y:5,proj10y:10,proj20y:20,proj30y:30,proj40y:40};
+    Object.entries(ms).forEach(([id,y])=>{
+      const nEl=document.getElementById(id),rEl=document.getElementById(id+"r");
+      if(nEl)nEl.innerText=y<=horizon?fmtMillions(nominal[y]??nominal[nominal.length-1]):"—";
+      if(rEl)rEl.innerText=y<=horizon?fmtMillions(real[y]??real[real.length-1]):"—";
+    });
+
+    drawProjChart(labels,nominal,real,afterTax,mcOn?mc10:null,mcOn?mc90:null);
+    updateTimeline();
+  }
+
+  function drawProjChart(labels,nominal,real,afterTax,mc10,mc90){
+    const ctx=document.getElementById("projChart"); if(!ctx)return;
+    if(projChart){projChart.destroy();projChart=null;}
+    const ds=[];
+    if(mc10&&mc90){
+      ds.push({label:"90th",data:mc90,borderColor:"transparent",backgroundColor:"rgba(22,163,74,0.10)",fill:"+1",tension:0.35,pointRadius:0});
+      ds.push({label:"10th",data:mc10,borderColor:"transparent",backgroundColor:"rgba(22,163,74,0.10)",fill:false,tension:0.35,pointRadius:0});
+    }
+    ds.push({label:"After-tax",data:afterTax,borderColor:"#f59e0b",borderWidth:2,borderDash:[5,4],tension:0.35,fill:false,pointRadius:0,pointHoverRadius:4});
+    ds.push({label:"Real",data:real,borderColor:"#9467bd",borderWidth:2,borderDash:[6,4],tension:0.35,fill:false,pointRadius:0,pointHoverRadius:4});
+    ds.push({label:"Nominal",data:nominal,borderColor:"#16a34a",borderWidth:2.5,tension:0.35,fill:false,pointRadius:0,pointHoverRadius:4});
+    projChart=new Chart(ctx,{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmtMoney0(c.parsed.y)}}},scales:{x:{ticks:{maxTicksLimit:8,font:{size:10}}},y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}}}}});
+  }
+
+  // ══════════════════════════════════════════
+  // TIMELINE MILESTONES
+  // ══════════════════════════════════════════
+  function updateTimeline() {
+    const ret=parseFloat(document.getElementById("slReturn")?.value||7)/100;
+    const proj=yrs=>projBase*Math.pow(1+ret,Math.max(0,yrs));
+    const ss=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=fmtMoney0(v);};
+    ss("tlNW62",proj(62-CURRENT_AGE));
+    ss("tlNW70",proj(70-CURRENT_AGE));
+    ss("tlNW75",proj(75-CURRENT_AGE));
+  }
+
+  // ══════════════════════════════════════════
+  // WITHDRAWAL SIMULATOR
+  // ══════════════════════════════════════════
+  function initWithdrawal(){
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct=v=>parseFloat(v).toFixed(1)+"%";
+    const age=v=>v;
+    wire("wdRetireAge","wdRetireAgeV",age); wire("wdSpend","wdSpendV",dollar);
+    wire("wdReturn","wdReturnV",pct); wire("wdInflation","wdInflationV",pct);
+    wire("wdSS","wdSSV",dollar); wire("wdSSAge","wdSSAgeV",age);
+    updateWithdrawal();
+  }
+
+  function updateWithdrawal(){
+    const retireAge=parseInt(document.getElementById("wdRetireAge")?.value||62);
+    const spend=parseFloat(document.getElementById("wdSpend")?.value||100000);
+    const ret=parseFloat(document.getElementById("wdReturn")?.value||5)/100;
+    const inf=parseFloat(document.getElementById("wdInflation")?.value||3)/100;
+    const ssAmt=parseFloat(document.getElementById("wdSS")?.value||60000);
+    const ssAge=parseInt(document.getElementById("wdSSAge")?.value||70);
+    const grossRet=parseFloat(document.getElementById("slReturn")?.value||7)/100;
+    const portAtRetire=projBase*Math.pow(1+grossRet,Math.max(0,retireAge-CURRENT_AGE));
+    const safe4=portAtRetire*0.04;
+    const netNeed=Math.max(0,spend-ssAmt);
+    const labels=[],vals=[],valsWithSS=[];
+    let port=portAtRetire,portSS=portAtRetire,depAge=null;
+    for(let yr=0;yr<=40;yr++){
+      const age=retireAge+yr;
+      labels.push(age); vals.push(Math.max(0,Math.round(port))); valsWithSS.push(Math.max(0,Math.round(portSS)));
+      if(port<=0&&depAge===null)depAge=age;
+      const adj=Math.pow(1+inf,yr);
+      port=port*(1+ret)-spend*adj;
+      portSS=portSS*(1+ret)-Math.max(0,spend*adj-(age>=ssAge?ssAmt:0));
+    }
+    const lastsUntil=depAge?`Age ${depAge} (${BIRTH_YEAR+depAge})`:`Age ${retireAge+40}+ ✓`;
+    const sv=(id,v,cls)=>{const e=document.getElementById(id);if(!e)return;e.innerText=v;if(cls)e.className="wdVal "+cls;};
+    sv("wdPortVal",fmtMoney0(portAtRetire));
+    sv("wdSafe4",fmtMoney0(safe4),safe4>=spend?"good":"warning");
+    sv("wdNetNeed",fmtMoney0(netNeed),netNeed<=safe4?"good":"danger");
+    sv("wdLasts",lastsUntil,depAge?"danger":"good");
+    const ctx=document.getElementById("wdChart"); if(!ctx)return;
+    if(wdChart){wdChart.destroy();wdChart=null;}
+    wdChart=new Chart(ctx,{type:"line",data:{labels,datasets:[
+      {label:"No SS offset",data:vals,borderColor:"#dc2626",backgroundColor:"rgba(220,38,38,0.07)",fill:true,tension:0.3,borderWidth:1.5,pointRadius:0,borderDash:[5,4]},
+      {label:"With SS",data:valsWithSS,borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.08)",fill:true,tension:0.3,borderWidth:2,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmtMoney0(c.parsed.y)}}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:10},title:{display:true,text:"Age",font:{size:10}}},y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}}}}});
+  }
+
+  // ══════════════════════════════════════════
+  // ROTH CONVERSION
+  // ══════════════════════════════════════════
+  function initRothConversion(){
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct=v=>parseFloat(v).toFixed(1)+"%";
+    const pctInt=v=>v+"%";
+    const yrs=v=>v+" yrs";
+    wire("rcTrad","rcTradV",dollar); wire("rcRoth","rcRothV",dollar);
+    wire("rcConvert","rcConvertV",dollar); wire("rcTax","rcTaxV",pctInt);
+    wire("rcYears","rcYearsV",yrs); wire("rcReturn","rcReturnV",pct);
+    updateRoth();
+  }
+
+  function updateRoth(){
+    const trad=parseFloat(document.getElementById("rcTrad")?.value||1500000);
+    const roth=parseFloat(document.getElementById("rcRoth")?.value||500000);
+    const conv=parseFloat(document.getElementById("rcConvert")?.value||50000);
+    const tax=parseFloat(document.getElementById("rcTax")?.value||22)/100;
+    const convYrs=parseInt(document.getElementById("rcYears")?.value||7);
+    const ret=parseFloat(document.getElementById("rcReturn")?.value||7)/100;
+    const yearsToRMD=73-CURRENT_AGE;
+    let tradNC=trad,rothNC=roth,tradC=trad,rothC=roth,taxCost=0;
+    const labels=[],rothNCdata=[],rothCdata=[],tradATdata=[];
+    for(let yr=0;yr<=yearsToRMD;yr++){
+      const age=CURRENT_AGE+yr;
+      labels.push(age); rothNCdata.push(Math.round(rothNC)); rothCdata.push(Math.round(rothC)); tradATdata.push(Math.round(tradNC*(1-tax)));
+      if(yr<yearsToRMD){
+        tradNC=tradNC*(1+ret); rothNC=rothNC*(1+ret);
+        if(yr<convYrs){const ac=Math.min(conv,tradC);taxCost+=ac*tax;tradC=(tradC-ac)*(1+ret);rothC=(rothC+ac)*(1+ret);}
+        else{tradC=tradC*(1+ret);rothC=rothC*(1+ret);}
+      }
+    }
+    let beAge=null,rC=roth,rN=roth,tN=trad;
+    for(let yr=0;yr<=40;yr++){const ag=CURRENT_AGE+yr;if(rC>rN+tN*(1-tax)){beAge=ag;break;}rC=(yr<convYrs?rC+Math.min(conv,tN):rC)*(1+ret);tN=(yr<convYrs?tN-Math.min(conv,tN):tN)*(1+ret);rN=rN*(1+ret);}
+    const gain=rothCdata[yearsToRMD]-rothNCdata[yearsToRMD];
+    const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+    sv("rcTaxCost",fmtMoney0(taxCost));
+    sv("rcBreakEven",beAge?`Age ${beAge} (${BIRTH_YEAR+beAge})`:"After age 95");
+    sv("rcRothNo",fmtMoney0(rothNCdata[yearsToRMD]));
+    sv("rcRothYes",fmtMoney0(rothCdata[yearsToRMD]));
+    const adv=document.getElementById("rcAdvice");
+    if(adv)adv.innerText=gain>0?`✅ Converting $${(conv/1000).toFixed(0)}K/yr for ${convYrs} years adds ${fmtMoney0(gain)} more in your Roth by age 73, with ${fmtMoney0(taxCost)} in taxes paid today. Break-even: ${beAge?`age ${beAge}`:"after age 95"}. Best done in your Golden Window (2033–2040) at lower tax rates.`:`⚠️ At this tax rate and conversion amount, the strategy does not break even before age 73. Try reducing tax rate or extending conversion years.`;
+    const ctx=document.getElementById("rcChart"); if(!ctx)return;
+    if(rcChart){rcChart.destroy();rcChart=null;}
+    rcChart=new Chart(ctx,{type:"line",data:{labels,datasets:[
+      {label:"Roth w/ conv.",data:rothCdata,borderColor:"#16a34a",borderWidth:2.5,tension:0.35,fill:false,pointRadius:0,pointHoverRadius:4},
+      {label:"Roth no conv.",data:rothNCdata,borderColor:"#9467bd",borderWidth:2,borderDash:[6,4],tension:0.35,fill:false,pointRadius:0},
+      {label:"Trad after-tax",data:tradATdata,borderColor:"#d62728",borderWidth:1.5,borderDash:[4,4],tension:0.35,fill:false,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmtMoney0(c.parsed.y)}}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:10},title:{display:true,text:"Age",font:{size:10}}},y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}}}}});
+  }
+
+  // ══════════════════════════════════════════
+  // RMD ESTIMATOR
+  // ══════════════════════════════════════════
+  function initRMD(){
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct=v=>parseFloat(v).toFixed(1)+"%";
+    const pctInt=v=>v+"%";
+    wire("rmdBal","rmdBalV",dollar); wire("rmdReturn","rmdReturnV",pct); wire("rmdTax","rmdTaxV",pctInt);
+    updateRMD();
+  }
+
+  function updateRMD(){
+    const initBal=parseFloat(document.getElementById("rmdBal")?.value||1500000);
+    const ret=parseFloat(document.getElementById("rmdReturn")?.value||6)/100;
+    const tax=parseFloat(document.getElementById("rmdTax")?.value||22)/100;
+    const tbody=document.getElementById("rmdBody"); if(!tbody)return;
+    let bal=initBal,rows="";
+    for(let age=73;age<=87;age++){
+      const factor=RMD_TABLE[age]||14.4,rmd=bal/factor,at=rmd*(1-tax),tb=rmd*tax;
+      const cls=rmd>100000?"high":rmd>60000?"warn":"";
+      rows+=`<tr><td>${age}</td><td>${BIRTH_YEAR+age}</td><td>${fmtMoney0(bal)}</td><td>${factor}</td><td class="${cls}">${fmtMoney0(rmd)}</td><td>${fmtMoney0(at)}</td><td class="${cls}">${fmtMoney0(tb)}</td></tr>`;
+      bal=(bal-rmd)*(1+ret);
+    }
+    tbody.innerHTML=rows;
+  }
+
+  // ══════════════════════════════════════════
+  // DIVIDEND INCOME TARGET
+  // ══════════════════════════════════════════
+  function initDividendTarget(){
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct=v=>parseFloat(v).toFixed(1)+"%";
+    wire("divTarget","divTargetV",dollar); wire("divGrowth","divGrowthV",pct); wire("divAddInv","divAddInvV",dollar);
+    updateDividend();
+  }
+
+  function updateDividend(){
+    let income=0,totalVal=0;
+    portfolio.forEach(p=>{income+=(p.dividend||0)*(p.shares||0);const q=dataMap[p.symbol],price=q?.c||p.last_price||0;totalVal+=price?price*p.shares:p.cost*p.shares;});
+    const monthly=income/12;
+    const target=parseFloat(document.getElementById("divTarget")?.value||8333);
+    const growth=parseFloat(document.getElementById("divGrowth")?.value||5)/100;
+    const addInv=parseFloat(document.getElementById("divAddInv")?.value||24000);
+    const avgYield=totalVal>0?income/totalVal:0;
+    const pct=Math.min(100,totalVal>0?(monthly/target)*100:0);
+    const gap=Math.max(0,target-monthly);
+    const bar=document.getElementById("divBar");
+    if(bar){bar.style.width=pct.toFixed(1)+"%";bar.innerText=pct.toFixed(0)+"%";}
+    const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.innerText=v;};
+    sv("divPct",pct.toFixed(1)+"%");
+    sv("divCurrent","$"+Math.round(monthly).toLocaleString()+"/mo");
+    sv("divTargetShow","Target: $"+Math.round(target).toLocaleString()+"/mo");
+    sv("divGap",fmtMoney0(gap)+"/mo");
+    sv("divGapAnnual",fmtMoney0(gap*12)+"/yr");
+    sv("divAnnual",fmtMoney0(income));
+    sv("divYield",(avgYield*100).toFixed(2)+"%");
+    const labels=[],incData=[],tLine=[];
+    let pIncome=income,hit50=null,hit75=null,hit100=null;
+    for(let yr=0;yr<=30;yr++){
+      labels.push(CURRENT_YEAR+yr);
+      const m=pIncome/12; incData.push(Math.round(m)); tLine.push(Math.round(target));
+      const ph=pIncome/(target*12);
+      if(!hit50&&ph>=0.50)hit50={yr,val:m};
+      if(!hit75&&ph>=0.75)hit75={yr,val:m};
+      if(!hit100&&ph>=1.00)hit100={yr,val:m};
+      pIncome=pIncome*(1+growth)+addInv*avgYield;
+    }
+    const setM=(vId,yId,d)=>{sv(vId,d?fmtMoney0(d.val)+"/mo":"Not in 30yr");const e=document.getElementById(yId);if(e){e.innerText=d?CURRENT_YEAR+d.yr:"—";e.style.color=d?"#16a34a":"#9ca3af";}};
+    setM("div50Val","div50Yr",hit50); setM("div75Val","div75Yr",hit75); setM("div100Val","div100Yr",hit100);
+    const ctx=document.getElementById("divChart"); if(!ctx)return;
+    if(divChart){divChart.destroy();divChart=null;}
+    divChart=new Chart(ctx,{type:"line",data:{labels,datasets:[
+      {label:"Monthly Div",data:incData,borderColor:"#16a34a",backgroundColor:"rgba(22,163,74,0.08)",fill:true,tension:0.35,borderWidth:2,pointRadius:0,pointHoverRadius:4},
+      {label:"Target",data:tLine,borderColor:"#dc2626",borderWidth:1.5,borderDash:[6,4],tension:0,fill:false,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+c.dataset.label+": $"+c.parsed.y.toLocaleString()+"/mo"}}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:10}},y:{ticks:{callback:v=>"$"+(v>=1000?(v/1000).toFixed(0)+"K":v)+"/mo",font:{size:10}}}}}});
+  }
+
+  // ══════════════════════════════════════════
+  // SS COMPARISON TOOL
+  // ══════════════════════════════════════════
+  function initSSComparison(){
+    const dollar=v=>"$"+Number(v).toLocaleString();
+    const pct=v=>parseFloat(v).toFixed(1)+"%";
+    const age=v=>v;
+    wire("ss1Full","ss1FullV",dollar); wire("ss1Life","ss1LifeV",age);
+    wire("ss2Full","ss2FullV",dollar); wire("ss2Life","ss2LifeV",age);
+    wire("ssPort","ssPortV",dollar); wire("ssExpense","ssExpenseV",dollar); wire("ssReturn","ssReturnV",pct);
+    updateSSComparison();
+  }
+
+  function updateSSComparison(){
+    const sp1Full=parseFloat(document.getElementById("ss1Full")?.value||3000)*12;
+    const sp2Full=parseFloat(document.getElementById("ss2Full")?.value||3000)*12;
+    const sp1Life=parseInt(document.getElementById("ss1Life")?.value||87);
+    const sp2Life=parseInt(document.getElementById("ss2Life")?.value||87);
+    const portAt62=parseFloat(document.getElementById("ssPort")?.value||3000000);
+    const expenses=parseFloat(document.getElementById("ssExpense")?.value||100000);
+    const ret=parseFloat(document.getElementById("ssReturn")?.value||5)/100;
+    const lifeExp=Math.max(sp1Life,sp2Life);
+    const claimAges=[62,67,70];
+    const colors={62:"#dc2626",67:"#f59e0b",70:"#16a34a"};
+    const labels=[];
+    for(let age=62;age<=lifeExp;age++)labels.push(age);
+    const cumSS={},portVal={},lifeTotals={},portAtLife={};
+    claimAges.forEach(ca=>{
+      const annualSS=(sp1Full*SS_MULTIPLIERS[ca])+(sp2Full*SS_MULTIPLIERS[ca]);
+      let cum=0,port=portAt62;
+      const cd=[],pd=[];
+      for(let age=62;age<=lifeExp;age++){
+        const ss=age>=ca?annualSS:0; cum+=ss; cd.push(Math.round(cum));
+        pd.push(Math.max(0,Math.round(port)));
+        port=port*(1+ret)-Math.max(0,expenses-ss);
+      }
+      cumSS[ca]=cd; portVal[ca]=pd; lifeTotals[ca]=cum; portAtLife[ca]=Math.max(0,port);
+    });
+    const monthly=ca=>((sp1Full*SS_MULTIPLIERS[ca])+(sp2Full*SS_MULTIPLIERS[ca]))/12;
+    const annual=ca=>(sp1Full*SS_MULTIPLIERS[ca])+(sp2Full*SS_MULTIPLIERS[ca]);
+    const findBE=(ea,la)=>{const ed=cumSS[ea],ld=cumSS[la];for(let i=0;i<labels.length;i++){if(ld[i]>=ed[i])return labels[i];}return null;};
+    const be6267=findBE(62,67),be6270=findBE(62,70),be6770=findBE(67,70);
+    const ref=lifeTotals[70];
+    const tbody=document.getElementById("ssCompBody");
+    if(tbody)tbody.innerHTML=claimAges.map(ca=>{const diff=lifeTotals[ca]-ref;return`<tr><td style="font-weight:700;color:${colors[ca]};">Claim at ${ca}</td><td>${fmtMoney0(monthly(ca))}/mo</td><td>${fmtMoney0(annual(ca))}/yr</td><td>${fmtMoney0(lifeTotals[ca])}</td><td>${fmtMoney0(portAtLife[ca])}</td><td style="font-weight:700;color:${diff<0?"#dc2626":"#16a34a"};">${diff===0?"Baseline":(diff>0?"+":"")+fmtMoney0(diff)}</td></tr>`;}).join("");
+    const box=document.getElementById("ssBreakEvenBox");
+    if(box){
+      const f62_70=be6270?`age <strong>${be6270}</strong> (${BIRTH_YEAR+be6270})`:"beyond your life expectancy";
+      const f62_67=be6267?`age <strong>${be6267}</strong> (${BIRTH_YEAR+be6267})`:"beyond your life expectancy";
+      const f67_70=be6770?`age <strong>${be6770}</strong> (${BIRTH_YEAR+be6770})`:"beyond your life expectancy";
+      const winner=lifeTotals[70]>lifeTotals[62]?`Waiting to <strong style="color:#16a34a;">70</strong> collects <strong>${fmtMoney0(lifeTotals[70]-lifeTotals[62])}</strong> more in lifetime SS than claiming at 62.`:`Claiming at <strong style="color:#dc2626;">62</strong> collects more total SS given your life expectancy settings.`;
+      box.innerHTML=`<div style="font-weight:700;font-size:13px;color:#16a34a;margin-bottom:8px;">📍 Break-Even Analysis</div>
+        <div>• <strong>67 vs 62:</strong> Breaks even at ${f62_67}</div>
+        <div>• <strong>70 vs 62:</strong> Breaks even at ${f62_70}</div>
+        <div>• <strong>70 vs 67:</strong> Breaks even at ${f67_70}</div>
+        <div style="margin-top:8px;">${winner}</div>
+        <div style="margin-top:8px;font-size:11px;color:#6b7280;">⚠️ Higher earner should wait to 70 for maximum survivor benefit. Lower earner can claim earlier to bridge income.</div>`;
+    }
+    const cumCtx=document.getElementById("ssCumChart");
+    if(cumCtx){if(ssCumChart){ssCumChart.destroy();ssCumChart=null;}
+      ssCumChart=new Chart(cumCtx,{type:"line",data:{labels,datasets:claimAges.map(ca=>({label:`Claim at ${ca}`,data:cumSS[ca],borderColor:colors[ca],borderWidth:ca===70?2.5:2,tension:0.3,fill:false,pointRadius:0,pointHoverRadius:4}))},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{position:"top",labels:{boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:c=>` Claim ${c.dataset.label.split(" ").pop()}: ${fmtMoney0(c.parsed.y)} total`}}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:8}},y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}}}}});}
+    const portCtx=document.getElementById("ssPortChart");
+    if(portCtx){if(ssPortChart){ssPortChart.destroy();ssPortChart=null;}
+      ssPortChart=new Chart(portCtx,{type:"line",data:{labels,datasets:claimAges.map(ca=>({label:`Claim at ${ca}`,data:portVal[ca],borderColor:colors[ca],borderWidth:ca===70?2.5:2,tension:0.3,fill:false,pointRadius:0,pointHoverRadius:4}))},options:{responsive:true,maintainAspectRatio:false,animation:{duration:200},interaction:{mode:"index",intersect:false},plugins:{legend:{position:"top",labels:{boxWidth:10,font:{size:10}}},tooltip:{callbacks:{label:c=>` Claim ${c.dataset.label.split(" ").pop()}: ${fmtMoney0(c.parsed.y)}`}}},scales:{x:{ticks:{font:{size:10},maxTicksLimit:8}},y:{ticks:{callback:v=>fmtMillions(v),font:{size:10}}}}}});}
+  }
+
+  // ══════════════════════════════════════════
+  // INIT AUTH
+  // ══════════════════════════════════════════
+  async function initAuth() {
+    const {data} = await supabase.auth.getSession();
+    user = data.session?.user || null;
+    if (user) { window.currentUser = user; showApp(); }
+  }
+
+  initAuth();
+
+}); // end load
+</script>
 </body>
 </html>
